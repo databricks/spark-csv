@@ -26,17 +26,17 @@ public class CsvParser {
   private Character delimiter = ',';
   private Character quote = '"';
 
-  public CsvUtils withUseHeader(Boolean flag) {
+  public CsvParser withUseHeader(Boolean flag) {
     this.useHeader = flag;
     return this;
   }
 
-  public CsvUtils withDelimiter(Character delimiter) {
+  public CsvParser withDelimiter(Character delimiter) {
     this.delimiter = delimiter;
     return this;
   }
 
-  public CsvUtils withQuoteChar(Character quote) {
+  public CsvParser withQuoteChar(Character quote) {
     this.quote = quote;
     return this;
   }
