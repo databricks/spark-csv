@@ -87,22 +87,21 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
   }
 
   private def inferSchema(): StructType = {
-     if (this.userSchema != null) {
+    if (this.userSchema != null) {
       userSchema
     } else {
-       val firstRow = CSVParser.parse(getFirstLine(), CSVFormat.DEFAULT).getRecords.head.toList
-       System.out.println(s"Found first row to be: $firstRow")
+      val firstRow = CSVParser.parse(getFirstLine(), CSVFormat.DEFAULT).getRecords.head.toList
 
-       val header = if (useHeader) {
-         firstRow
-       } else {
-         firstRow.zipWithIndex.map { case (value, index) => s"V$index"}
-       }
-       // By default fields are assumed to be StringType
-       val schemaFields = header.map { fieldName =>
-         StructField(fieldName.toString, StringType, nullable = true)
-       }
-       StructType(schemaFields)
+      val header = if (useHeader) {
+        firstRow
+      } else {
+        firstRow.zipWithIndex.map { case (value, index) => s"V$index"}
+      }
+      // By default fields are assumed to be StringType
+      val schemaFields = header.map { fieldName =>
+        StructField(fieldName.toString, StringType, nullable = true)
+      }
+      StructType(schemaFields)
     }
   }
 
@@ -114,7 +113,7 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
     val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
 
     val status = fs.getFileStatus(path)
-    val singleFile = if (status.isDir) {
+    val singleFile = if (status.isDirectory) {
       fs.listStatus(path)
         .find(_.getLen > 0)
         .map(_.getPath)

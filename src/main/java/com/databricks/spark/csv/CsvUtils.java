@@ -21,7 +21,7 @@ import org.apache.spark.sql.api.java.JavaSchemaRDD;
 /**
  * A collection of static functions for working with CSV files in Spark SQL
  */
-public class CsvUtils {
+public class CsvParser {
   private Boolean useHeader = true;
   private Character delimiter = ',';
   private Character quote = '"';
