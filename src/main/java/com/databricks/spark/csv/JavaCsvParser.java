@@ -21,30 +21,31 @@ import org.apache.spark.sql.api.java.JavaSchemaRDD;
 /**
  * A collection of static functions for working with CSV files in Spark SQL
  */
-public class CsvParser {
+public class JavaCsvParser {
+
   private Boolean useHeader = true;
   private Character delimiter = ',';
   private Character quote = '"';
 
-  public CsvParser withUseHeader(Boolean flag) {
+  public JavaCsvParser withUseHeader(Boolean flag) {
     this.useHeader = flag;
     return this;
   }
 
-  public CsvParser withDelimiter(Character delimiter) {
+  public JavaCsvParser withDelimiter(Character delimiter) {
     this.delimiter = delimiter;
     return this;
   }
 
-  public CsvParser withQuoteChar(Character quote) {
+  public JavaCsvParser withQuoteChar(Character quote) {
     this.quote = quote;
     return this;
   }
 
   /** Returns a Schema RDD for the given CSV path. */
   public JavaSchemaRDD csvFile(JavaSQLContext sqlContext, String path) {
-    CsvRelation relation = new CsvRelation(path, sqlContext.sqlContext());
-    relation.setUseHeader(this.useHeader).setDelimiter(this.delimiter).setQuoteChar(this.quote);
+    CsvRelation relation = new
+            CsvRelation(path, useHeader, delimiter, quote, null, sqlContext.sqlContext());
     return sqlContext.baseRelationToSchemaRDD(relation);
   }
 }

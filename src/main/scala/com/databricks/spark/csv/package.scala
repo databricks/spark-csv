@@ -23,9 +23,25 @@ package object csv {
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
   implicit class CsvContext(sqlContext: SQLContext) {
-    def csvFile(filePath: String) =
-      sqlContext.baseRelationToSchemaRDD(CsvRelation(filePath)(sqlContext))
+    def csvFile(filePath: String) = {
+      val csvRelation = CsvRelation(
+        location = filePath,
+        useHeader = true,
+        delimiter = ',',
+        quote = '"')(sqlContext)
+      sqlContext.baseRelationToSchemaRDD(csvRelation)
+    }
+
+    def tsvFile(filePath: String) = {
+      val csvRelation = CsvRelation(
+        location = filePath,
+        useHeader = true,
+        delimiter = '\t',
+        quote = '"')(sqlContext)
+      sqlContext.baseRelationToSchemaRDD(csvRelation)
+    }
   }
+
 
   // TODO: Implement me.
   implicit class CsvSchemaRDD(schemaRDD: SchemaRDD) {

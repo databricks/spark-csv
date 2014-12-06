@@ -28,39 +28,18 @@ import org.apache.spark.sql.sources.TableScan
 
 import scala.collection.JavaConversions._
 
-case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) extends TableScan {
-
-  private var useHeader: Boolean = true
-  private var delimiter: Char = ','
-  private var quote: Char = '"'
-  private var userSchema: StructType = null
-
-  def setUseHeader(headerFlag: Boolean) = {
-    this.useHeader = headerFlag
-    this
-  }
-
-  def setDelimiter(delimiter: Char) = {
-    this.delimiter = delimiter
-    this
-  }
-
-  def setQuoteChar(quote: Char)= {
-    this.quote = quote
-    this
-  }
-
-  def setSchema(schema: StructType) = {
-    this.userSchema = schema
-    this
-  }
+case class CsvRelation protected[spark] (
+    location: String,
+    useHeader: Boolean,
+    delimiter: Char,
+    quote: Char,
+    userSchema: StructType = null)(@transient val sqlContext: SQLContext) extends TableScan {
 
   val schema = inferSchema()
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   lazy val buildScan = {
     val baseRDD = sqlContext.sparkContext.textFile(location)
-    val firstLine = getFirstLine()
 
     val numFields = schema.fields.length
     val row = new GenericMutableRow(numFields)
@@ -81,7 +60,6 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
         iter
       }
 
-      //val tokenIter = new CsvTokenizer(csvIter, delimiter, quote)
       parseCSV(csvIter, csvFormat, schema.fields, projection, row)
     }
   }
@@ -90,7 +68,7 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
     if (this.userSchema != null) {
       userSchema
     } else {
-      val firstRow = CSVParser.parse(getFirstLine(), CSVFormat.DEFAULT).getRecords.head.toList
+      val firstRow = CSVParser.parse(firstLine, CSVFormat.DEFAULT).getRecords.head.toList
 
       val header = if (useHeader) {
         firstRow
@@ -108,12 +86,12 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
   /**
    * Returns the first line of the first non-empty file in path
    */
-  private def getFirstLine() = {
+  private lazy val firstLine = {
     val path = new Path(location)
     val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
 
     val status = fs.getFileStatus(path)
-    val singleFile = if (status.isDirectory) {
+    val singleFile = if (status.isDir) {
       fs.listStatus(path)
         .find(_.getLen > 0)
         .map(_.getPath)
@@ -129,10 +107,10 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
     lineText.toString
   }
 
-  private def schemaCaster(schema: Seq[AttributeReference]): MutableProjection = {
-    val startSchema = (1 to schema.length).toSeq.map(
+  private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {
+    val startSchema = (1 to sourceSchema.length).toSeq.map(
       index => new AttributeReference(s"V$index", StringType, nullable = true)())
-    val casts = schema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
+    val casts = sourceSchema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
     new InterpretedMutableProjection(casts, startSchema)
   }
 
@@ -145,9 +123,8 @@ case class CsvRelation(location: String)(@transient val sqlContext: SQLContext) 
       row: GenericMutableRow): Iterator[Row] = {
     iter.map { line =>
       val tokens = CSVParser.parse(line, csvFormat).getRecords.head
-      schemaFields.zipWithIndex.foreach {
-        case (StructField(name, dataType, _, _), index) =>
-          row.update(index, tokens.get(index))
+      for (index <- 0 to schemaFields.length) {
+        row.(index) = tokens.get(index)
       }
       projection(row)
     }
