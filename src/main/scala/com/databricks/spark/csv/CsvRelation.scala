@@ -123,8 +123,8 @@ case class CsvRelation protected[spark] (
       row: GenericMutableRow): Iterator[Row] = {
     iter.map { line =>
       val tokens = CSVParser.parse(line, csvFormat).getRecords.head
-      for (index <- 0 to schemaFields.length) {
-        row.(index) = tokens.get(index)
+      for (index <- 0 until schemaFields.length) {
+        row(index) = tokens.get(index)
       }
       projection(row)
     }
