@@ -14,10 +14,10 @@ groupId: com.databricks.spark
 artifactId: spark-csv_2.10
 version: 0.1
 ```
-The spark-csv jar file can also be added to a Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
+The spark-csv assembly jar file can also be added to a Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --jars spark-csv_2.11-0.1.jar
+$ bin/spark-shell --jars spark-csv-assembly-0.1.jar
 ```
 
 ## Features
@@ -32,13 +32,13 @@ $ wget https://github.com/databricks/spark-csv/raw/master/src/test/resources/car
 You can use the library by loading the implicits from `com.databricks.spark.csv._`.
 
 ```
-scala> import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SQLContext
 
-scala> val sqlContext = new SQLContext(sc)
+val sqlContext = new SQLContext(sc)
 
-scala> import com.databricks.spark.csv._
+import com.databricks.spark.csv._
 
-scala> val cars = sqlContext.csvFile("cars.csv")
+val cars = sqlContext.csvFile("cars.csv")
 ```
 
 ### SQL API
@@ -60,5 +60,5 @@ JavaSchemaRDD cars = (new CsvUtils()).setUseHeader(true).csvFile(sqlContext, "ca
 ```
 
 ## Building From Source
-This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script.  To build a JAR file simply run `sbt/sbt package` from the project root.
+This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt assembly` from the project root.
 
