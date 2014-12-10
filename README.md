@@ -47,7 +47,7 @@ CSV data can be queried in pure SQL by registering the data as a temporary table
 ```sql
 CREATE TEMPORARY TABLE cars
 USING com.databricks.spark.csv
-OPTIONS (path "cars.csv", header true)
+OPTIONS (path "cars.csv", header "true")
 ```
 
 ### Java API
