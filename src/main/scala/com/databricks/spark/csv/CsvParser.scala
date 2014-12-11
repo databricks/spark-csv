@@ -15,6 +15,7 @@
  */
 package com.databricks.spark.csv
 
+import org.apache.spark.sql.catalyst.types.StructType
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SchemaRDD
 
@@ -26,6 +27,7 @@ class CsvParser {
   private var useHeader: Boolean = true
   private var delimiter: Character = ','
   private var quote: Character = '"'
+  private var schema: StructType = null
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -42,9 +44,14 @@ class CsvParser {
     this
   }
 
+  def withSchema(schema: StructType): CsvParser = {
+    this.schema = schema
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   def csvFile(sqlContext: SQLContext, path: String): SchemaRDD = {
-    val relation: CsvRelation = CsvRelation(path, useHeader, delimiter, quote)(sqlContext)
+    val relation: CsvRelation = CsvRelation(path, useHeader, delimiter, quote, schema)(sqlContext)
     sqlContext.baseRelationToSchemaRDD(relation)
   }
 

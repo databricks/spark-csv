@@ -17,6 +17,7 @@ package com.databricks.spark.csv;
 
 import org.apache.spark.sql.api.java.JavaSQLContext;
 import org.apache.spark.sql.api.java.JavaSchemaRDD;
+import org.apache.spark.sql.catalyst.types.StructType;
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -26,6 +27,7 @@ public class JavaCsvParser {
   private Boolean useHeader = true;
   private Character delimiter = ',';
   private Character quote = '"';
+  private StructType schema = null;
 
   public JavaCsvParser withUseHeader(Boolean flag) {
     this.useHeader = flag;
@@ -42,10 +44,15 @@ public class JavaCsvParser {
     return this;
   }
 
+  public JavaCsvParser withSchema(StructType schema) {
+    this.schema = schema;
+    return this;
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   public JavaSchemaRDD csvFile(JavaSQLContext sqlContext, String path) {
     CsvRelation relation = new
-            CsvRelation(path, useHeader, delimiter, quote, null, sqlContext.sqlContext());
+            CsvRelation(path, useHeader, delimiter, quote, schema, sqlContext.sqlContext());
     return sqlContext.baseRelationToSchemaRDD(relation);
   }
 }
