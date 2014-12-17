@@ -86,7 +86,7 @@ case class CsvRelation protected[spark] (
   /**
    * Returns the first line of the first non-empty file in path
    */
-  private lazy val firstLine = {
+  private val firstLine = {
     val path = new Path(location)
     val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
 
