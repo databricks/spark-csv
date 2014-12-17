@@ -65,11 +65,10 @@ case class CsvRelation protected[spark] (
   }
 
   private def inferSchema(): StructType = {
+    val firstRow = CSVParser.parse(firstLine, CSVFormat.DEFAULT).getRecords.head.toList
     if (this.userSchema != null) {
       userSchema
     } else {
-      val firstRow = CSVParser.parse(firstLine, CSVFormat.DEFAULT).getRecords.head.toList
-
       val header = if (useHeader) {
         firstRow
       } else {
@@ -86,7 +85,7 @@ case class CsvRelation protected[spark] (
   /**
    * Returns the first line of the first non-empty file in path
    */
-  private val firstLine = {
+  private lazy val firstLine = {
     val path = new Path(location)
     val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
 
