@@ -10,8 +10,6 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.2.0" % "provided"
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
-resolvers += "Spark Staging Repository" at "https://repository.apache.org/content/repositories/orgapachespark-1038/"
-
 publishMavenStyle := true
 
 publishTo := {
