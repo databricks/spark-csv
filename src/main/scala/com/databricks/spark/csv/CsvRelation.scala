@@ -128,8 +128,10 @@ case class CsvRelation protected[spark] (
           None
         } else {
           val tokens = records.head
-          for (index <- 0 until schemaFields.length) {
+          var index = 0
+          while (index < schemaFields.length) {
             row(index) = tokens.get(index)
+            index = index + 1
           }
           Some(projection(row))
         }
