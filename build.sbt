@@ -12,8 +12,6 @@ libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
 
-resolvers += "Spark Staging Repository" at "https://repository.apache.org/content/repositories/orgapachespark-1038/"
-
 publishMavenStyle := true
 
 publishTo := {
