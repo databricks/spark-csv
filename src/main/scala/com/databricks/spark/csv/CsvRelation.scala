@@ -18,6 +18,7 @@ package com.databricks.spark.csv
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.util.LineReader
+import org.slf4j.LoggerFactory
 
 import org.apache.commons.csv._
 
@@ -27,6 +28,7 @@ import org.apache.spark.sql.catalyst.types.{StructType, StructField, StringType}
 import org.apache.spark.sql.sources.TableScan
 
 import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
 
 case class CsvRelation protected[spark] (
     location: String,
@@ -34,6 +36,8 @@ case class CsvRelation protected[spark] (
     delimiter: Char,
     quote: Char,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext) extends TableScan {
+
+  private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
   val schema = inferSchema()
 
@@ -99,11 +103,8 @@ case class CsvRelation protected[spark] (
       path
     }
 
-    val lineReader = new LineReader(fs.open(singleFile))
-    val lineText = new Text()
-    lineReader.readLine(lineText)
-    lineReader.close()
-    lineText.toString
+    // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
+    sqlContext.sparkContext.textFile(singleFile.toString).first()
   }
 
   private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {
@@ -120,12 +121,26 @@ case class CsvRelation protected[spark] (
       schemaFields: Seq[StructField],
       projection: MutableProjection,
       row: GenericMutableRow): Iterator[Row] = {
-    iter.map { line =>
-      val tokens = CSVParser.parse(line, csvFormat).getRecords.head
-      for (index <- 0 until schemaFields.length) {
-        row(index) = tokens.get(index)
+    iter.flatMap { line =>
+      try {
+        val records = CSVParser.parse(line, csvFormat).getRecords
+        if (records.isEmpty) {
+          logger.warn(s"Ignoring empty line: $line")
+          None
+        } else {
+          val tokens = records.head
+          var index = 0
+          while (index < schemaFields.length) {
+            row(index) = tokens.get(index)
+            index = index + 1
+          }
+          Some(projection(row))
+        }
+      } catch {
+        case NonFatal(e) =>
+          logger.error(s"Exception while parsing line: $line. ", e)
+          None
       }
-      projection(row)
     }
   }
 
