@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.types.{StructType, StructField, StringType}
 import org.apache.spark.sql.sources.TableScan
 
 import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
 
 case class CsvRelation protected[spark] (
     location: String,
@@ -36,7 +37,7 @@ case class CsvRelation protected[spark] (
     quote: Char,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext) extends TableScan {
 
-  private val logger = LoggerFactory.getLogger(classOf[CsvRelation])
+  private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
   val schema = inferSchema()
 
@@ -136,7 +137,7 @@ case class CsvRelation protected[spark] (
           Some(projection(row))
         }
       } catch {
-        case e: Exception =>
+        case NonFatal(e) =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None
       }
