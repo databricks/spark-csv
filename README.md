@@ -2,6 +2,8 @@
 
 A library for parsing and querying CSV data with [Spark SQL](http://spark.apache.org/docs/latest/sql-programming-guide.html).
 
+[![Build Status](https://travis-ci.org/databricks/spark-csv.svg?branch=master)](https://travis-ci.org/databricks/spark-csv)
+
 ## Requirements
 
 This library requires Spark 1.2+

@@ -57,3 +57,4 @@ class DefaultSource extends RelationProvider {
     CsvRelation(path, headerFlag, delimiterChar, quoteChar)(sqlContext)
   }
 }
+
