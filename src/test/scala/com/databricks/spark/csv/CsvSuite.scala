@@ -27,7 +27,7 @@ class CsvSuite extends FunSuite {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
 
-  test("dsl test") {
+  test("DSL test") {
     val results = TestSQLContext
       .csvFile(carsFile)
       .select('year)
@@ -36,7 +36,7 @@ class CsvSuite extends FunSuite {
     assert(results.size === 2)
   }
 
-  test("sql test") {
+  test("DDL test") {
     sql(
       s"""
         |CREATE TEMPORARY TABLE carsTable
@@ -79,5 +79,26 @@ class CsvSuite extends FunSuite {
     assert(results === 0)
   }
 
-  //TODO(hossein): When relation Schema PR gets merged add a sql test for empty file
+  test("sql test with empty file") {
+    sql(s"""
+           |CREATE TEMPORARY TABLE carsTable
+           |(yearMade double, makeName string, modelName string, comments string, grp string)
+           |USING com.databricks.spark.csv
+           |OPTIONS (path "$emptyFile", header "false")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT count(*) FROM carsTable").collect().size === 0)
+  }
+
+  test("DDL test with schema") {
+    sql(s"""
+        |CREATE TEMPORARY TABLE carsTable
+        |(yearMade double, makeName string, modelName string, comments string, grp string)
+        |USING com.databricks.spark.csv
+        |OPTIONS (path "$carsFile", header "true")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT makeName FROM carsTable").collect().size === 2)
+    assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
+  }
 }
