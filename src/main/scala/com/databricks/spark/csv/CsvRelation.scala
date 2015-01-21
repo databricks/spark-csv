@@ -16,16 +16,14 @@
 package com.databricks.spark.csv
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.io.Text
-import org.apache.hadoop.util.LineReader
 import org.slf4j.LoggerFactory
 
 import org.apache.commons.csv._
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.types.{StructType, StructField, StringType}
 import org.apache.spark.sql.sources.TableScan
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
