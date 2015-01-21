@@ -16,13 +16,14 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.sources.RelationProvider
+import org.apache.spark.sql.sources.{RelationProvider, SchemaRelationProvider}
+import org.apache.spark.sql.types.StructType
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
  * JDBC server).
  */
-class DefaultSource extends RelationProvider {
+class DefaultSource extends RelationProvider with SchemaRelationProvider {
 
   /**
    * Creates a new relation for data store in CSV given parameters.
@@ -56,5 +57,44 @@ class DefaultSource extends RelationProvider {
 
     CsvRelation(path, headerFlag, delimiterChar, quoteChar)(sqlContext)
   }
+
+  /**
+   * Creates a new relation for data store in CSV given parameters and user supported schema.
+   * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
+   */
+  def createRelation(
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      schema: StructType) = {
+
+    val path = parameters("path")
+
+    val delimiter = parameters.getOrElse("delimiter", ",")
+    val delimiterChar = if (delimiter.length == 1) {
+      delimiter.charAt(0)
+    } else {
+      throw new Exception("Delimiter cannot be more than one character.")
+    }
+
+    val quote = parameters.getOrElse("quote", "\"")
+    val quoteChar = if (quote.length == 1) {
+      quote.charAt(0)
+    } else {
+      throw new Exception("Quotation cannot be more than one character.")
+    }
+
+    val useHeader = parameters.getOrElse("header", "true")
+    val headerFlag = if (useHeader == "true") {
+      true
+    } else if (useHeader == "false") {
+      false
+    } else {
+      throw new Exception("Header flag can be true or false")
+    }
+
+    CsvRelation(path, headerFlag, delimiterChar, quoteChar, schema)(sqlContext)
+
+  }
+
 }
 
