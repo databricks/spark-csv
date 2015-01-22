@@ -44,10 +44,17 @@ val cars = sqlContext.csvFile("cars.csv")
 ```
 
 ### SQL API
-CSV data can be queried in pure SQL by registering the data as a temporary table.
+CSV data can be queried in pure SQL by registering the data as a (temporary) table.
 
 ```sql
-CREATE TEMPORARY TABLE cars
+CREATE TABLE cars
+USING com.databricks.spark.csv
+OPTIONS (path "cars.csv", header "true")
+```
+
+You can also specify column names and types in DDL.
+```sql
+CREATE TABLE cars (yearMade double, carMake string, carModel string, comments string, blank string)
 USING com.databricks.spark.csv
 OPTIONS (path "cars.csv", header "true")
 ```

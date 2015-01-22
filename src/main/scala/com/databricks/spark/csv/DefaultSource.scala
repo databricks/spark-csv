@@ -30,32 +30,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider {
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
   def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
-    val path = parameters("path")
-
-    val delimiter = parameters.getOrElse("delimiter", ",")
-    val delimiterChar = if (delimiter.length == 1) {
-      delimiter.charAt(0)
-    } else {
-      throw new Exception("Delimiter cannot be more than one character.")
-    }
-
-    val quote = parameters.getOrElse("quote", "\"")
-    val quoteChar = if (quote.length == 1) {
-      quote.charAt(0)
-    } else {
-      throw new Exception("Quotation cannot be more than one character.")
-    }
-
-    val useHeader = parameters.getOrElse("header", "true")
-    val headerFlag = if (useHeader == "true") {
-      true
-    } else if (useHeader == "false") {
-      false
-    } else {
-      throw new Exception("Header flag can be true or false")
-    }
-
-    CsvRelation(path, headerFlag, delimiterChar, quoteChar)(sqlContext)
+    createRelation(sqlContext, parameters, null)
   }
 
   /**
@@ -93,8 +68,6 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider {
     }
 
     CsvRelation(path, headerFlag, delimiterChar, quoteChar, schema)(sqlContext)
-
   }
-
 }
 
