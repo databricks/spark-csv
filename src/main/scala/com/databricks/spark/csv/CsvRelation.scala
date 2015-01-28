@@ -52,6 +52,7 @@ case class CsvRelation protected[spark] (
 
     val csvFormat = CSVFormat.DEFAULT
       .withDelimiter(delimiter)
+      .withQuote(quote)
       .withSkipHeaderRecord(false)
       .withHeader(fieldNames: _*)
 
@@ -69,7 +70,11 @@ case class CsvRelation protected[spark] (
   }
 
   private def inferSchema(): StructType = {
-    val firstRow = CSVParser.parse(firstLine, CSVFormat.DEFAULT).getRecords.head.toList
+    val csvFormat = CSVFormat.DEFAULT
+      .withDelimiter(delimiter)
+      .withQuote(quote)
+      .withSkipHeaderRecord(false)
+    val firstRow = CSVParser.parse(firstLine, csvFormat).getRecords.head.toList
     if (this.userSchema != null) {
       userSchema
     } else {
