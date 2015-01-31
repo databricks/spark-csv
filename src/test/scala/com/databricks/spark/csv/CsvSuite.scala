@@ -23,6 +23,7 @@ import TestSQLContext._
 
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsAltFile = "src/test/resources/cars-alternative.csv"
 
   test("dsl test") {
     val results = TestSQLContext
@@ -43,4 +44,16 @@ class CsvSuite extends FunSuite {
 
     assert(sql("SELECT year FROM carsTable").collect().size === 2)
   }
+
+  test("dsl test with alternative delimiter and quote") {
+    val results = new CsvParser()
+      .withDelimiter('|')
+      .withQuoteChar('\'')
+      .csvFile(TestSQLContext, carsAltFile)
+      .select('year)
+      .collect()
+
+    assert(results.size === 2)
+  }
+
 }
