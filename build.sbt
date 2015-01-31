@@ -1,6 +1,6 @@
 name := "spark-csv"
 
-version := "0.2-SNAPSHOT"
+version := "0.2"
 
 organization := "com.databricks"
 
