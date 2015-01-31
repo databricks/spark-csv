@@ -93,21 +93,8 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    val path = new Path(location)
-    val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
-
-    val status = fs.getFileStatus(path)
-    val singleFile = if (status.isDir) {
-      fs.listStatus(path)
-        .find(_.getLen > 0)
-        .map(_.getPath)
-        .getOrElse(sys.error(s"Could not find non-empty file at $path"))
-    } else {
-      path
-    }
-
     // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    sqlContext.sparkContext.textFile(singleFile.toString).first()
+    sqlContext.sparkContext.textFile(location + "/*").first()
   }
 
   private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {
