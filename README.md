@@ -12,7 +12,7 @@ This library requires Spark 1.2+
 You can link against this library in your program at the following coordiates:
 
 ```
-groupId: com.databricks.spark
+groupId: com.databricks
 artifactId: spark-csv_2.10
 version: 0.1
 ```
