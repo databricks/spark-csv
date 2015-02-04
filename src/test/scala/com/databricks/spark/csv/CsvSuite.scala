@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.sql.test._
+import org.apache.spark.sql.catalyst.types._
 import org.scalatest.FunSuite
 
 /* Implicits */
@@ -24,6 +25,7 @@ import TestSQLContext._
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val emptyFile = "src/test/resources/empty.csv"
 
   test("dsl test") {
     val results = TestSQLContext
@@ -54,6 +56,17 @@ class CsvSuite extends FunSuite {
       .collect()
 
     assert(results.size === 2)
+  }
+
+  test("dsl test with empty file and known schema") {
+    val results = new CsvParser()
+      .withDelimiter('|')
+      .withQuoteChar('\'')
+      .withSchema(StructType(List(StructField("column", StringType, false))))
+      .csvFile(TestSQLContext, emptyFile)
+      .count()
+
+    assert(results === 0)
   }
 
 }
