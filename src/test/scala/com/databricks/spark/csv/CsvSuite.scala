@@ -60,8 +60,6 @@ class CsvSuite extends FunSuite {
 
   test("dsl test with empty file and known schema") {
     val results = new CsvParser()
-      .withDelimiter('|')
-      .withQuoteChar('\'')
       .withSchema(StructType(List(StructField("column", StringType, false))))
       .csvFile(TestSQLContext, emptyFile)
       .count()
