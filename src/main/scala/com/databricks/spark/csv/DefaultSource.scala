@@ -17,7 +17,7 @@ package com.databricks.spark.csv
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.sources.{RelationProvider, SchemaRelationProvider}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.catalyst.types.StructType
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
