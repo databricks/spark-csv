@@ -54,11 +54,13 @@ case class CsvRelation protected[spark] (
       .withSkipHeaderRecord(false)
       .withHeader(fieldNames: _*)
 
+    // If header is set, make sure firstLine is materialized before sending to executors.
+    val filterLine = if (useHeader) firstLine else null
 
     baseRDD.mapPartitions { iter =>
       // When using header, any input line that equals firstLine is assumed to be header
       val csvIter = if (useHeader) {
-        iter.filter(_ != firstLine)
+        iter.filter(_ != filterLine)
       } else {
         iter
       }

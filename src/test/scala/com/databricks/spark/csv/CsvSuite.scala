@@ -47,7 +47,7 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === 2)
   }
 
-  test("dsl test with alternative delimiter and quote") {
+  test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
       .withDelimiter('|')
       .withQuoteChar('\'')
@@ -58,7 +58,7 @@ class CsvSuite extends FunSuite {
     assert(results.size === 2)
   }
 
-  test("sql test with alternative delimiter and quote") {
+  test("DDL test with alternative delimiter and quote") {
     sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
@@ -70,16 +70,16 @@ class CsvSuite extends FunSuite {
   }
 
 
-  test("dsl test with empty file and known schema") {
+  test("DSL test with empty file and known schema") {
     val results = new CsvParser()
-      .withSchema(StructType(List(StructField("column", StringType, false))))
+      .withSchema(StructType(List(StructField("column", StringType, false)))).withUseHeader(false)
       .csvFile(TestSQLContext, emptyFile)
       .count()
 
     assert(results === 0)
   }
 
-  test("sql test with empty file") {
+  test("DDL test with empty file") {
     sql(s"""
            |CREATE TEMPORARY TABLE carsTable
            |(yearMade double, makeName string, modelName string, comments string, grp string)
@@ -87,7 +87,7 @@ class CsvSuite extends FunSuite {
            |OPTIONS (path "$emptyFile", header "false")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT count(*) FROM carsTable").collect().size === 0)
+    assert(sql("SELECT count(*) FROM carsTable").collect().head(0) === 0)
   }
 
   test("DDL test with schema") {
