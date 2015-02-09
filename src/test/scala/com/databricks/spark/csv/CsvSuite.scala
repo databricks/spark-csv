@@ -58,6 +58,18 @@ class CsvSuite extends FunSuite {
     assert(results.size === 2)
   }
 
+  test("sql test with alternative delimiter and quote") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === 2)
+  }
+
+
   test("dsl test with empty file and known schema") {
     val results = new CsvParser()
       .withSchema(StructType(List(StructField("column", StringType, false))))
@@ -67,4 +79,5 @@ class CsvSuite extends FunSuite {
     assert(results === 0)
   }
 
+  //TODO(hossein): When relation Schema PR gets merged add a sql test for empty file
 }
