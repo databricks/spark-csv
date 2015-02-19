@@ -16,7 +16,7 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.sql.test._
-import org.apache.spark.sql.catalyst.types._
+import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
 /* Implicits */
@@ -30,7 +30,7 @@ class CsvSuite extends FunSuite {
   test("DSL test") {
     val results = TestSQLContext
       .csvFile(carsFile)
-      .select('year)
+      .select("year")
       .collect()
 
     assert(results.size === 2)
@@ -52,7 +52,7 @@ class CsvSuite extends FunSuite {
       .withDelimiter('|')
       .withQuoteChar('\'')
       .csvFile(TestSQLContext, carsAltFile)
-      .select('year)
+      .select("year")
       .collect()
 
     assert(results.size === 2)
