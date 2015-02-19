@@ -16,7 +16,7 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.sql.test._
-import org.apache.spark.sql.catalyst.types._
+import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
 /* Implicits */
@@ -27,16 +27,16 @@ class CsvSuite extends FunSuite {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
 
-  test("dsl test") {
+  test("DSL test") {
     val results = TestSQLContext
       .csvFile(carsFile)
-      .select('year)
+      .select("year")
       .collect()
 
     assert(results.size === 2)
   }
 
-  test("sql test") {
+  test("DDL test") {
     sql(
       s"""
         |CREATE TEMPORARY TABLE carsTable
@@ -47,18 +47,18 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === 2)
   }
 
-  test("dsl test with alternative delimiter and quote") {
+  test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
       .withDelimiter('|')
       .withQuoteChar('\'')
       .csvFile(TestSQLContext, carsAltFile)
-      .select('year)
+      .select("year")
       .collect()
 
     assert(results.size === 2)
   }
 
-  test("sql test with alternative delimiter and quote") {
+  test("DDL test with alternative delimiter and quote") {
     sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
@@ -70,13 +70,36 @@ class CsvSuite extends FunSuite {
   }
 
 
-  test("dsl test with empty file and known schema") {
+  test("DSL test with empty file and known schema") {
     val results = new CsvParser()
-      .withSchema(StructType(List(StructField("column", StringType, false))))
+      .withSchema(StructType(List(StructField("column", StringType, false)))).withUseHeader(false)
       .csvFile(TestSQLContext, emptyFile)
       .count()
 
     assert(results === 0)
+  }
+
+  test("DDL test with empty file") {
+    sql(s"""
+           |CREATE TEMPORARY TABLE carsTable
+           |(yearMade double, makeName string, modelName string, comments string, grp string)
+           |USING com.databricks.spark.csv
+           |OPTIONS (path "$emptyFile", header "false")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT count(*) FROM carsTable").collect().head(0) === 0)
+  }
+
+  test("DDL test with schema") {
+    sql(s"""
+        |CREATE TEMPORARY TABLE carsTable
+        |(yearMade double, makeName string, modelName string, comments string, grp string)
+        |USING com.databricks.spark.csv
+        |OPTIONS (path "$carsFile", header "true")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT makeName FROM carsTable").collect().size === 2)
+    assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
   }
 
   test("column names test") {
@@ -86,6 +109,4 @@ class CsvSuite extends FunSuite {
     assert(cars.schema.fields(0).name == "C0")
     assert(cars.schema.fields(2).name == "C2")
   }
-
-  //TODO(hossein): When relation Schema PR gets merged add a sql test for empty file
 }

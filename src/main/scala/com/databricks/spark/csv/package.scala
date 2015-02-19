@@ -15,7 +15,7 @@
  */
 package com.databricks.spark
 
-import org.apache.spark.sql.{SQLContext, SchemaRDD}
+import org.apache.spark.sql.{SQLContext, DataFrame}
 
 package object csv {
 
@@ -29,7 +29,7 @@ package object csv {
         useHeader = true,
         delimiter = ',',
         quote = '"')(sqlContext)
-      sqlContext.baseRelationToSchemaRDD(csvRelation)
+      sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
     def tsvFile(filePath: String) = {
@@ -38,13 +38,31 @@ package object csv {
         useHeader = true,
         delimiter = '\t',
         quote = '"')(sqlContext)
-      sqlContext.baseRelationToSchemaRDD(csvRelation)
+      sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
 
+  implicit class CsvSchemaRDD(dataFrame: DataFrame) {
+    def saveAsCsvFile(path: String): Unit = {
+      // TODO(hossein): For nested types, we may want to perform special work
+      val header = dataFrame.columns.map(c => s""""$c"""").mkString(",")
+      val strRDD = dataFrame.rdd.mapPartitions { iter =>
+        new Iterator[String] {
+          var firstRow: Boolean = true
 
-  // TODO: Implement me.
-  implicit class CsvSchemaRDD(schemaRDD: SchemaRDD) {
-    def saveAsCsvFile(path: String): Unit = ???
+          override def hasNext = iter.hasNext
+
+          override def next: String = {
+            if (firstRow) {
+              firstRow = false
+              header + "\n" + iter.next.mkString(",")
+            } else {
+              iter.next.mkString(",")
+            }
+          }
+        }
+      }
+      strRDD.saveAsTextFile(path)
+    }
   }
 }

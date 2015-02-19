@@ -1,16 +1,22 @@
 name := "spark-csv"
 
-version := "0.1.1"
+version := "0.2.0"
 
 organization := "com.databricks"
 
 scalaVersion := "2.10.4"
 
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.2.0" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
+
+resolvers ++= Seq(
+  "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
+  "Typesafe" at "http://repo.typesafe.com/typesafe/releases",
+  "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+)
 
 publishMavenStyle := true
 

@@ -6,7 +6,7 @@ A library for parsing and querying CSV data with [Spark SQL](http://spark.apache
 
 ## Requirements
 
-This library requires Spark 1.2+
+This library requires Spark 1.3+
 
 ## Linking
 You can link against this library in your program at the following coordiates:
@@ -14,12 +14,12 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 0.1
+version: 0.2.0
 ```
 The spark-csv assembly jar file can also be added to a Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --jars spark-csv-assembly-0.1.jar
+$ bin/spark-shell --jars spark-csv-assembly-0.2.0.jar
 ```
 
 ## Features
@@ -44,10 +44,17 @@ val cars = sqlContext.csvFile("cars.csv")
 ```
 
 ### SQL API
-CSV data can be queried in pure SQL by registering the data as a temporary table.
+CSV data can be queried in pure SQL by registering the data as a (temporary) table.
 
 ```sql
-CREATE TEMPORARY TABLE cars
+CREATE TABLE cars
+USING com.databricks.spark.csv
+OPTIONS (path "cars.csv", header "true")
+```
+
+You can also specify column names and types in DDL.
+```sql
+CREATE TABLE cars (yearMade double, carMake string, carModel string, comments string, blank string)
 USING com.databricks.spark.csv
 OPTIONS (path "cars.csv", header "true")
 ```

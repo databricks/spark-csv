@@ -16,16 +16,14 @@
 package com.databricks.spark.csv
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.io.Text
-import org.apache.hadoop.util.LineReader
 import org.slf4j.LoggerFactory
 
 import org.apache.commons.csv._
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.types.{StructType, StructField, StringType}
 import org.apache.spark.sql.sources.TableScan
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
@@ -56,11 +54,13 @@ case class CsvRelation protected[spark] (
       .withSkipHeaderRecord(false)
       .withHeader(fieldNames: _*)
 
+    // If header is set, make sure firstLine is materialized before sending to executors.
+    val filterLine = if (useHeader) firstLine else null
 
     baseRDD.mapPartitions { iter =>
       // When using header, any input line that equals firstLine is assumed to be header
       val csvIter = if (useHeader) {
-        iter.filter(_ != firstLine)
+        iter.filter(_ != filterLine)
       } else {
         iter
       }
@@ -95,21 +95,8 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    val path = new Path(location)
-    val fs = FileSystem.get(path.toUri, sqlContext.sparkContext.hadoopConfiguration)
-
-    val status = fs.getFileStatus(path)
-    val singleFile = if (status.isDir) {
-      fs.listStatus(path)
-        .find(_.getLen > 0)
-        .map(_.getPath)
-        .getOrElse(sys.error(s"Could not find non-empty file at $path"))
-    } else {
-      path
-    }
-
     // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    sqlContext.sparkContext.textFile(singleFile.toString).first()
+    sqlContext.sparkContext.textFile(location).first()
   }
 
   private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {

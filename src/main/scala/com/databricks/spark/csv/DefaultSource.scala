@@ -16,19 +16,32 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.sources.RelationProvider
+import org.apache.spark.sql.sources.{RelationProvider, SchemaRelationProvider}
+import org.apache.spark.sql.types.StructType
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
  * JDBC server).
  */
-class DefaultSource extends RelationProvider {
+class DefaultSource extends RelationProvider with SchemaRelationProvider {
 
   /**
    * Creates a new relation for data store in CSV given parameters.
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
   def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
+    createRelation(sqlContext, parameters, null)
+  }
+
+  /**
+   * Creates a new relation for data store in CSV given parameters and user supported schema.
+   * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
+   */
+  def createRelation(
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      schema: StructType) = {
+
     val path = parameters("path")
 
     val delimiter = parameters.getOrElse("delimiter", ",")
@@ -54,7 +67,7 @@ class DefaultSource extends RelationProvider {
       throw new Exception("Header flag can be true or false")
     }
 
-    CsvRelation(path, headerFlag, delimiterChar, quoteChar)(sqlContext)
+    CsvRelation(path, headerFlag, delimiterChar, quoteChar, schema)(sqlContext)
   }
 }
 
