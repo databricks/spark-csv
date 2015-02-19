@@ -44,7 +44,8 @@ package object csv {
 
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
     def saveAsCsvFile(path: String): Unit = {
-      val header = dataFrame.columns.mkString(",")
+      // TODO(hossein): For nested types, we may want to perform special work
+      val header = dataFrame.columns.map(c => s""""$c"""").mkString(",")
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
         new Iterator[String] {
           var firstRow: Boolean = true
