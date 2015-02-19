@@ -79,5 +79,13 @@ class CsvSuite extends FunSuite {
     assert(results === 0)
   }
 
+  test("column names test") {
+    val cars = new CsvParser()
+      .withUseHeader(false)
+      .csvFile(TestSQLContext, carsFile)
+    assert(cars.schema.fields(0).name == "C0")
+    assert(cars.schema.fields(2).name == "C2")
+  }
+
   //TODO(hossein): When relation Schema PR gets merged add a sql test for empty file
 }
