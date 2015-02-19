@@ -23,7 +23,7 @@ import org.apache.commons.csv._
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.TableScan
-import org.apache.spark.sql.catalyst.types.{StructType, StructField, StringType}
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
@@ -96,7 +96,7 @@ case class CsvRelation protected[spark] (
    */
   private lazy val firstLine = {
     // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    sqlContext.sparkContext.textFile(location + "/*").first()
+    sqlContext.sparkContext.textFile(location).first()
   }
 
   private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {

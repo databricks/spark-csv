@@ -16,8 +16,8 @@
 package com.databricks.spark.csv;
 
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.SchemaRDD;
-import org.apache.spark.sql.catalyst.types.StructType;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.types.StructType;
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -50,9 +50,9 @@ public class JavaCsvParser {
   }
 
   /** Returns a Schema RDD for the given CSV path. */
-  public SchemaRDD csvFile(SQLContext sqlContext, String path) {
+  public DataFrame csvFile(SQLContext sqlContext, String path) {
     CsvRelation relation = new
             CsvRelation(path, useHeader, delimiter, quote, schema, sqlContext);
-    return sqlContext.baseRelationToSchemaRDD(relation);
+    return sqlContext.baseRelationToDataFrame(relation);
   }
 }
