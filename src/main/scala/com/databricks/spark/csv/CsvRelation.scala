@@ -81,7 +81,7 @@ case class CsvRelation protected[spark] (
       val header = if (useHeader) {
         firstRow
       } else {
-        firstRow.zipWithIndex.map { case (value, index) => s"V$index"}
+        firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
       // By default fields are assumed to be StringType
       val schemaFields = header.map { fieldName =>

@@ -101,4 +101,12 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT makeName FROM carsTable").collect().size === 2)
     assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
   }
+
+  test("column names test") {
+    val cars = new CsvParser()
+      .withUseHeader(false)
+      .csvFile(TestSQLContext, carsFile)
+    assert(cars.schema.fields(0).name == "C0")
+    assert(cars.schema.fields(2).name == "C2")
+  }
 }
