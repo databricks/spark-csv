@@ -60,14 +60,13 @@ OPTIONS (path "cars.csv", header "true")
 ```
 
 ### Java API
-CSV files can be read using functions in CsvUtils.
+CSV files can be read using functions in JavaCsvParser.
 
 ```java
-import com.databricks.spark.csv.CSVUtils;
+import com.databricks.spark.csv.JavaCsvParser;
 
-JavaSchemaRDD cars = (new CsvUtils()).setUseHeader(true).csvFile(sqlContext, "cars.csv");
+DataFrame cars = (new JavaCsvParser()).withUseHeader(true).csvFile(sqlContext, "cars.csv");
 ```
 
 ## Building From Source
 This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt assembly` from the project root.
-

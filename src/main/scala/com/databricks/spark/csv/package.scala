@@ -43,21 +43,23 @@ package object csv {
   }
 
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
-    def saveAsCsvFile(path: String): Unit = {
+    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
-      val header = dataFrame.columns.map(c => s""""$c"""").mkString(",")
+      val delimiter = parameters.getOrElse("delimiter", ",")
+      val generateHeader = parameters.getOrElse("generateHeader", "false").toBoolean
+      val header = dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
         new Iterator[String] {
-          var firstRow: Boolean = true
+          var firstRow: Boolean = generateHeader
 
           override def hasNext = iter.hasNext
 
           override def next: String = {
             if (firstRow) {
               firstRow = false
-              header + "\n" + iter.next.mkString(",")
+              header + "\n" + iter.next.mkString(delimiter)
             } else {
-              iter.next.mkString(",")
+              iter.next.mkString(delimiter)
             }
           }
         }

@@ -15,32 +15,34 @@
  */
 package com.databricks.spark.csv
 
-import org.apache.hadoop.fs.{FileSystem, Path}
-import org.slf4j.LoggerFactory
-
-import org.apache.commons.csv._
-
-import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.sources.TableScan
-import org.apache.spark.sql.types.{StructType, StructField, StringType}
+import java.io.IOException
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
+
+import org.apache.commons.csv._
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
+import org.slf4j.LoggerFactory
+
 
 case class CsvRelation protected[spark] (
     location: String,
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext) extends TableScan {
+    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+  extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
-  val schema = inferSchema()
+  var schema = inferSchema()
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
-  lazy val buildScan = {
+  def buildScan = {
     val baseRDD = sqlContext.sparkContext.textFile(location)
 
     val numFields = schema.fields.length
@@ -101,11 +103,10 @@ case class CsvRelation protected[spark] (
 
   private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {
     val startSchema = (1 to sourceSchema.length).toSeq.map(
-      index => new AttributeReference(s"V$index", StringType, nullable = true)())
+      index => new AttributeReference(s"C$index", StringType, nullable = true)())
     val casts = sourceSchema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
     new InterpretedMutableProjection(casts, startSchema)
   }
-
 
   private def parseCSV(
       iter: Iterator[String],
@@ -133,6 +134,29 @@ case class CsvRelation protected[spark] (
           logger.error(s"Exception while parsing line: $line. ", e)
           None
       }
+    }
+  }
+
+  // The function below was borrowed from JSONRelation
+  override def insert(data: DataFrame, overwrite: Boolean) = {
+    val filesystemPath = new Path(location)
+    val fs = filesystemPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
+
+    if (overwrite) {
+      try {
+        fs.delete(filesystemPath, true)
+      } catch {
+        case e: IOException =>
+          throw new IOException(
+            s"Unable to clear output directory ${filesystemPath.toString} prior"
+              + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
+      }
+      // Write the data.
+      data.saveAsCsvFile(location, Map("delimiter" -> delimiter.toString))
+      // Right now, we assume that the schema is not changed. We will not update the schema.
+      // schema = data.schema
+    } else {
+      sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
   }
 
