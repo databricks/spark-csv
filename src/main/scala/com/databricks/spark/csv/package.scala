@@ -46,8 +46,12 @@ package object csv {
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
-      val generateHeader = parameters.getOrElse("generateHeader", "false").toBoolean
-      val header = dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
+      val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      val header = if (generateHeader) {
+        dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
+      } else {
+        "" // There is no need to generate header in this case
+      }
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
         new Iterator[String] {
           var firstRow: Boolean = generateHeader

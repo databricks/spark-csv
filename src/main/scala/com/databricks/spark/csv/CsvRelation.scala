@@ -39,7 +39,7 @@ case class CsvRelation protected[spark] (
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
-  var schema = inferSchema()
+  val schema = inferSchema()
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
@@ -151,10 +151,8 @@ case class CsvRelation protected[spark] (
             s"Unable to clear output directory ${filesystemPath.toString} prior"
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
-      // Write the data.
+      // Write the data. We assume that schema isn't changed, and we won't update it.
       data.saveAsCsvFile(location, Map("delimiter" -> delimiter.toString))
-      // Right now, we assume that the schema is not changed. We will not update the schema.
-      // schema = data.schema
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }

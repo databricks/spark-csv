@@ -1,12 +1,12 @@
 name := "spark-csv"
 
-version := "0.2.1-rc2"
+version := "1.0.0"
 
 organization := "com.databricks"
 
 scalaVersion := "2.10.4"
 
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0-rc2" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
@@ -53,5 +53,3 @@ pomExtra := (
 // libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
-
-resolvers += "Spark Snapshot Repository" at "https://repository.apache.org/content/repositories/orgapachespark-1075/"
