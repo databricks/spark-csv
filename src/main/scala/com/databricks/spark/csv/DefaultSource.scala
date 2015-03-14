@@ -15,21 +15,27 @@
  */
 package com.databricks.spark.csv
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.sources.{RelationProvider, SchemaRelationProvider}
+import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
  * JDBC server).
  */
-class DefaultSource extends RelationProvider with SchemaRelationProvider {
+class DefaultSource
+  extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
+
+  private def checkPath(parameters: Map[String, String]): String = {
+    parameters.getOrElse("path", sys.error("'path' must be specified for CSV data."))
+  }
 
   /**
    * Creates a new relation for data store in CSV given parameters.
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
-  def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
+  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
     createRelation(sqlContext, parameters, null)
   }
 
@@ -37,13 +43,11 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider {
    * Creates a new relation for data store in CSV given parameters and user supported schema.
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
-  def createRelation(
+  override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String],
       schema: StructType) = {
-
-    val path = parameters("path")
-
+    val path = checkPath(parameters)
     val delimiter = parameters.getOrElse("delimiter", ",")
     val delimiterChar = if (delimiter.length == 1) {
       delimiter.charAt(0)
@@ -69,5 +73,34 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider {
 
     CsvRelation(path, headerFlag, delimiterChar, quoteChar, schema)(sqlContext)
   }
-}
 
+  override def createRelation(
+      sqlContext: SQLContext,
+      mode: SaveMode,
+      parameters: Map[String, String],
+      data: DataFrame): BaseRelation = {
+    val path = checkPath(parameters)
+    val filesystemPath = new Path(path)
+    val fs = filesystemPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
+    val doSave = if (fs.exists(filesystemPath)) {
+      mode match {
+        case SaveMode.Append =>
+          sys.error(s"Append mode is not supported by ${this.getClass.getCanonicalName}")
+        case SaveMode.Overwrite =>
+          fs.delete(filesystemPath, true)
+          true
+        case SaveMode.ErrorIfExists =>
+          sys.error(s"path $path already exists.")
+        case SaveMode.Ignore => false
+      }
+    } else {
+      true
+    }
+    if (doSave) {
+      // Only save data when the save mode is not ignore.
+      data.saveAsCsvFile(path, parameters)
+    }
+
+    createRelation(sqlContext, parameters, data.schema)
+  }
+}

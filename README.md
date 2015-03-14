@@ -14,12 +14,12 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 0.2.0
+version: 1.0.0
 ```
 The spark-csv assembly jar file can also be added to a Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --jars spark-csv-assembly-0.2.0.jar
+$ bin/spark-shell --jars spark-csv-assembly-1.0.0.jar
 ```
 
 ## Features
@@ -60,14 +60,17 @@ OPTIONS (path "cars.csv", header "true")
 ```
 
 ### Java API
-CSV files can be read using functions in CsvUtils.
+CSV files can be read using functions in JavaCsvParser.
 
 ```java
-import com.databricks.spark.csv.CSVUtils;
+import com.databricks.spark.csv.JavaCsvParser;
 
-JavaSchemaRDD cars = (new CsvUtils()).setUseHeader(true).csvFile(sqlContext, "cars.csv");
+DataFrame cars = (new JavaCsvParser()).withUseHeader(true).csvFile(sqlContext, "cars.csv");
 ```
+
+### Saving as CSV
+You can save your DataFrame using `saveAsCsvFile` function. The function allows you to specify the delimiter and whether we should generate a header row for the table (each header has name `C$i` where `$i` is column index). For example:
+```myDataFrame.saveAsCsvFile("/mydir", Map("delimiter" -> "|", "header" -> "true"))```
 
 ## Building From Source
 This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt assembly` from the project root.
-

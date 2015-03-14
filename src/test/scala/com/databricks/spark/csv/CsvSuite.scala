@@ -15,6 +15,8 @@
  */
 package com.databricks.spark.csv
 
+import java.io.File
+
 import org.apache.spark.sql.test._
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
@@ -26,6 +28,7 @@ class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
+  val tempEmptyDir = "target/test/empty/"
 
   test("DSL test") {
     val results = TestSQLContext
@@ -108,5 +111,33 @@ class CsvSuite extends FunSuite {
       .csvFile(TestSQLContext, carsFile)
     assert(cars.schema.fields(0).name == "C0")
     assert(cars.schema.fields(2).name == "C2")
+  }
+
+  test("SQL test insert overwrite") {
+    // Create a temp directory for table that will be overwritten
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    sql(
+      s"""
+        |CREATE TEMPORARY TABLE carsTableIO
+        |USING com.databricks.spark.csv
+        |OPTIONS (path "$carsFile", header "false")
+      """.stripMargin.replaceAll("\n", " "))
+    sql(s"""
+        |CREATE TEMPORARY TABLE carsTableEmpty
+        |(yearMade double, makeName string, modelName string, comments string, grp string)
+        |USING com.databricks.spark.csv
+        |OPTIONS (path "$tempEmptyDir", header "false")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT * FROM carsTableIO").collect().size === 3)
+    assert(sql("SELECT * FROM carsTableEmpty").collect().isEmpty)
+
+    sql(
+      s"""
+        |INSERT OVERWRITE TABLE carsTableEmpty
+        |SELECT * FROM carsTableIO
+      """.stripMargin.replaceAll("\n", " "))
+    assert(sql("SELECT * FROM carsTableEmpty").collect().size == 3)
   }
 }
