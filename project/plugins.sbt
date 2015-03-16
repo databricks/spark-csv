@@ -6,9 +6,13 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
+resolvers += "Spark Package Main Repo" at "https://dl.bintray.com/spark-packages/maven"
+
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.2.0")
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
+
+addSbtPlugin("org.spark-packages" % "sbt-spark-package" % "0.1.1")
 
 // For Sonatype publishing
 //resolvers += Resolver.url("sbt-plugin-releases", new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns)
