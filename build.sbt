@@ -49,6 +49,12 @@ pomExtra := (
     </developer>
   </developers>)
 
+sparkPackageName := "databricks/spark-csv"
+
+sparkVersion := "1.3.0"
+
+sparkComponents += "sql"
+
 // Enable Junit testing.
 // libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
 
