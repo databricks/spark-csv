@@ -58,9 +58,9 @@ package object csv {
       val quote = parameters.getOrElse("quote", "\"").charAt(0)
       val escape = parameters.getOrElse("escape", "\\").charAt(0)
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
-      val header = dataFrame.columns.map(c => c).toArray
+      val header = dataFrame.columns
 
-      var firstRow: Boolean = true
+      var firstRow: Boolean = generateHeader
       val csvFileFormat = CSVFormat.DEFAULT
       .withDelimiter(delimiter)
       .withQuote(quote)
@@ -72,7 +72,8 @@ package object csv {
         val stringWriter = new StringWriter()
         val csvPrinter = new CSVPrinter(stringWriter, csvFileFormat)
         if (firstRow) {
-          csvPrinter.printRecord(header)
+          firstRow = false
+          csvPrinter.printRecord(header:_*)
         }
         csvPrinter.printRecords(WrapAsJava.asJavaIterable(newIter.toIterable))
         Iterator(stringWriter.toString)
