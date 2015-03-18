@@ -17,6 +17,13 @@ package com.databricks.spark
 
 import org.apache.spark.sql.{SQLContext, DataFrame}
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
+import java.io.StringWriter;
+
+import scala.collection.convert.WrapAsJava
+
 package object csv {
 
   /**
@@ -28,7 +35,8 @@ package object csv {
         location = filePath,
         useHeader = true,
         delimiter = ',',
-        quote = '"')(sqlContext)
+        quote = '"',
+        escape = '\\')(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -37,7 +45,8 @@ package object csv {
         location = filePath,
         useHeader = true,
         delimiter = '\t',
-        quote = '"')(sqlContext)
+        quote = '"',
+        escape = '\\')(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
@@ -45,28 +54,28 @@ package object csv {
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
-      val delimiter = parameters.getOrElse("delimiter", ",")
+      val delimiter = parameters.getOrElse("delimiter", ",").charAt(0)
+      val quote = parameters.getOrElse("quote", "\"").charAt(0)
+      val escape = parameters.getOrElse("escape", "\\").charAt(0)
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
-      val header = if (generateHeader) {
-        dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
-      } else {
-        "" // There is no need to generate header in this case
-      }
+      val header = dataFrame.columns.map(c => c).toArray
+
+      var firstRow: Boolean = true
+      val csvFileFormat = CSVFormat.DEFAULT
+      .withDelimiter(delimiter)
+      .withQuote(quote)
+      .withEscape(escape)
+
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
-        new Iterator[String] {
-          var firstRow: Boolean = generateHeader
-
-          override def hasNext = iter.hasNext
-
-          override def next: String = {
-            if (firstRow) {
-              firstRow = false
-              header + "\n" + iter.next.mkString(delimiter)
-            } else {
-              iter.next.mkString(delimiter)
-            }
-          }
+        var firstRow: Boolean = generateHeader
+        val newIter = iter.map(_.toSeq.toArray)
+        val stringWriter = new StringWriter()
+        val csvPrinter = new CSVPrinter(stringWriter, csvFileFormat)
+        if (firstRow) {
+          csvPrinter.printRecord(header)
         }
+        csvPrinter.printRecords(WrapAsJava.asJavaIterable(newIter.toIterable))
+        Iterator(stringWriter.toString)
       }
       strRDD.saveAsTextFile(path)
     }
