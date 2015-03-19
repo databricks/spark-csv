@@ -27,8 +27,10 @@ import TestSQLContext._
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val familyCarsFile = "src/test/resources/family-cars.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val tempEmptyDir = "target/test/empty/"
+  val tempFamilyCarsDir = "target/test/family-cars"
 
   test("DSL test") {
     val results = TestSQLContext
@@ -59,6 +61,37 @@ class CsvSuite extends FunSuite {
       .collect()
 
     assert(results.size === 2)
+  }
+
+  test("DSL test read write with escape") {
+    //Parse a csv file with \ as escape character
+    val results = new CsvParser()
+      .withEscapeChar('\\')
+      .csvFile(TestSQLContext, familyCarsFile)
+    //Check that the file was as expected parse
+    val firstComment1 = results
+      .select("comment")
+      .collect()
+      .head
+      .getString(0)
+    assert(firstComment1 === "The ideal car for \"families\" and all their \"bags\", \"boxes\" and \"barbecues\"")
+
+    TestUtils.deleteRecursively(new File(tempFamilyCarsDir))
+    //Save the dataFrame without providing an escape character (default is ")
+    results.saveAsCsvFile(tempFamilyCarsDir, Map("header" -> "true"))
+    //Check that the generated file is well formed
+    val rawData = TestSQLContext.sparkContext.textFile(tempFamilyCarsDir).toArray
+    assert(rawData.contains("2012,VW,Touran,\"The ideal car for \"\"families\"\" and all their \"\"bags\"\", \"\"boxes\"\" and \"\"barbecues\"\"\""))
+  
+    //Check that the generated file is well parsed
+    val results2 = new CsvParser()
+      .csvFile(TestSQLContext, tempFamilyCarsDir)
+    val firstComment2 = results2
+      .select("comment")
+      .collect()
+      .head
+      .getString(0)
+    assert(firstComment2 === "The ideal car for \"families\" and all their \"bags\", \"boxes\" and \"barbecues\"")
   }
 
   test("DDL test with alternative delimiter and quote") {
