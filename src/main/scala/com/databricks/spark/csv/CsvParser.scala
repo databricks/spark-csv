@@ -26,7 +26,7 @@ class CsvParser {
   private var useHeader: Boolean = true
   private var delimiter: Character = ','
   private var quote: Character = '"'
-  private var escape: Character = '\\'
+  private var escape: Character = null
   private var schema: StructType = null
 
   def withUseHeader(flag: Boolean): CsvParser = {
