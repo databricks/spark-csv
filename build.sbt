@@ -14,6 +14,8 @@ libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
 
+libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
+
 resolvers ++= Seq(
   "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
   "Typesafe" at "http://repo.typesafe.com/typesafe/releases",
