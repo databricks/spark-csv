@@ -23,24 +23,19 @@ $ bin/spark-shell --jars spark-csv-assembly-1.0.0.jar
 ```
 
 ## Features
+This package allows reading CSV files in local or distributed filesystem as [Spark DataFrames](https://spark.apache.org/docs/1.3.0/sql-programming-guide.html).
+When reading files the API accepts several options:
+* path: location of files. Similar to Spark can be a wildcard.
+* header: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string.
+* delimiter: by default lines are delimited using ',', but delimiter can be set to any character
+* quote: by default the quote character is '"', but can be set to any character. Delimiters inside quotes are ignored
+
+The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table (each header has name `c$i` where `$i` is column index). See following examples for more details.
+
 These examples use a CSV file available for download [here](https://github.com/databricks/spark-csv/raw/master/src/test/resources/cars.csv):
 
 ```
 $ wget https://github.com/databricks/spark-csv/raw/master/src/test/resources/cars.csv
-```
-
-### Scala API
-
-You can use the library by loading the implicits from `com.databricks.spark.csv._`.
-
-```
-import org.apache.spark.sql.SQLContext
-
-val sqlContext = new SQLContext(sc)
-
-import com.databricks.spark.csv._
-
-val cars = sqlContext.csvFile("cars.csv")
 ```
 
 ### SQL API
@@ -59,18 +54,65 @@ USING com.databricks.spark.csv
 OPTIONS (path "cars.csv", header "true")
 ```
 
-### Java API
-CSV files can be read using functions in JavaCsvParser.
+### Scala API
+The recommended way to load CSV data is using the load/save functions in SQLContext.
 
-```java
-import com.databricks.spark.csv.JavaCsvParser;
+```scala
+import org.apache.spark.sql.SQLContext
+import com.databricks.spark.csv._
 
-DataFrame cars = (new JavaCsvParser()).withUseHeader(true).csvFile(sqlContext, "cars.csv");
+val sqlContext = new SQLContext(sc)
+val df = sqlContext.load("cars.csv", Map("header" -> "true"))
+df.select("year", "model").save("newcars.csv", Map("header" -> "false", "delimiter" -> "\t"))
 ```
 
-### Saving as CSV
-You can save your DataFrame using `saveAsCsvFile` function. The function allows you to specify the delimiter and whether we should generate a header row for the table (each header has name `C$i` where `$i` is column index). For example:
-```myDataFrame.saveAsCsvFile("/mydir", Map("delimiter" -> "|", "header" -> "true"))```
+You can also use the implicits from `com.databricks.spark.csv._`.
+
+```scala
+import org.apache.spark.sql.SQLContext
+import com.databricks.spark.csv._
+
+val sqlContext = new SQLContext(sc)
+
+val cars = sqlContext.csvFile("cars.csv")
+cars.select("year", "model").saveAsCsvFile("newcars.tsv", Map("header" -> "false", "delimiter" -> "\t"))
+```
+
+### Java API
+Similar to Scala, we recommend load/save functions in SQLContext.
+
+```java
+import org.apache.spark.sql.SQLContext
+import com.databricks.spark.csv._
+
+SQLContext sqlContext = new SQLContext(sc);
+
+HashMap<String, String> options = new HashMap<String, String>();
+options.put("header", "true");
+
+DataFrame df = sqlContext.load("cars.csv", options);
+df.select("name", "age").save("newcars.csv", options);
+```
+
+In Java (as well as Scala) CSV files can be read using functions in CsvParser.
+
+```java
+import com.databricks.spark.csv.CsvParser;
+SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
+
+DataFrame cars = (new CsvParser()).withUseHeader(true).csvFile(sqlContext, "cars.csv");
+```
+
+### Python API
+In Python you can read and save CSV files using load/save functions.
+
+```python
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+
+df = sqlContext.load("cars.csv", header = True)
+df.select("year", "model").save("newcars.csv", header = False, delimiter = "\t")
+```
 
 ## Building From Source
 This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt assembly` from the project root.
