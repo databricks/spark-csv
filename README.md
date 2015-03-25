@@ -62,7 +62,7 @@ import org.apache.spark.sql.SQLContext
 import com.databricks.spark.csv._
 
 val sqlContext = new SQLContext(sc)
-val df = sqlContext.load("cars.csv", Map("header" -> "true"))
+val df = sqlContext.load("com.databricks.spark.csv", Map("path" -> "cars.csv", "header" -> "true"))
 df.select("year", "model").save("newcars.csv", Map("header" -> "false", "delimiter" -> "\t"))
 ```
 
@@ -87,10 +87,11 @@ import com.databricks.spark.csv._
 
 SQLContext sqlContext = new SQLContext(sc);
 
-HashMap<String, String> options = new HashMap<String, String>();
+HashMap<String, String> options = new HashMap<>();
 options.put("header", "true");
+options.put("path", "cars.csv");
 
-DataFrame df = sqlContext.load("cars.csv", options);
+DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
 df.select("name", "age").save("newcars.csv", options);
 ```
 
@@ -110,7 +111,7 @@ In Python you can read and save CSV files using load/save functions.
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
-df = sqlContext.load("cars.csv", header = True)
+df = sqlContext.load("com.databricks.spark.csv", path = "cars.csv", header = True)
 df.select("year", "model").save("newcars.csv", header = False, delimiter = "\t")
 ```
 

@@ -105,7 +105,7 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
   }
 
-  test("column names test") {
+  test("DSL column names test") {
     val cars = new CsvParser()
       .withUseHeader(false)
       .csvFile(TestSQLContext, carsFile)
