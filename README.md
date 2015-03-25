@@ -59,7 +59,6 @@ The recommended way to load CSV data is using the load/save functions in SQLCont
 
 ```scala
 import org.apache.spark.sql.SQLContext
-import com.databricks.spark.csv._
 
 val sqlContext = new SQLContext(sc)
 val df = sqlContext.load("com.databricks.spark.csv", Map("path" -> "cars.csv", "header" -> "true"))
@@ -83,7 +82,6 @@ Similar to Scala, we recommend load/save functions in SQLContext.
 
 ```java
 import org.apache.spark.sql.SQLContext
-import com.databricks.spark.csv._
 
 SQLContext sqlContext = new SQLContext(sc);
 
