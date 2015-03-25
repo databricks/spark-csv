@@ -1,10 +1,12 @@
 name := "spark-csv"
 
-version := "1.0.0"
+version := "1.0.1"
 
 organization := "com.databricks"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.6"
+
+crossScalaVersions := Seq("2.10.4", "2.11.6")
 
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 
