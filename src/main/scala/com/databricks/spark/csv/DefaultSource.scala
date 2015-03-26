@@ -62,7 +62,7 @@ class DefaultSource
       throw new Exception("Quotation cannot be more than one character.")
     }
 
-    val useHeader = parameters.getOrElse("header", "true")
+    val useHeader = parameters.getOrElse("header", "false")
     val headerFlag = if (useHeader == "true") {
       true
     } else if (useHeader == "false") {

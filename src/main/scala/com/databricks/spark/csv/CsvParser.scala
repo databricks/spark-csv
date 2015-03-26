@@ -23,7 +23,7 @@ import org.apache.spark.sql.types.StructType
  */
 class CsvParser {
 
-  private var useHeader: Boolean = true
+  private var useHeader: Boolean = false
   private var delimiter: Character = ','
   private var quote: Character = '"'
   private var schema: StructType = null

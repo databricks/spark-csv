@@ -43,6 +43,10 @@ package object csv {
   }
 
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
+
+    /**
+     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
