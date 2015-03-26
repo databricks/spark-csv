@@ -63,7 +63,7 @@ class CsvSuite extends FunSuite {
 
   test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
     val results =
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = ''')
+      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '\'')
       .select("year")
       .collect()
 
@@ -72,7 +72,7 @@ class CsvSuite extends FunSuite {
 
   test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
     intercept[ org.apache.spark.sql.AnalysisException] {
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = ''')
+      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = '\'')
         .select("year")
         .collect()
     }
