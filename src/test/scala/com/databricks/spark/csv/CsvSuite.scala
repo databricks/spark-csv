@@ -54,6 +54,7 @@ class CsvSuite extends FunSuite {
     val results = new CsvParser()
       .withDelimiter('|')
       .withQuoteChar('\'')
+      .withUseHeader(true)
       .csvFile(TestSQLContext, carsAltFile)
       .select("year")
       .collect()
