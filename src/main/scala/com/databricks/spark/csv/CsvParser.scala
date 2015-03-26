@@ -26,6 +26,7 @@ class CsvParser {
   private var useHeader: Boolean = true
   private var delimiter: Character = ','
   private var quote: Character = '"'
+  private var escape: Character = null
   private var schema: StructType = null
 
   def withUseHeader(flag: Boolean): CsvParser = {
@@ -43,6 +44,11 @@ class CsvParser {
     this
   }
 
+  def withEscapeChar(escape: Character): CsvParser = {
+    this.escape = escape
+    this
+  }
+
   def withSchema(schema: StructType): CsvParser = {
     this.schema = schema
     this
@@ -50,7 +56,7 @@ class CsvParser {
 
   /** Returns a Schema RDD for the given CSV path. */
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
-    val relation: CsvRelation = CsvRelation(path, useHeader, delimiter, quote, schema)(sqlContext)
+    val relation: CsvRelation = CsvRelation(path, useHeader, delimiter, quote, escape, schema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 

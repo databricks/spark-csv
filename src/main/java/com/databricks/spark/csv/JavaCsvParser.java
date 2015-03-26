@@ -27,6 +27,7 @@ public class JavaCsvParser {
   private Boolean useHeader = true;
   private Character delimiter = ',';
   private Character quote = '"';
+  private Character escape = '\\';
   private StructType schema = null;
 
   public JavaCsvParser withUseHeader(Boolean flag) {
@@ -44,6 +45,11 @@ public class JavaCsvParser {
     return this;
   }
 
+  public JavaCsvParser withEscapeChar(Character escape) {
+    this.escape = escape;
+    return this;
+  }
+
   public JavaCsvParser withSchema(StructType schema) {
     this.schema = schema;
     return this;
@@ -52,7 +58,7 @@ public class JavaCsvParser {
   /** Returns a Schema RDD for the given CSV path. */
   public DataFrame csvFile(SQLContext sqlContext, String path) {
     CsvRelation relation = new
-            CsvRelation(path, useHeader, delimiter, quote, schema, sqlContext);
+            CsvRelation(path, useHeader, delimiter, quote, escape, schema, sqlContext);
     return sqlContext.baseRelationToDataFrame(relation);
   }
 }

@@ -62,6 +62,13 @@ class DefaultSource
       throw new Exception("Quotation cannot be more than one character.")
     }
 
+    val escape = parameters.getOrElse("escape", "\\")
+    val escapeChar = if (escape.length == 1) {
+      escape.charAt(0)
+    } else {
+      throw new Exception("Escape cannot be more than one character.")
+    }
+
     val useHeader = parameters.getOrElse("header", "true")
     val headerFlag = if (useHeader == "true") {
       true
@@ -71,7 +78,7 @@ class DefaultSource
       throw new Exception("Header flag can be true or false")
     }
 
-    CsvRelation(path, headerFlag, delimiterChar, quoteChar, schema)(sqlContext)
+    CsvRelation(path, headerFlag, delimiterChar, quoteChar, escapeChar, schema)(sqlContext)
   }
 
   override def createRelation(
