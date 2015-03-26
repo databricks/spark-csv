@@ -39,7 +39,7 @@ public class JavaCsvSuite {
 
   @Test
   public void testLoad() {
-    HashMap<String, String> options = new HashMap<>();
+    HashMap<String, String> options = new HashMap<String, String>();
     options.put("header", "true");
     options.put("path", carsFile);
 

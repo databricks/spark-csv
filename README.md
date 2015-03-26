@@ -85,7 +85,7 @@ import org.apache.spark.sql.SQLContext
 
 SQLContext sqlContext = new SQLContext(sc);
 
-HashMap<String, String> options = new HashMap<>();
+HashMap<String, String> options = new HashMap<String, String>();
 options.put("header", "true");
 options.put("path", "cars.csv");
 
