@@ -25,12 +25,12 @@ $ bin/spark-shell --jars spark-csv-assembly-1.0.0.jar
 ## Features
 This package allows reading CSV files in local or distributed filesystem as [Spark DataFrames](https://spark.apache.org/docs/1.3.0/sql-programming-guide.html).
 When reading files the API accepts several options:
-* path: location of files. Similar to Spark can be a wildcard.
-* header: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string.
+* path: location of files. Similar to Spark can accept standard Hadoop globbing expressions.
+* header: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string. Default value is false.
 * delimiter: by default lines are delimited using ',', but delimiter can be set to any character
 * quote: by default the quote character is '"', but can be set to any character. Delimiters inside quotes are ignored
 
-The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table (each header has name `c$i` where `$i` is column index). See following examples for more details.
+The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
 These examples use a CSV file available for download [here](https://github.com/databricks/spark-csv/raw/master/src/test/resources/cars.csv):
 
@@ -62,7 +62,7 @@ import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
 val df = sqlContext.load("com.databricks.spark.csv", Map("path" -> "cars.csv", "header" -> "true"))
-df.select("year", "model").save("newcars.csv", Map("header" -> "false", "delimiter" -> "\t"))
+df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
 You can also use the implicits from `com.databricks.spark.csv._`.
@@ -74,7 +74,7 @@ import com.databricks.spark.csv._
 val sqlContext = new SQLContext(sc)
 
 val cars = sqlContext.csvFile("cars.csv")
-cars.select("year", "model").saveAsCsvFile("newcars.tsv", Map("header" -> "false", "delimiter" -> "\t"))
+cars.select("year", "model").saveAsCsvFile("newcars.tsv")
 ```
 
 ### Java API
@@ -90,8 +90,9 @@ options.put("header", "true");
 options.put("path", "cars.csv");
 
 DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
-df.select("name", "age").save("newcars.csv", options);
+df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
 ```
+See documentations of <a href="https://spark.apache.org/docs/1.3.0/api/java/org/apache/spark/sql/SQLContext.html#load(java.lang.String)">load</a> and <a href="https://spark.apache.org/docs/1.3.0/api/java/org/apache/spark/sql/DataFrame.html#save(java.lang.String)">save</a> for more details.
 
 In Java (as well as Scala) CSV files can be read using functions in CsvParser.
 
@@ -110,7 +111,7 @@ from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
 df = sqlContext.load("com.databricks.spark.csv", path = "cars.csv", header = True)
-df.select("year", "model").save("newcars.csv", header = False, delimiter = "\t")
+df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
 ## Building From Source
