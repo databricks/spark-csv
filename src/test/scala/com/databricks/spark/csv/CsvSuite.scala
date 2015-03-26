@@ -17,6 +17,7 @@ package com.databricks.spark.csv
 
 import java.io.File
 
+import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
@@ -140,5 +141,35 @@ class CsvSuite extends FunSuite {
         |SELECT * FROM carsTableIO
       """.stripMargin.replaceAll("\n", " "))
     assert(sql("SELECT * FROM carsTableEmpty").collect().size == 3)
+  }
+
+  test("Save") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.toSet == cars.collect.toSet)
+  }
+
+  test("Save with a compression codec") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.toSet == cars.collect.toSet)
   }
 }

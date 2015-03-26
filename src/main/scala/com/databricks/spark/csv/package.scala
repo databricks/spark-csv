@@ -16,6 +16,7 @@
 package com.databricks.spark
 
 import org.apache.spark.sql.{SQLContext, DataFrame}
+import org.apache.hadoop.io.compress.CompressionCodec
 
 package object csv {
 
@@ -47,7 +48,8 @@ package object csv {
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
      */
-    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
+    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
+                      compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
@@ -72,7 +74,10 @@ package object csv {
           }
         }
       }
-      strRDD.saveAsTextFile(path)
+      compressionCodec match {
+        case null => strRDD.saveAsTextFile(path)
+        case codec => strRDD.saveAsTextFile(path, codec)
+      }
     }
   }
 }
