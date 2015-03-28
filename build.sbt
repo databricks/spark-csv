@@ -59,7 +59,4 @@ sparkVersion := "1.3.0"
 
 sparkComponents += "sql"
 
-// Enable Junit testing.
-// libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
-
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"

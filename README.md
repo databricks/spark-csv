@@ -13,13 +13,15 @@ You can link against this library in your program at the following coordiates:
 
 ```
 groupId: com.databricks
-artifactId: spark-csv_2.10
-version: 1.0.0
+artifactId: spark-csv_2.11
+version: 1.0.1
 ```
-The spark-csv assembly jar file can also be added to a Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
+
+## Using with Apache Spark
+This package can be added to  Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --jars spark-csv-assembly-1.0.0.jar
+$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.0
 ```
 
 ## Features
@@ -115,4 +117,4 @@ df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
 ## Building From Source
-This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt assembly` from the project root.
+This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt package` from the project root. The build configuration includes support for both Scala 2.10 and 2.11.
