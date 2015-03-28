@@ -17,9 +17,8 @@ package com.databricks.spark.csv
 
 import org.apache.spark.sql.{SQLContext, DataFrame}
 import org.apache.spark.sql.types.StructType
-import org.slf4j.LoggerFactory
 
-import com.databricks.spark.csv.util.ParseMode
+import com.databricks.spark.csv.util.ParseModes
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -30,9 +29,7 @@ class CsvParser {
   private var delimiter: Character = ','
   private var quote: Character = '"'
   private var schema: StructType = null
-  private var parseMode: String = ParseMode.PERMISSIVE_MODE
-
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private var parseMode: String = ParseModes.DEFAULT
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -55,11 +52,7 @@ class CsvParser {
   }
 
   def withParseMode(mode: String): CsvParser = {
-    if (ParseMode.isValidMode(mode)) {
-      this.parseMode = mode
-    } else {
-      logger.warn(s"$mode is not a valid parse mode.")
-    }
+    this.parseMode = mode
     this
   }
 

@@ -28,7 +28,7 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan
 import org.apache.spark.sql.types.{StructType, StructField, StringType}
 import org.slf4j.LoggerFactory
 
-import com.databricks.spark.csv.util.ParseMode
+import com.databricks.spark.csv.util.ParseModes
 
 case class CsvRelation protected[spark] (
     location: String,
@@ -42,9 +42,12 @@ case class CsvRelation protected[spark] (
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
   // Parse mode flags
-  private val failFast = ParseMode.isFailFastMode(parseMode)
-  private val dropMalformed = ParseMode.isDropMalformedMode(parseMode)
-  private val permissive = ParseMode.isPermissiveMode(parseMode)
+  if (!ParseModes.isValidMode(parseMode)) {
+    logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
+  }
+  private val failFast = ParseModes.isFailFastMode(parseMode)
+  private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
+  private val permissive = ParseModes.isPermissiveMode(parseMode)
 
   val schema = inferSchema()
 
