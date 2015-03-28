@@ -28,16 +28,23 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan
 import org.apache.spark.sql.types.{StructType, StructField, StringType}
 import org.slf4j.LoggerFactory
 
+import com.databricks.spark.csv.util.ParseMode
 
 case class CsvRelation protected[spark] (
     location: String,
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
+    parseMode: String,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
+
+  // Parse mode flags
+  private val failFast = ParseMode.isFailFastMode(parseMode)
+  private val dropMalformed = ParseMode.isDropMalformedMode(parseMode)
+  private val permissive = ParseMode.isPermissiveMode(parseMode)
 
   val schema = inferSchema()
 
@@ -124,18 +131,24 @@ case class CsvRelation protected[spark] (
         } else {
           val tokens = records.head
           index = 0
-          while (index < schemaFields.length) {
-            row(index) = tokens.get(index)
-            index = index + 1
+          if (dropMalformed && schemaFields.length != tokens.size) {
+            logger.warn(s"Dropping malformed line: $line")
+            None
+          } else if (failFast && schemaFields.length != tokens.size) {
+            throw new RuntimeException(s"Malformed line in FAILFAST mode: $line")
+          } else {
+            while (index < schemaFields.length) {
+              row(index) = tokens.get(index)
+              index = index + 1
+            }
+            Some(projection(row))
           }
-          Some(projection(row))
         }
       } catch {
-        case aiob: ArrayIndexOutOfBoundsException =>
-          logger.warn(s"Row has fewer tokens than schema: $line")
+        case aiob: ArrayIndexOutOfBoundsException if permissive =>
           (index until schemaFields.length).foreach(ind => row(ind) = null)
           Some(projection(row))
-        case NonFatal(e) =>
+        case NonFatal(e) if !failFast =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None
       }

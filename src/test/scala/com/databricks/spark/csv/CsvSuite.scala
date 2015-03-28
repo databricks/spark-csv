@@ -19,6 +19,7 @@ import java.io.File
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
+import org.apache.spark.SparkException
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
@@ -52,6 +53,32 @@ class CsvSuite extends FunSuite {
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
+
+  test("DSL test for DROPMALFORMED parsing mode") {
+    val results = new CsvParser()
+      .withParseMode("DROPMALFORMED")
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars - 1)
+  }
+
+  test("DSL test for FAILFAST parsing mode") {
+    val parser = new CsvParser()
+      .withParseMode("FAILFAST")
+      .withUseHeader(true)
+
+    val exception = intercept[SparkException]{
+      parser.csvFile(TestSQLContext, carsFile)
+        .select("year")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+  }
+
 
   test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
