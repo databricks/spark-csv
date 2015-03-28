@@ -115,6 +115,7 @@ case class CsvRelation protected[spark] (
       projection: MutableProjection,
       row: GenericMutableRow): Iterator[Row] = {
     iter.flatMap { line =>
+      var index: Int = 0
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
         if (records.isEmpty) {
@@ -122,7 +123,7 @@ case class CsvRelation protected[spark] (
           None
         } else {
           val tokens = records.head
-          var index = 0
+          index = 0
           while (index < schemaFields.length) {
             row(index) = tokens.get(index)
             index = index + 1
@@ -130,6 +131,10 @@ case class CsvRelation protected[spark] (
           Some(projection(row))
         }
       } catch {
+        case aiob: ArrayIndexOutOfBoundsException =>
+          logger.warn(s"Row has fewer tokens than schema: $line")
+          (index until schemaFields.length).foreach(ind => row(ind) = null)
+          Some(projection(row))
         case NonFatal(e) =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None
