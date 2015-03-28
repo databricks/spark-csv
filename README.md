@@ -112,7 +112,7 @@ In Python you can read and save CSV files using load/save functions.
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
-df = sqlContext.load("com.databricks.spark.csv", path = "cars.csv", header = True)
+df = sqlContext.load("com.databricks.spark.csv", path = "cars.csv", header = "true")
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
