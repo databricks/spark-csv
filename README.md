@@ -31,6 +31,10 @@ When reading files the API accepts several options:
 * header: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string. Default value is false.
 * delimiter: by default lines are delimited using ',', but delimiter can be set to any character
 * quote: by default the quote character is '"', but can be set to any character. Delimiters inside quotes are ignored
+* mode: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
+  * PERMISSIVE: tries to parse all lines
+  * DROPMALFORMED: drops lines which have fewer or more tokens than expected
+  * FAILFAST: aborts with a RuntimeException if encounters any malformed line
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
