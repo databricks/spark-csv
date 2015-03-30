@@ -28,16 +28,26 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan
 import org.apache.spark.sql.types.{StructType, StructField, StringType}
 import org.slf4j.LoggerFactory
 
+import com.databricks.spark.csv.util.ParseModes
 
 case class CsvRelation protected[spark] (
     location: String,
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
+    parseMode: String,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
+
+  // Parse mode flags
+  if (!ParseModes.isValidMode(parseMode)) {
+    logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
+  }
+  private val failFast = ParseModes.isFailFastMode(parseMode)
+  private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
+  private val permissive = ParseModes.isPermissiveMode(parseMode)
 
   val schema = inferSchema()
 
@@ -115,6 +125,7 @@ case class CsvRelation protected[spark] (
       projection: MutableProjection,
       row: GenericMutableRow): Iterator[Row] = {
     iter.flatMap { line =>
+      var index: Int = 0
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
         if (records.isEmpty) {
@@ -122,15 +133,25 @@ case class CsvRelation protected[spark] (
           None
         } else {
           val tokens = records.head
-          var index = 0
-          while (index < schemaFields.length) {
-            row(index) = tokens.get(index)
-            index = index + 1
+          index = 0
+          if (dropMalformed && schemaFields.length != tokens.size) {
+            logger.warn(s"Dropping malformed line: $line")
+            None
+          } else if (failFast && schemaFields.length != tokens.size) {
+            throw new RuntimeException(s"Malformed line in FAILFAST mode: $line")
+          } else {
+            while (index < schemaFields.length) {
+              row(index) = tokens.get(index)
+              index = index + 1
+            }
+            Some(projection(row))
           }
-          Some(projection(row))
         }
       } catch {
-        case NonFatal(e) =>
+        case aiob: ArrayIndexOutOfBoundsException if permissive =>
+          (index until schemaFields.length).foreach(ind => row(ind) = null)
+          Some(projection(row))
+        case NonFatal(e) if !failFast =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None
       }

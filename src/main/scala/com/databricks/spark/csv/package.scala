@@ -27,12 +27,14 @@ package object csv {
     def csvFile(filePath: String,
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
-                quote: Char = '"') = {
+                quote: Char = '"',
+                mode: String = "PERMISSIVE") = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = delimiter,
-        quote = quote)(sqlContext)
+        quote = quote,
+        parseMode = mode)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -41,7 +43,8 @@ package object csv {
         location = filePath,
         useHeader = useHeader,
         delimiter = '\t',
-        quote = '"')(sqlContext)
+        quote = '"',
+        parseMode = "PERMISSIVE")(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

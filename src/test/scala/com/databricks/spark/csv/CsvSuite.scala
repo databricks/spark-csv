@@ -19,6 +19,7 @@ import java.io.File
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
+import org.apache.spark.SparkException
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
@@ -31,13 +32,15 @@ class CsvSuite extends FunSuite {
   val emptyFile = "src/test/resources/empty.csv"
   val tempEmptyDir = "target/test/empty/"
 
+  val numCars = 3
+
   test("DSL test") {
     val results = TestSQLContext
       .csvFile(carsFile)
       .select("year")
       .collect()
 
-    assert(results.size === 2)
+    assert(results.size === numCars)
   }
 
   test("DDL test") {
@@ -48,8 +51,34 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT year FROM carsTable").collect().size === 2)
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
+
+  test("DSL test for DROPMALFORMED parsing mode") {
+    val results = new CsvParser()
+      .withParseMode("DROPMALFORMED")
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars - 1)
+  }
+
+  test("DSL test for FAILFAST parsing mode") {
+    val parser = new CsvParser()
+      .withParseMode("FAILFAST")
+      .withUseHeader(true)
+
+    val exception = intercept[SparkException]{
+      parser.csvFile(TestSQLContext, carsFile)
+        .select("year")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+  }
+
 
   test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
@@ -60,7 +89,7 @@ class CsvSuite extends FunSuite {
       .select("year")
       .collect()
 
-    assert(results.size === 2)
+    assert(results.size === numCars)
   }
 
   test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
@@ -69,7 +98,7 @@ class CsvSuite extends FunSuite {
       .select("year")
       .collect()
 
-    assert(results.size === 2)
+    assert(results.size === numCars)
   }
 
   test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
@@ -86,7 +115,8 @@ class CsvSuite extends FunSuite {
       .select("year")
       .collect()
 
-    assert(results.slice(0, 2).toSeq.map(_(0).asInstanceOf[String]) == Seq("'2012'", "1997"))
+    assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
+      Seq("'2012'", "1997", "2015"))
   }
 
   test("DDL test with alternative delimiter and quote") {
@@ -97,7 +127,7 @@ class CsvSuite extends FunSuite {
          |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT year FROM carsTable").collect().size === 2)
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
 
@@ -129,8 +159,9 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT makeName FROM carsTable").collect().size === 2)
-    assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
+    assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
+    assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
+      .collect().head(0) === 2004.5)
   }
 
   test("DSL column names test") {
@@ -158,7 +189,7 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$tempEmptyDir", header "false")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT * FROM carsTableIO").collect().size === 3)
+    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars + 1)
     assert(sql("SELECT * FROM carsTableEmpty").collect().isEmpty)
 
     sql(
@@ -166,10 +197,10 @@ class CsvSuite extends FunSuite {
         |INSERT OVERWRITE TABLE carsTableEmpty
         |SELECT * FROM carsTableIO
       """.stripMargin.replaceAll("\n", " "))
-    assert(sql("SELECT * FROM carsTableEmpty").collect().size == 3)
+    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars + 1)
   }
 
-  test("Save") {
+  test("DSL save") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
     new File(tempEmptyDir).mkdirs()
@@ -181,10 +212,10 @@ class CsvSuite extends FunSuite {
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
     assert(carsCopy.count == cars.count)
-    assert(carsCopy.collect.toSet == cars.collect.toSet)
+    assert(carsCopy.collect.map(_.toString).toSet== cars.collect.map(_.toString).toSet)
   }
 
-  test("Save with a compression codec") {
+  test("DSL save with a compression codec") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
     new File(tempEmptyDir).mkdirs()
@@ -196,6 +227,6 @@ class CsvSuite extends FunSuite {
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
     assert(carsCopy.count == cars.count)
-    assert(carsCopy.collect.toSet == cars.collect.toSet)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
 }

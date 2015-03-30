@@ -14,6 +14,7 @@ import org.apache.spark.sql.test.TestSQLContext$;
 
 public class JavaCsvSuite {
   private transient SQLContext sqlContext;
+  private int numCars = 3;
 
   String carsFile = "src/test/resources/cars.csv";
 
@@ -34,7 +35,7 @@ public class JavaCsvSuite {
   public void testCsvParser() {
     DataFrame df = (new CsvParser()).withUseHeader(true).csvFile(sqlContext, carsFile);
     int result = df.select("model").collect().length;
-    Assert.assertEquals(result, 2);
+    Assert.assertEquals(result, numCars);
   }
 
   @Test
@@ -45,7 +46,7 @@ public class JavaCsvSuite {
 
     DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
     int result = df.select("year").collect().length;
-    Assert.assertEquals(result, 2);
+    Assert.assertEquals(result, numCars);
   }
 
   @Test
@@ -56,7 +57,7 @@ public class JavaCsvSuite {
 
     DataFrame newDf = (new CsvParser()).csvFile(sqlContext, tempDir);
     int result = newDf.select("C1").collect().length;
-    Assert.assertEquals(result, 2);
+    Assert.assertEquals(result, numCars);
 
   }
 }
