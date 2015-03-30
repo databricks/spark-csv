@@ -32,7 +32,7 @@ When reading files the API accepts several options:
 * delimiter: by default lines are delimited using ',', but delimiter can be set to any character
 * quote: by default the quote character is '"', but can be set to any character. Delimiters inside quotes are ignored
 * mode: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
-  * PERMISSIVE: tries to parse all lines
+  * PERMISSIVE: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
   * DROPMALFORMED: drops lines which have fewer or more tokens than expected
   * FAILFAST: aborts with a RuntimeException if encounters any malformed line
 
