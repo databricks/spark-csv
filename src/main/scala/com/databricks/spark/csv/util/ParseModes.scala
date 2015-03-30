@@ -30,7 +30,11 @@ private[csv] object ParseModes {
     }
   }
 
-  def isPermissiveMode(mode: String) = mode.toUpperCase == PERMISSIVE_MODE
   def isDropMalformedMode(mode: String) = mode.toUpperCase == DROP_MALFORMED_MODE
   def isFailFastMode(mode: String) = mode.toUpperCase == FAIL_FAST_MODE
+  def isPermissiveMode(mode: String) = if (isValidMode(mode))  {
+    mode.toUpperCase == PERMISSIVE_MODE
+  } else {
+    true // We default to permissive is the mode string is not valid
+  }
 }
