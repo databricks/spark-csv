@@ -229,4 +229,34 @@ class CsvSuite extends FunSuite {
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
+
+  test("DSL save with quoting") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with alternate quoting") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "!"))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", quote = '!')
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  } 
 }

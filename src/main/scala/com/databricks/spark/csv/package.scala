@@ -15,8 +15,9 @@
  */
 package com.databricks.spark
 
-import org.apache.spark.sql.{SQLContext, DataFrame}
+import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.commons.lang3.StringUtils
 
 package object csv {
 
@@ -49,6 +50,28 @@ package object csv {
     }
   }
 
+  implicit class CsvRow(row: Row) {
+    def asQuotedSeq(quote: String): Seq[String] = {
+      val seq: Seq[Any] = row.toSeq
+      seq.map {
+        _ match {
+          case ref: AnyRef => {
+            val escaped = StringUtils.replace(ref.toString, quote, s"\\$quote")
+            s"$quote$escaped$quote"
+          }
+          case _ => quote + "null" + quote
+        }
+      }
+    }
+
+    def asCsvRow(delimiter: String, quote: Option[String]) = {
+      quote match {
+        case Some(q) => asQuotedSeq(q).mkString(delimiter)
+        case None    => row.mkString(delimiter)
+      }
+    }
+  }
+  
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
 
     /**
@@ -58,6 +81,7 @@ package object csv {
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
+      val quote = parameters.get("quote")
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
         dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
@@ -71,11 +95,12 @@ package object csv {
           override def hasNext = iter.hasNext
 
           override def next: String = {
+            val row = iter.next.asCsvRow(delimiter, quote)
             if (firstRow) {
               firstRow = false
-              header + "\n" + iter.next.mkString(delimiter)
+              header + "\n" + row
             } else {
-              iter.next.mkString(delimiter)
+              row
             }
           }
         }

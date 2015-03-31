@@ -63,6 +63,7 @@ case class CsvRelation protected[spark] (
     val csvFormat = CSVFormat.DEFAULT
       .withDelimiter(delimiter)
       .withQuote(quote)
+      .withEscape('\\')
       .withSkipHeaderRecord(false)
       .withHeader(fieldNames: _*)
 
@@ -88,6 +89,7 @@ case class CsvRelation protected[spark] (
       val csvFormat = CSVFormat.DEFAULT
         .withDelimiter(delimiter)
         .withQuote(quote)
+        .withEscape('\\')
         .withSkipHeaderRecord(false)
       val firstRow = CSVParser.parse(firstLine, csvFormat).getRecords.head.toList
       val header = if (useHeader) {
