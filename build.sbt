@@ -1,6 +1,6 @@
 name := "spark-csv"
 
-version := "1.0.1"
+version := "1.0.2"
 
 organization := "com.databricks"
 
@@ -13,8 +13,6 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
-
-libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
 
 resolvers ++= Seq(
   "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
@@ -60,3 +58,5 @@ sparkVersion := "1.3.0"
 sparkComponents += "sql"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+
+libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
