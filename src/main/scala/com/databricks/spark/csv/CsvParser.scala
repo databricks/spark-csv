@@ -28,6 +28,7 @@ class CsvParser {
   private var useHeader: Boolean = false
   private var delimiter: Character = ','
   private var quote: Character = '"'
+  private var escape: Character = '\\'
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
 
@@ -64,6 +65,7 @@ class CsvParser {
       useHeader,
       delimiter,
       quote,
+      escape,
       parseMode,
       schema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)

@@ -12,8 +12,6 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.3.2"
-
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"

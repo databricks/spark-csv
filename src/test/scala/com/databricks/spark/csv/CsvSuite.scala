@@ -30,6 +30,7 @@ class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
+  val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
 
   val numCars = 3
@@ -258,5 +259,21 @@ class CsvSuite extends FunSuite {
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
-  } 
+  }
+  
+  test("DSL save with quoting, escaped quote") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "escape-copy.csv"
+
+    val escape = TestSQLContext.csvFile(escapeFile, escape='|', quote='"')
+    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+
+    val escapeCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(escapeCopy.count == escape.count)
+    assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
+    assert(escapeCopy.head().getString(0) == "\"thing")
+  }
 }
