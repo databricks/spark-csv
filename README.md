@@ -14,14 +14,14 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.0.1
+version: 1.0.2
 ```
 
 ## Using with Apache Spark
 This package can be added to  Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.0
+$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.2
 ```
 
 ## Features
