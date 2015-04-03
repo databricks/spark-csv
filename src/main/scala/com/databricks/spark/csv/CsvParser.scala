@@ -57,6 +57,11 @@ class CsvParser {
     this
   }
 
+  def withEscape(escapeChar: Character): CsvParser = {
+    this.escape = escapeChar
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
