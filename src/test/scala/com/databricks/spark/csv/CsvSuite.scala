@@ -17,7 +17,9 @@ package com.databricks.spark.csv
 
 import java.io.File
 
+import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
+import org.apache.spark.SparkException
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
@@ -27,10 +29,11 @@ import TestSQLContext._
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
-  val familyCarsFile = "src/test/resources/family-cars.csv"
   val emptyFile = "src/test/resources/empty.csv"
+  val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
-  val tempFamilyCarsDir = "target/test/family-cars"
+
+  val numCars = 3
 
   test("DSL test") {
     val results = TestSQLContext
@@ -38,7 +41,7 @@ class CsvSuite extends FunSuite {
       .select("year")
       .collect()
 
-    assert(results.size === 2)
+    assert(results.size === numCars)
   }
 
   test("DDL test") {
@@ -49,49 +52,72 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT year FROM carsTable").collect().size === 2)
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
+
+  test("DSL test for DROPMALFORMED parsing mode") {
+    val results = new CsvParser()
+      .withParseMode("DROPMALFORMED")
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars - 1)
+  }
+
+  test("DSL test for FAILFAST parsing mode") {
+    val parser = new CsvParser()
+      .withParseMode("FAILFAST")
+      .withUseHeader(true)
+
+    val exception = intercept[SparkException]{
+      parser.csvFile(TestSQLContext, carsFile)
+        .select("year")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+  }
+
 
   test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
       .withDelimiter('|')
       .withQuoteChar('\'')
+      .withUseHeader(true)
       .csvFile(TestSQLContext, carsAltFile)
       .select("year")
       .collect()
 
-    assert(results.size === 2)
+    assert(results.size === numCars)
   }
 
-  test("DSL test read write with escape") {
-    //Parse a csv file with \ as escape character
-    val results = new CsvParser()
-      .withEscapeChar('\\')
-      .csvFile(TestSQLContext, familyCarsFile)
-    //Check that the file was as expected parse
-    val firstComment1 = results
-      .select("comment")
+  test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
+    val results =
+      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '\'')
+      .select("year")
       .collect()
-      .head
-      .getString(0)
-    assert(firstComment1 === "The ideal car for \"families\" and all their \"bags\", \"boxes\" and \"barbecues\"")
 
-    TestUtils.deleteRecursively(new File(tempFamilyCarsDir))
-    //Save the dataFrame without providing an escape character (default is ")
-    results.saveAsCsvFile(tempFamilyCarsDir, Map("header" -> "true"))
-    //Check that the generated file is well formed
-    val rawData = TestSQLContext.sparkContext.textFile(tempFamilyCarsDir).toArray
-    assert(rawData.contains("2012,VW,Touran,\"The ideal car for \"\"families\"\" and all their \"\"bags\"\", \"\"boxes\"\" and \"\"barbecues\"\"\""))
-  
-    //Check that the generated file is well parsed
-    val results2 = new CsvParser()
-      .csvFile(TestSQLContext, tempFamilyCarsDir)
-    val firstComment2 = results2
-      .select("comment")
+    assert(results.size === numCars)
+  }
+
+  test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
+    intercept[ org.apache.spark.sql.AnalysisException] {
+      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = '\'')
+        .select("year")
+        .collect()
+    }
+  }
+
+  test("Expect wrong parsing results with wrong quote setting using sparkContext.csvFile") {
+    val results =
+      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '"')
+      .select("year")
       .collect()
-      .head
-      .getString(0)
-    assert(firstComment2 === "The ideal car for \"families\" and all their \"bags\", \"boxes\" and \"barbecues\"")
+
+    assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
+      Seq("'2012'", "1997", "2015"))
   }
 
   test("DDL test with alternative delimiter and quote") {
@@ -102,7 +128,7 @@ class CsvSuite extends FunSuite {
          |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT year FROM carsTable").collect().size === 2)
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
 
@@ -134,11 +160,12 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT makeName FROM carsTable").collect().size === 2)
-    assert(sql("SELECT avg(yearMade) FROM carsTable group by grp").collect().head(0) === 2004.5)
+    assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
+    assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
+      .collect().head(0) === 2004.5)
   }
 
-  test("column names test") {
+  test("DSL column names test") {
     val cars = new CsvParser()
       .withUseHeader(false)
       .csvFile(TestSQLContext, carsFile)
@@ -163,7 +190,7 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$tempEmptyDir", header "false")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT * FROM carsTableIO").collect().size === 3)
+    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars + 1)
     assert(sql("SELECT * FROM carsTableEmpty").collect().isEmpty)
 
     sql(
@@ -171,6 +198,82 @@ class CsvSuite extends FunSuite {
         |INSERT OVERWRITE TABLE carsTableEmpty
         |SELECT * FROM carsTableIO
       """.stripMargin.replaceAll("\n", " "))
-    assert(sql("SELECT * FROM carsTableEmpty").collect().size == 3)
+    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars + 1)
+  }
+
+  test("DSL save") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet== cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with a compression codec") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with quoting") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with alternate quoting") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = TestSQLContext.csvFile(carsFile)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "!"))
+
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", quote = '!')
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+  
+  test("DSL save with quoting, escaped quote") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "escape-copy.csv"
+
+    val escape = TestSQLContext.csvFile(escapeFile, escape='|', quote='"')
+    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+
+    val escapeCopy = TestSQLContext.csvFile(copyFilePath + "/")
+
+    assert(escapeCopy.count == escape.count)
+    assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
+    assert(escapeCopy.head().getString(0) == "\"thing")
   }
 }

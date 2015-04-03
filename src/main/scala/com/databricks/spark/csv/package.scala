@@ -15,14 +15,10 @@
  */
 package com.databricks.spark
 
-import org.apache.spark.sql.{SQLContext, DataFrame}
+import org.apache.commons.csv.CSVFormat
+import org.apache.hadoop.io.compress.CompressionCodec
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-
-import java.io.StringWriter;
-
-import scala.collection.convert.WrapAsJava
+import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 
 package object csv {
 
@@ -30,55 +26,106 @@ package object csv {
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
   implicit class CsvContext(sqlContext: SQLContext) {
-    def csvFile(filePath: String) = {
+    def csvFile(filePath: String,
+                useHeader: Boolean = true,
+                delimiter: Char = ',',
+                quote: Char = '"',
+                escape: Char = '\\',
+                mode: String = "PERMISSIVE") = {
       val csvRelation = CsvRelation(
         location = filePath,
-        useHeader = true,
-        delimiter = ',',
-        quote = '"',
-        escape = '\\')(sqlContext)
+        useHeader = useHeader,
+        delimiter = delimiter,
+        quote = quote,
+        escape = escape,
+        parseMode = mode)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def tsvFile(filePath: String) = {
+    def tsvFile(filePath: String, useHeader: Boolean = true) = {
       val csvRelation = CsvRelation(
         location = filePath,
-        useHeader = true,
+        useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
-        escape = '\\')(sqlContext)
+        escape = '\\',
+        parseMode = "PERMISSIVE")(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
-
+  
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
-    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
+
+    /**
+     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     */
+    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
+                      compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
-      val delimiter = parameters.getOrElse("delimiter", ",").charAt(0)
-      val quote = parameters.getOrElse("quote", "\"").charAt(0)
-      val escape = parameters.getOrElse("escape", "\\").charAt(0)
-      val generateHeader = parameters.getOrElse("header", "false").toBoolean
-      val header = dataFrame.columns
-
-      var firstRow: Boolean = generateHeader
-      val csvFileFormat = CSVFormat.DEFAULT
-      .withDelimiter(delimiter)
-      .withQuote(quote)
-      .withEscape(escape)
-
-      val strRDD = dataFrame.rdd.mapPartitions { iter =>
-        var firstRow: Boolean = generateHeader
-        val newIter = iter.map(_.toSeq.toArray)
-        val stringWriter = new StringWriter()
-        val csvPrinter = new CSVPrinter(stringWriter, csvFileFormat)
-        if (firstRow) {
-          firstRow = false
-          csvPrinter.printRecord(header:_*)
-        }
-        csvPrinter.printRecords(WrapAsJava.asJavaIterable(newIter.toIterable))
-        Iterator(stringWriter.toString)
+      val delimiter = parameters.getOrElse("delimiter", ",")
+      val delimiterChar = if (delimiter.length == 1) {
+        delimiter.charAt(0)
+      } else {
+        throw new Exception("Delimiter cannot be more than one character.")
       }
-      strRDD.saveAsTextFile(path)
+
+      val escape = parameters.getOrElse("escape", "\\")
+      val escapeChar = if (escape.length == 1) {
+        escape.charAt(0)
+      } else {
+        throw new Exception("Escape character cannot be more than one character.")
+      }
+
+      val quoteChar = parameters.get("quote") match {
+        case Some(s) => {
+          if (s.length == 1) {
+            Some(s.charAt(0))
+          } else {
+            throw new Exception("Quotation cannot be more than one character.")
+          }
+        }
+        case None => None
+      }
+
+      val csvFormatBase = CSVFormat.DEFAULT
+        .withDelimiter(delimiterChar)
+        .withEscape(escapeChar)
+        .withSkipHeaderRecord(false)
+        .withNullString("null")
+
+      val csvFormat = quoteChar match {
+        case Some(c) => csvFormatBase.withQuote(c)
+        case _ => csvFormatBase
+      }
+
+      val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      val header = if (generateHeader) {
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
+      } else {
+        "" // There is no need to generate header in this case
+      }
+      val strRDD = dataFrame.rdd.mapPartitions { iter =>
+
+        new Iterator[String] {
+          var firstRow: Boolean = generateHeader
+
+          override def hasNext = iter.hasNext
+
+          override def next: String = {
+            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
+            if (firstRow) {
+              firstRow = false
+              header + "\n" + row
+            } else {
+              row
+            }
+          }
+        }
+      }
+      compressionCodec match {
+        case null => strRDD.saveAsTextFile(path)
+        case codec => strRDD.saveAsTextFile(path, codec)
+      }
     }
   }
 }

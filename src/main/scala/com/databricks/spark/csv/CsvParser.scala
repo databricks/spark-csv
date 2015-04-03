@@ -18,16 +18,19 @@ package com.databricks.spark.csv
 import org.apache.spark.sql.{SQLContext, DataFrame}
 import org.apache.spark.sql.types.StructType
 
+import com.databricks.spark.csv.util.ParseModes
+
 /**
  * A collection of static functions for working with CSV files in Spark SQL
  */
 class CsvParser {
 
-  private var useHeader: Boolean = true
+  private var useHeader: Boolean = false
   private var delimiter: Character = ','
   private var quote: Character = '"'
-  private var escape: Character = null
+  private var escape: Character = '\\'
   private var schema: StructType = null
+  private var parseMode: String = ParseModes.DEFAULT
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -44,19 +47,32 @@ class CsvParser {
     this
   }
 
-  def withEscapeChar(escape: Character): CsvParser = {
-    this.escape = escape
-    this
-  }
-
   def withSchema(schema: StructType): CsvParser = {
     this.schema = schema
     this
   }
 
+  def withParseMode(mode: String): CsvParser = {
+    this.parseMode = mode
+    this
+  }
+
+  def withEscape(escapeChar: Character): CsvParser = {
+    this.escape = escapeChar
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
+  @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
-    val relation: CsvRelation = CsvRelation(path, useHeader, delimiter, quote, escape, schema)(sqlContext)
+    val relation: CsvRelation = CsvRelation(
+      path,
+      useHeader,
+      delimiter,
+      quote,
+      escape,
+      parseMode,
+      schema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
