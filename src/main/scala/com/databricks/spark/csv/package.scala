@@ -15,8 +15,10 @@
  */
 package com.databricks.spark
 
-import org.apache.spark.sql.{SQLContext, DataFrame}
+import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
+
+import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 
 package object csv {
 
@@ -28,12 +30,14 @@ package object csv {
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
                 quote: Char = '"',
+                escape: Char = '\\',
                 mode: String = "PERMISSIVE") = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = delimiter,
         quote = quote,
+        escape = escape,
         parseMode = mode)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -44,11 +48,12 @@ package object csv {
         useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
+        escape = '\\',
         parseMode = "PERMISSIVE")(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
-
+  
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
 
     /**
@@ -58,6 +63,30 @@ package object csv {
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
+      val delimiterChar = if (delimiter.length == 1) {
+        delimiter.charAt(0)
+      } else {
+        throw new Exception("Delimiter cannot be more than one character.")
+      }
+
+      val escape = parameters.getOrElse("escape", "\\")
+      val escapeChar = if (escape.length == 1) {
+        escape.charAt(0)
+      } else {
+        throw new Exception("Escape character cannot be more than one character.")
+      }
+
+      val quoteChar = parameters.get("quote") match {
+        case Some(s) => {
+          if (s.length == 1) {
+            Some(s.charAt(0))
+          } else {
+            throw new Exception("Quotation cannot be more than one character.")
+          }
+        }
+        case None => None
+      }
+
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
         dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
@@ -65,17 +94,29 @@ package object csv {
         "" // There is no need to generate header in this case
       }
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
+        val csvFormatBase = CSVFormat.DEFAULT
+          .withDelimiter(delimiterChar)
+          .withEscape(escapeChar)
+          .withSkipHeaderRecord(false)
+          .withNullString("null")
+
+        val csvFormat = quoteChar match {
+          case Some(c) => csvFormatBase.withQuote(c)
+          case _ => csvFormatBase
+        }
+
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
           override def hasNext = iter.hasNext
 
           override def next: String = {
+            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
             if (firstRow) {
               firstRow = false
-              header + "\n" + iter.next.mkString(delimiter)
+              header + "\n" + row
             } else {
-              iter.next.mkString(delimiter)
+              row
             }
           }
         }
