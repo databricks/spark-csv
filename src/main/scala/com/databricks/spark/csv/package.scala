@@ -16,9 +16,9 @@
 package com.databricks.spark
 
 import org.apache.commons.csv.CSVFormat
-import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 import org.apache.hadoop.io.compress.CompressionCodec
-import org.apache.commons.lang3.StringUtils
+
+import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 
 package object csv {
 
