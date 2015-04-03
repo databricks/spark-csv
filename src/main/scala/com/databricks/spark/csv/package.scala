@@ -76,7 +76,17 @@ package object csv {
         throw new Exception("Escape character cannot be more than one character.")
       }
 
-      val quote = parameters.get("quote")
+      val quoteChar = parameters.get("quote") match {
+        case Some(s) => {
+          if (s.length == 1) {
+            Some(s.charAt(0))
+          } else {
+            throw new Exception("Quotation cannot be more than one character.")
+          }
+        }
+        case None => None
+      }
+
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
         dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
@@ -90,14 +100,8 @@ package object csv {
           .withSkipHeaderRecord(false)
           .withNullString("null")
 
-        val csvFormat = quote match {
-          case Some(s) => {
-            if (s.length == 1) {
-              csvFormatBase.withQuote(s.charAt(0))
-            } else {
-              throw new Exception("Quotation cannot be more than one character.")
-            }
-          }
+        val csvFormat = quoteChar match {
+          case Some(c) => csvFormatBase.withQuote(c)
           case _ => csvFormatBase
         }
 
