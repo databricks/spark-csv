@@ -17,18 +17,19 @@ package com.databricks.spark.csv
 
 import java.io.IOException
 
-import scala.collection.JavaConversions._
-import scala.util.control.NonFatal
-
+import com.ayasdi.bigdf.readers._
+import com.databricks.spark.csv.util.ParseModes
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
-import org.apache.spark.sql.types.{StructType, StructField, StringType}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.slf4j.LoggerFactory
 
-import com.databricks.spark.csv.util.ParseModes
+import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
 
 case class CsvRelation protected[spark] (
     location: String,
@@ -61,38 +62,14 @@ case class CsvRelation protected[spark] (
     val projection = schemaCaster(asAttributes(schema))
     val fieldNames = schema.fieldNames.toArray
 
-    val csvFormat = CSVFormat.DEFAULT
-      .withDelimiter(delimiter)
-      .withQuote(quote)
-      .withEscape(escape)
-      .withSkipHeaderRecord(false)
-      .withHeader(fieldNames: _*)
-
-    // If header is set, make sure firstLine is materialized before sending to executors.
-    val filterLine = if (useHeader) firstLine else null
-
-    baseRDD.mapPartitions { iter =>
-      // When using header, any input line that equals firstLine is assumed to be header
-      val csvIter = if (useHeader) {
-        iter.filter(_ != filterLine)
-      } else {
-        iter
-      }
-
-      parseCSV(csvIter, csvFormat, schema.fields, projection, row)
-    }
+    readCSV(baseRDD, fieldNames, schema.fields, projection, row)
   }
 
   private def inferSchema(): StructType = {
     if (this.userSchema != null) {
       userSchema
     } else {
-      val csvFormat = CSVFormat.DEFAULT
-        .withDelimiter(delimiter)
-        .withQuote(quote)
-        .withEscape(escape)
-        .withSkipHeaderRecord(false)
-      val firstRow = CSVParser.parse(firstLine, csvFormat).getRecords.head.toList
+      val firstRow = new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escape).parseLine(firstLine)
       val header = if (useHeader) {
         firstRow
       } else {
@@ -119,6 +96,62 @@ case class CsvRelation protected[spark] (
       index => new AttributeReference(s"C$index", StringType, nullable = true)())
     val casts = sourceSchema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
     new InterpretedMutableProjection(casts, startSchema)
+  }
+
+  private def readCSV(
+     file: RDD[String],
+     header: Seq[String],
+     schemaFields: Seq[StructField],
+     projection: MutableProjection,
+     row: GenericMutableRow) = {
+
+    val dataLines = if (useHeader) {
+      file.mapPartitionsWithIndex({
+        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
+      }, true)
+    }
+    else {
+      file
+    }
+
+    val rows = dataLines.mapPartitionsWithIndex({
+      case (split, iter) => {
+        new BulkCsvReader(iter, split,
+          headers = header, fieldSep = delimiter, quote = quote, escape = escape).flatMap { tokens =>
+          if (tokens.isEmpty) {
+            logger.warn(s"Ignoring empty line: $tokens")
+            None
+          } else {
+            if (dropMalformed && schemaFields.length != tokens.size) {
+              logger.warn(s"Dropping malformed line: $tokens")
+              None
+            } else if (failFast && schemaFields.length != tokens.size) {
+              throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+            } else {
+              var index: Int = 0
+              try {
+                index = 0
+                while (index < schemaFields.length) {
+                  row(index) = tokens(index)
+                  index = index + 1
+                }
+                Some(projection(row))
+              } catch {
+                case aiob: ArrayIndexOutOfBoundsException if permissive =>
+                  (index until schemaFields.length).foreach(ind => row(ind) = null)
+                  Some(projection(row))
+                case NonFatal(e) if !failFast =>
+                  logger.error(s"Exception while parsing line: $tokens. ", e)
+                  None
+              }
+
+            }
+          }
+        }
+      }
+    }, true)
+
+    rows
   }
 
   private def parseCSV(

@@ -12,6 +12,8 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
+libraryDependencies += "com.univocity" % "univocity-parsers" % "1.3.1"
+
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
 
 resolvers ++= Seq(

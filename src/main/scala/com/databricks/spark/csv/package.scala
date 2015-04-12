@@ -17,8 +17,7 @@ package com.databricks.spark
 
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
-
-import org.apache.spark.sql.{SQLContext, DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 package object csv {
 
@@ -93,7 +92,7 @@ package object csv {
       } else {
         "" // There is no need to generate header in this case
       }
-      val strRDD = dataFrame.rdd.mapPartitions { iter =>
+      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) => {
         val csvFormatBase = CSVFormat.DEFAULT
           .withDelimiter(delimiterChar)
           .withEscape(escapeChar)
@@ -106,12 +105,12 @@ package object csv {
         }
 
         new Iterator[String] {
-          var firstRow: Boolean = generateHeader
+          var firstRow: Boolean = generateHeader && index == 0
 
           override def hasNext = iter.hasNext
 
           override def next: String = {
-            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
+            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]): _*)
             if (firstRow) {
               firstRow = false
               header + "\n" + row
@@ -120,6 +119,7 @@ package object csv {
             }
           }
         }
+      }
       }
       compressionCodec match {
         case null => strRDD.saveAsTextFile(path)

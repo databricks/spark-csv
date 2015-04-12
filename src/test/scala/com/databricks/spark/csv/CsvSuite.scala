@@ -160,9 +160,11 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
+    sql("select * from carsTable").collect().foreach { println(_) }
+
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
-    assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
-      .collect().head(0) === 2004.5)
+    assert(sql("SELECT avg(yearMade) FROM carsTable where grp is null group by grp")
+      .collect().head(0) === 2008)
   }
 
   test("DSL column names test") {
@@ -213,7 +215,7 @@ class CsvSuite extends FunSuite {
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
     assert(carsCopy.count == cars.count)
-    assert(carsCopy.collect.map(_.toString).toSet== cars.collect.map(_.toString).toSet)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
 
   test("DSL save with a compression codec") {
