@@ -118,33 +118,27 @@ case class CsvRelation protected[spark] (
       case (split, iter) => {
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter, quote = quote, escape = escape).flatMap { tokens =>
-          if (tokens.isEmpty) {
-            logger.warn(s"Ignoring empty line: $tokens")
+          if (dropMalformed && schemaFields.length != tokens.size) {
+            logger.warn(s"Dropping malformed line: $tokens")
             None
+          } else if (failFast && schemaFields.length != tokens.size) {
+            throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
           } else {
-            if (dropMalformed && schemaFields.length != tokens.size) {
-              logger.warn(s"Dropping malformed line: $tokens")
-              None
-            } else if (failFast && schemaFields.length != tokens.size) {
-              throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
-            } else {
-              var index: Int = 0
-              try {
-                index = 0
-                while (index < schemaFields.length) {
-                  row(index) = tokens(index)
-                  index = index + 1
-                }
-                Some(projection(row))
-              } catch {
-                case aiob: ArrayIndexOutOfBoundsException if permissive =>
-                  (index until schemaFields.length).foreach(ind => row(ind) = null)
-                  Some(projection(row))
-                case NonFatal(e) if !failFast =>
-                  logger.error(s"Exception while parsing line: $tokens. ", e)
-                  None
+            var index: Int = 0
+            try {
+              index = 0
+              while (index < schemaFields.length) {
+                row(index) = tokens(index)
+                index = index + 1
               }
-
+              Some(projection(row))
+            } catch {
+              case aiob: ArrayIndexOutOfBoundsException if permissive =>
+                (index until schemaFields.length).foreach(ind => row(ind) = null)
+                Some(projection(row))
+              case NonFatal(e) if !failFast =>
+                logger.error(s"Exception while parsing line: $tokens. ", e)
+                None
             }
           }
         }

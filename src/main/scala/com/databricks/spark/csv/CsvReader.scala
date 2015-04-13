@@ -40,6 +40,7 @@ abstract class CsvReader(fieldSep: Char = ',',
     settings.setReadInputOnSeparateThread(false)
     settings.setInputBufferSize(inputBufSize)
     settings.setMaxColumns(maxCols)
+    settings.setNullValue("")
     if(headers != null) settings.setHeaders(headers:_*)
 
     new CsvParser(settings)

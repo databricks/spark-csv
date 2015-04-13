@@ -163,8 +163,8 @@ class CsvSuite extends FunSuite {
     sql("select * from carsTable").collect().foreach { println(_) }
 
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
-    assert(sql("SELECT avg(yearMade) FROM carsTable where grp is null group by grp")
-      .collect().head(0) === 2008)
+    assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
+      .collect().head(0) === 2004.5)
   }
 
   test("DSL column names test") {
