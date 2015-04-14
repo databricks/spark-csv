@@ -20,14 +20,14 @@ import java.io.StringReader
 import com.univocity.parsers.csv._
 
 abstract class CsvReader(fieldSep: Char = ',',
-                         lineSep: String = "\n",
-                         quote: Char = '"',
-                         escape: Char = '\\',
-                         ignoreLeadingSpace: Boolean = true,
-                         ignoreTrailingSpace: Boolean = true,
-                         headers: Seq[String],
-                         inputBufSize: Int = 128,
-                         maxCols: Int = 20480) {
+    lineSep: String = "\n",
+    quote: Char = '"',
+    escape: Char = '\\',
+    ignoreLeadingSpace: Boolean = true,
+    ignoreTrailingSpace: Boolean = true,
+    headers: Seq[String],
+    inputBufSize: Int = 128,
+    maxCols: Int = 20480) {
   lazy val parser = {
     val settings = new CsvParserSettings()
     val format = settings.getFormat
@@ -51,13 +51,13 @@ abstract class CsvReader(fieldSep: Char = ',',
  * Parser for parsing a line at a time. Not efficient for bulk data.
  */
 class LineCsvReader(fieldSep: Char = ',',
-                    lineSep: String = "\n",
-                    quote: Char = '"',
-                    escape: Char = '\\',
-                    ignoreLeadingSpace: Boolean = true,
-                    ignoreTrailingSpace: Boolean = true,
-                    inputBufSize: Int = 128,
-                    maxCols: Int = 20480)
+    lineSep: String = "\n",
+    quote: Char = '"',
+    escape: Char = '\\',
+    ignoreLeadingSpace: Boolean = true,
+    ignoreTrailingSpace: Boolean = true,
+    inputBufSize: Int = 128,
+    maxCols: Int = 20480)
   extends CsvReader(fieldSep,
     lineSep,
     quote,
@@ -85,16 +85,16 @@ class LineCsvReader(fieldSep: Char = ',',
  * @param iter iterator over lines in the file
  */
 class BulkCsvReader (iter: Iterator[String],
-                     split: Int,      // for debugging
-                     fieldSep: Char = ',',
-                     lineSep: String = "\n",
-                     quote: Char = '"',
-                     escape: Char = '\\',
-                     ignoreLeadingSpace: Boolean = true,
-                     ignoreTrailingSpace: Boolean = true,
-                     headers: Seq[String],
-                     inputBufSize: Int = 128,
-                     maxCols: Int = 20480)
+    split: Int,      // for debugging
+    fieldSep: Char = ',',
+    lineSep: String = "\n",
+    quote: Char = '"',
+    escape: Char = '\\',
+    ignoreLeadingSpace: Boolean = true,
+    ignoreTrailingSpace: Boolean = true,
+    headers: Seq[String],
+    inputBufSize: Int = 128,
+    maxCols: Int = 20480)
   extends CsvReader(fieldSep,
     lineSep,
     quote,

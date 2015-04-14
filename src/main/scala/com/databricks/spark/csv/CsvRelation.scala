@@ -17,19 +17,20 @@ package com.databricks.spark.csv
 
 import java.io.IOException
 
-import com.ayasdi.bigdf.readers._
-import com.databricks.spark.csv.util.ParseModes
+import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
+
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
+import org.slf4j.LoggerFactory
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.slf4j.LoggerFactory
-
-import scala.collection.JavaConversions._
-import scala.util.control.NonFatal
+import com.ayasdi.bigdf.readers._
+import com.databricks.spark.csv.util.ParseModes
 
 case class CsvRelation protected[spark] (
     location: String,
