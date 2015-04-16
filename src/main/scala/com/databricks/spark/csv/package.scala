@@ -87,23 +87,25 @@ package object csv {
         case None => None
       }
 
+      val csvFormatBase = CSVFormat.DEFAULT
+        .withDelimiter(delimiterChar)
+        .withEscape(escapeChar)
+        .withSkipHeaderRecord(false)
+        .withNullString("null")
+
+      val csvFormat = quoteChar match {
+        case Some(c) => csvFormatBase.withQuote(c)
+        case _ => csvFormatBase
+      }
+
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      //Use format instead of mkString
       val header = if (generateHeader) {
-        dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
       } else {
         "" // There is no need to generate header in this case
       }
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
-        val csvFormatBase = CSVFormat.DEFAULT
-          .withDelimiter(delimiterChar)
-          .withEscape(escapeChar)
-          .withSkipHeaderRecord(false)
-          .withNullString("null")
-
-        val csvFormat = quoteChar match {
-          case Some(c) => csvFormatBase.withQuote(c)
-          case _ => csvFormatBase
-        }
 
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
