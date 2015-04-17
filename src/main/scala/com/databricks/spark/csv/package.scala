@@ -30,7 +30,7 @@ package object csv {
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
                 quote: Char = '"',
-                escape: Char = '\\',
+                escape: Character = null,
                 mode: String = "PERMISSIVE") = {
       val csvRelation = CsvRelation(
         location = filePath,
@@ -48,7 +48,7 @@ package object csv {
         useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
-        escape = '\\',
+        escape = null,
         parseMode = "PERMISSIVE")(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -69,8 +69,10 @@ package object csv {
         throw new Exception("Delimiter cannot be more than one character.")
       }
 
-      val escape = parameters.getOrElse("escape", "\\")
-      val escapeChar = if (escape.length == 1) {
+      val escape = parameters.getOrElse("escape", null)
+      val escapeChar: Character = if (escape == null) {
+        null
+      } else if (escape.length == 1) {
         escape.charAt(0)
       } else {
         throw new Exception("Escape character cannot be more than one character.")
