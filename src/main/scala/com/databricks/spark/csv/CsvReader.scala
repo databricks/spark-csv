@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-package com.ayasdi.bigdf.readers
+package com.databricks.spark.sql.readers
 
 import java.io.StringReader
 import com.univocity.parsers.csv._
 
-abstract class CsvReader(fieldSep: Char = ',',
+/**
+ * Read and parse CSV-like input
+ * @param fieldSep the delimiter used to separate fields in a line
+ * @param lineSep the delimiter used to separate lines
+ * @param quote character used to quote fields
+ * @param escape character used to escape the quote character
+ * @param ignoreLeadingSpace ignore white space before a field
+ * @param ignoreTrailingSpace ignore white space after a field
+ * @param headers headers for the columns
+ * @param inputBufSize size of buffer to use for parsing input, tune for performance
+ * @param maxCols maximum number of columns allowed, for safety against bad inputs
+ */
+private[readers] abstract class CsvReader(fieldSep: Char = ',',
     lineSep: String = "\n",
     quote: Char = '"',
     escape: Char = '\\',
@@ -49,6 +61,14 @@ abstract class CsvReader(fieldSep: Char = ',',
 
 /**
  * Parser for parsing a line at a time. Not efficient for bulk data.
+ *  @param fieldSep the delimiter used to separate fields in a line
+ * @param lineSep the delimiter used to separate lines
+ * @param quote character used to quote fields
+ * @param escape character used to escape the quote character
+ * @param ignoreLeadingSpace ignore white space before a field
+ * @param ignoreTrailingSpace ignore white space after a field
+ * @param inputBufSize size of buffer to use for parsing input, tune for performance
+ * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 class LineCsvReader(fieldSep: Char = ',',
     lineSep: String = "\n",
@@ -83,6 +103,15 @@ class LineCsvReader(fieldSep: Char = ',',
 /**
  * Parser for parsing lines in bulk. Use this when efficiency is desired.
  * @param iter iterator over lines in the file
+ * @param fieldSep the delimiter used to separate fields in a line
+ * @param lineSep the delimiter used to separate lines
+ * @param quote character used to quote fields
+ * @param escape character used to escape the quote character
+ * @param ignoreLeadingSpace ignore white space before a field
+ * @param ignoreTrailingSpace ignore white space after a field
+ * @param headers headers for the columns
+ * @param inputBufSize size of buffer to use for parsing input, tune for performance
+ * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 class BulkCsvReader (iter: Iterator[String],
     split: Int,      // for debugging
@@ -106,9 +135,9 @@ class BulkCsvReader (iter: Iterator[String],
     maxCols)
   with Iterator[Array[String]] {
 
-  val reader = new StringIteratorReader(iter, lineSep)
+  private val reader = new StringIteratorReader(iter, lineSep)
   parser.beginParsing(reader)
-  var nextRecord =  parser.parseNext()
+  private var nextRecord =  parser.parseNext()
 
   /**
    * get the next parsed line.
@@ -133,8 +162,9 @@ class BulkCsvReader (iter: Iterator[String],
  * Univocity parser requires a Reader that provides access to the data to be parsed and needs the newlines to
  * be present
  * @param iter iterator over RDD[String]
+ * @param lineSep line separator
  */
-class StringIteratorReader(val iter: Iterator[String], val lineSep: String) extends java.io.Reader {
+private class StringIteratorReader(val iter: Iterator[String], val lineSep: String) extends java.io.Reader {
   require(lineSep.length == 1)
   private var next: Long = 0
   private var length: Long = 0

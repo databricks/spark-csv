@@ -29,8 +29,8 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.ayasdi.bigdf.readers._
 import com.databricks.spark.csv.util.ParseModes
+import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
     location: String,
