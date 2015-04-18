@@ -160,8 +160,6 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
 
-    sql("select * from carsTable").collect().foreach { println(_) }
-
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
     assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
       .collect().head(0) === 2004.5)

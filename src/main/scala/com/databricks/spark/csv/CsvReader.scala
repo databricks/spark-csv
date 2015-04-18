@@ -61,7 +61,7 @@ private[readers] abstract class CsvReader(fieldSep: Char = ',',
 
 /**
  * Parser for parsing a line at a time. Not efficient for bulk data.
- *  @param fieldSep the delimiter used to separate fields in a line
+ * @param fieldSep the delimiter used to separate fields in a line
  * @param lineSep the delimiter used to separate lines
  * @param quote character used to quote fields
  * @param escape character used to escape the quote character
@@ -135,7 +135,7 @@ class BulkCsvReader (iter: Iterator[String],
     maxCols)
   with Iterator[Array[String]] {
 
-  private val reader = new StringIteratorReader(iter, lineSep)
+  private val reader = new StringIteratorReader(iter)
   parser.beginParsing(reader)
   private var nextRecord =  parser.parseNext()
 
@@ -162,28 +162,33 @@ class BulkCsvReader (iter: Iterator[String],
  * Univocity parser requires a Reader that provides access to the data to be parsed and needs the newlines to
  * be present
  * @param iter iterator over RDD[String]
- * @param lineSep line separator
  */
-private class StringIteratorReader(val iter: Iterator[String], val lineSep: String) extends java.io.Reader {
-  require(lineSep.length == 1)
-  private var next: Long = 0
-  private var length: Long = 0
-  private var start: Long = 0
-  private var str: String = null
-  private val lineSepLen = lineSep.length
+private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
+  private var next: Long = 0
+  private var length: Long = 0  //length of input so far
+  private var start: Long = 0
+  private var str: String = null   //current string from iter
+
+  /**
+   * fetch next string from iter, if done with current one
+   * pretend there is a new line at the end of every string we get from from iter
+   */
   private def refill(): Unit = {
     if(length == next) {
       if(iter.hasNext) {
         str = iter.next
         start = length
-        length += (str.length + lineSepLen) //allowance for line separator removed by SparkContext.textFile()
+        length += (str.length + 1) //allowance for line separator removed by SparkContext.textFile()
       } else {
         str = null
       }
     }
   }
 
+  /**
+   * read the next character, if at end of string pretend there is a new line
+   */
   override def read(): Int = {
     refill()
     if(next >= length) {
@@ -198,6 +203,9 @@ private class StringIteratorReader(val iter: Iterator[String], val lineSep: Stri
     }
   }
 
+  /**
+   * read from str into cbuf
+   */
   def read(cbuf: Array[Char], off: Int, len: Int): Int = {
     refill()
     var n = 0
@@ -206,21 +214,20 @@ private class StringIteratorReader(val iter: Iterator[String], val lineSep: Stri
       throw new IndexOutOfBoundsException()
     } else if (len == 0) {
       n = 0
-    }
-    else {
-      if (next >= length) {
+    } else {
+      if (next >= length) {   //end of input
         n = -1
       } else {
-        n = Math.min(length - next, len).toInt
+        n = Math.min(length - next, len).toInt   //amount of input available or size of buffer, whichever is less
         if (n == length - next) {
           str.getChars((next - start).toInt, (next - start + n - 1).toInt, cbuf, off)
-          cbuf(off + n - lineSepLen) = lineSep.charAt(0)
+          cbuf(off + n - 1) = '\n'
         } else {
           str.getChars((next - start).toInt, (next - start + n).toInt, cbuf, off)
         }
         next += n
         if (n < len) {
-          val m = read(cbuf, off + n, len - n)
+          val m = read(cbuf, off + n, len - n)  //have more space, fetch more input from iter
           if(m != -1)
             n += m
         }
