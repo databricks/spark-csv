@@ -60,3 +60,7 @@ sparkComponents += "sql"
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
+
+// Fork to help tests of methods using reflection.
+// See https://issues.apache.org/jira/browse/SPARK-5281.
+fork in Test := true
