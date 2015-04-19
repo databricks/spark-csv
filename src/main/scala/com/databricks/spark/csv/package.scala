@@ -19,6 +19,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{SQLContext, DataFrame, Row}
+import org.apache.spark.sql.types.StructType
 
 package object csv {
 
@@ -31,14 +32,16 @@ package object csv {
                 delimiter: Char = ',',
                 quote: Char = '"',
                 escape: Char = '\\',
-                mode: String = "PERMISSIVE") = {
+                mode: String = "PERMISSIVE",
+                schema: Option[StructType] = None) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = delimiter,
         quote = quote,
         escape = escape,
-        parseMode = mode)(sqlContext)
+        parseMode = mode,
+        userSchema = schema.orNull)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -53,7 +56,7 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
-  
+
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
 
     /**
