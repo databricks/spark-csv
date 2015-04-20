@@ -101,7 +101,6 @@ package object csv {
       }
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
-      //Use format instead of mkString
       val header = if (generateHeader) {
         csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
       } else {
