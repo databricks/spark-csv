@@ -107,19 +107,23 @@ package object csv {
         "" // There is no need to generate header in this case
       }
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
-
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
-          override def hasNext = iter.hasNext
+          override def hasNext = iter.hasNext || firstRow
 
           override def next: String = {
-            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
-            if (firstRow) {
-              firstRow = false
-              header + "\n" + row
+            if(!iter.isEmpty) {
+              val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
+              if (firstRow) {
+                firstRow = false
+                header + csvFormat.getRecordSeparator() + row
+              } else {
+                row
+              }
             } else {
-              row
+              firstRow = false
+              header 
             }
           }
         }
