@@ -107,6 +107,7 @@ package object csv {
         "" // There is no need to generate header in this case
       }
       val strRDD = dataFrame.rdd.mapPartitions { iter =>
+        // When the iterator is empty but the header is set to true, the header should be rendered
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
