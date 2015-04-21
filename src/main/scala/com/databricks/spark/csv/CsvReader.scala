@@ -17,6 +17,7 @@
 package com.databricks.spark.sql.readers
 
 import java.io.StringReader
+
 import com.univocity.parsers.csv._
 
 /**
@@ -145,10 +146,11 @@ class BulkCsvReader (iter: Iterator[String],
    */
   def next = {
     val curRecord = nextRecord
-    if(curRecord != null)
+    if(curRecord != null) {
       nextRecord = parser.parseNext()
-    else
+    } else {
       throw new NoSuchElementException("next record is null")
+    }
     curRecord
   }
 
@@ -157,18 +159,17 @@ class BulkCsvReader (iter: Iterator[String],
 }
 
 /**
- * A Reader that "reads" from a sequence of lines. Spark's textFile method removes newlines at end of
- * each line
- * Univocity parser requires a Reader that provides access to the data to be parsed and needs the newlines to
- * be present
+ * A Reader that "reads" from a sequence of lines. Spark's textFile method removes newlines at
+ * end of each line Univocity parser requires a Reader that provides access to the data to be
+ * parsed and needs the newlines to be present
  * @param iter iterator over RDD[String]
  */
 private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
   private var next: Long = 0
-  private var length: Long = 0  //length of input so far
+  private var length: Long = 0  // length of input so far
   private var start: Long = 0
-  private var str: String = null   //current string from iter
+  private var str: String = null   // current string from iter
 
   /**
    * fetch next string from iter, if done with current one
@@ -179,7 +180,7 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
       if(iter.hasNext) {
         str = iter.next
         start = length
-        length += (str.length + 1) //allowance for line separator removed by SparkContext.textFile()
+        length += (str.length + 1) // allowance for newline removed by SparkContext.textFile()
       } else {
         str = null
       }
@@ -196,10 +197,7 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     } else {
       val cur = next - start
       next += 1
-      if (cur == str.length)
-        '\n'
-      else
-        str.charAt(cur.toInt)
+      if (cur == str.length) '\n' else str.charAt(cur.toInt)
     }
   }
 
@@ -215,10 +213,10 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     } else if (len == 0) {
       n = 0
     } else {
-      if (next >= length) {   //end of input
+      if (next >= length) {   // end of input
         n = -1
       } else {
-        n = Math.min(length - next, len).toInt   //amount of input available or size of buffer, whichever is less
+        n = Math.min(length - next, len).toInt // lesser of amount of input available or buf size
         if (n == length - next) {
           str.getChars((next - start).toInt, (next - start + n - 1).toInt, cbuf, off)
           cbuf(off + n - 1) = '\n'
@@ -227,9 +225,8 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
         }
         next += n
         if (n < len) {
-          val m = read(cbuf, off + n, len - n)  //have more space, fetch more input from iter
-          if(m != -1)
-            n += m
+          val m = read(cbuf, off + n, len - n)  // have more space, fetch more input from iter
+          if(m != -1) n += m
         }
       }
     }

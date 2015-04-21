@@ -31,25 +31,38 @@ package object csv {
                 delimiter: Char = ',',
                 quote: Char = '"',
                 escape: Char = '\\',
-                mode: String = "PERMISSIVE") = {
+                mode: String = "PERMISSIVE",
+                parserLib: String = "COMMONS",
+                ignoreLeadingWhiteSpace: Boolean = false,
+                ignoreTrailingWhiteSpace: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = delimiter,
         quote = quote,
         escape = escape,
-        parseMode = mode)(sqlContext)
+        parseMode = mode,
+        parserLib = parserLib,
+        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def tsvFile(filePath: String, useHeader: Boolean = true) = {
+    def tsvFile(filePath: String,
+                useHeader: Boolean = true,
+                parserLib: String = "COMMONS",
+                ignoreLeadingWhiteSpace: Boolean = false,
+                ignoreTrailingWhiteSpace: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
         escape = '\\',
-        parseMode = "PERMISSIVE")(sqlContext)
+        parseMode = "PERMISSIVE",
+        parserLib = parserLib,
+        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

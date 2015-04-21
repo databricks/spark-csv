@@ -15,10 +15,10 @@
  */
 package com.databricks.spark.csv
 
-import org.apache.spark.sql.{SQLContext, DataFrame}
-import org.apache.spark.sql.types.StructType
 
-import com.databricks.spark.csv.util.ParseModes
+import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.types.StructType
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes}
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -31,6 +31,10 @@ class CsvParser {
   private var escape: Character = '\\'
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
+  private var ignoreLeadingWhiteSpace: Boolean = false
+  private var ignoreTrailingWhiteSpace: Boolean = false
+  private var parserLib: String = ParserLibs.DEFAULT
+
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -62,6 +66,21 @@ class CsvParser {
     this
   }
 
+  def withIgnoreLeadingWhiteSpace(ignore: Boolean): CsvParser = {
+    this.ignoreLeadingWhiteSpace = ignore
+    this
+  }
+
+  def withIgnoreTrailingWhiteSpace(ignore: Boolean): CsvParser = {
+    this.ignoreTrailingWhiteSpace = ignore
+    this
+  }
+
+  def withParserLib(parserLib: String): CsvParser = {
+    this.parserLib = parserLib
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -72,6 +91,9 @@ class CsvParser {
       quote,
       escape,
       parseMode,
+      parserLib,
+      ignoreLeadingWhiteSpace,
+      ignoreTrailingWhiteSpace,
       schema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
