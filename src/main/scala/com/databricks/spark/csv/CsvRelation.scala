@@ -101,9 +101,17 @@ case class CsvRelation protected[spark] (
     if (this.userSchema != null) {
       userSchema
     } else {
-      val firstRow =
+      val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
         new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escape)
           .parseLine(firstLine)
+      } else {
+        val csvFormat = CSVFormat.DEFAULT
+          .withDelimiter(delimiter)
+          .withQuote(quote)
+          .withEscape(escape)
+          .withSkipHeaderRecord(false)
+        CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
+      }
       val header = if (useHeader) {
         firstRow
       } else {
