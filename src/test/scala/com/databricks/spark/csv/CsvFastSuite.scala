@@ -31,7 +31,7 @@ class CsvFastSuite extends FunSuite {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
-  val tempEmptyDir = "target/test/empty/"
+  val tempEmptyDir = "target/test/empty2/"
 
   val numCars = 3
 
