@@ -119,7 +119,7 @@ package object csv {
         }
 
         new Iterator[String] {
-          var firstRow: Boolean = generateHeader && index == 0
+          var firstRow: Boolean = generateHeader //&& index == 0
 
           override def hasNext = iter.hasNext
 
