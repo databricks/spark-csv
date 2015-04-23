@@ -146,16 +146,9 @@ case class CsvRelation protected[spark] (
      schemaFields: Seq[StructField],
      projection: MutableProjection,
      row: GenericMutableRow) = {
-
-    val dataLines = if (useHeader) {
-      file.mapPartitionsWithIndex({
-        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
-      }, true)
-    }
-    else {
-      file
-    }
-
+    // If header is set, make sure firstLine is materialized before sending to executors.
+    val filterLine = if (useHeader) firstLine else null
+    val dataLines = if(useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
         new BulkCsvReader(iter, split,
