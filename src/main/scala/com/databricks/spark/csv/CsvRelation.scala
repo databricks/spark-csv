@@ -35,7 +35,7 @@ case class CsvRelation protected[spark] (
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
-    escape: Char,
+    escape: Character,
     parseMode: String,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
