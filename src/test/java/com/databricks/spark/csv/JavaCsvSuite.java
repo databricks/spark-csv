@@ -40,7 +40,7 @@ public class JavaCsvSuite {
 
   @Test
   public void testSQL() {
-      sqlContext.sql("CREATE TABLE carsTable " +
+      sqlContext.sql("CREATE TEMPORARY TABLE carsTable " +
                       "USING com.databricks.spark.csv " +
                       "OPTIONS (path \""+carsFile+"\", header \"true\"");
       DataFrame df = sqlContext.sql("SELECT * FROM carsTable");
