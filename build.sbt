@@ -6,6 +6,8 @@ organization := "com.databricks"
 
 scalaVersion := "2.11.6"
 
+parallelExecution in Test := false
+
 crossScalaVersions := Seq("2.10.4", "2.11.6")
 
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
