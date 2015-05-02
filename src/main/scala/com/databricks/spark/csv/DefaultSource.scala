@@ -63,8 +63,10 @@ class DefaultSource
       throw new Exception("Quotation cannot be more than one character.")
     }
 
-    val escape = parameters.getOrElse("escape", "\\")
-    val escapeChar = if (escape.length == 1) {
+    val escape = parameters.getOrElse("escape", null)
+    val escapeChar: Character = if (escape == null) {
+      null
+    } else if (escape.length == 1) {
       escape.charAt(0)
     } else {
       throw new Exception("Escape character cannot be more than one character.")

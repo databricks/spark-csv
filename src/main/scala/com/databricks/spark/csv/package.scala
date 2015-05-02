@@ -30,7 +30,7 @@ package object csv {
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
                 quote: Char = '"',
-                escape: Char = '\\',
+                escape: Character = null,
                 mode: String = "PERMISSIVE",
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
@@ -82,8 +82,10 @@ package object csv {
         throw new Exception("Delimiter cannot be more than one character.")
       }
 
-      val escape = parameters.getOrElse("escape", "\\")
-      val escapeChar = if (escape.length == 1) {
+      val escape = parameters.getOrElse("escape", null)
+      val escapeChar: Character = if (escape == null) {
+        null
+      } else if (escape.length == 1) {
         escape.charAt(0)
       } else {
         throw new Exception("Escape character cannot be more than one character.")
@@ -100,12 +102,24 @@ package object csv {
         case None => None
       }
 
+      val csvFormatBase = CSVFormat.DEFAULT
+        .withDelimiter(delimiterChar)
+        .withEscape(escapeChar)
+        .withSkipHeaderRecord(false)
+        .withNullString("null")
+
+      val csvFormat = quoteChar match {
+        case Some(c) => csvFormatBase.withQuote(c)
+        case _ => csvFormatBase
+      }
+
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
-        dataFrame.columns.map(c => s""""$c"""").mkString(delimiter)
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
       } else {
         "" // There is no need to generate header in this case
       }
+
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
         val csvFormatBase = CSVFormat.DEFAULT
           .withDelimiter(delimiterChar)
@@ -121,15 +135,20 @@ package object csv {
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
-          override def hasNext = iter.hasNext
+          override def hasNext = iter.hasNext || firstRow
 
           override def next: String = {
-            val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]): _*)
-            if (firstRow) {
-              firstRow = false
-              header + "\n" + row
+            if(!iter.isEmpty) {
+              val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
+              if (firstRow) {
+                firstRow = false
+                header + csvFormat.getRecordSeparator() + row
+              } else {
+                row
+              }
             } else {
-              row
+              firstRow = false
+              header 
             }
           }
         }

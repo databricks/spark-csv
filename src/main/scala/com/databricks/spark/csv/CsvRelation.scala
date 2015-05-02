@@ -37,7 +37,7 @@ case class CsvRelation protected[spark] (
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
-    escape: Char,
+    escape: Character,
     parseMode: String,
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
@@ -102,7 +102,8 @@ case class CsvRelation protected[spark] (
       userSchema
     } else {
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
-        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escape)
+        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal)
           .parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
@@ -151,9 +152,10 @@ case class CsvRelation protected[spark] (
     val dataLines = if(useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
+        val escapeVal = if(escape == null) '\\' else escape.charValue()
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quote, escape = escape).flatMap { tokens =>
+          quote = quote, escape = escapeVal).flatMap { tokens =>
           if (dropMalformed && schemaFields.length != tokens.size) {
             logger.warn(s"Dropping malformed line: $tokens")
             None
