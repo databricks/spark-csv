@@ -22,13 +22,15 @@ import scala.util.control.NonFatal
 
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
+import org.slf4j.LoggerFactory
+
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
-import org.apache.spark.sql.types.{StructType, StructField, StringType}
-import org.slf4j.LoggerFactory
-
-import com.databricks.spark.csv.util.ParseModes
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes}
+import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
     location: String,
@@ -37,6 +39,9 @@ case class CsvRelation protected[spark] (
     quote: Char,
     escape: Character,
     parseMode: String,
+    parserLib: String,
+    ignoreLeadingWhiteSpace: Boolean,
+    ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
@@ -46,6 +51,11 @@ case class CsvRelation protected[spark] (
   if (!ParseModes.isValidMode(parseMode)) {
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
+
+  if((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
+    logger.warn(s"Ignore white space options may not work with Commons parserLib option")
+  }
+
   private val failFast = ParseModes.isFailFastMode(parseMode)
   private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
   private val permissive = ParseModes.isPermissiveMode(parseMode)
@@ -61,25 +71,29 @@ case class CsvRelation protected[spark] (
     val projection = schemaCaster(asAttributes(schema))
     val fieldNames = schema.fieldNames.toArray
 
-    val csvFormat = CSVFormat.DEFAULT
-      .withDelimiter(delimiter)
-      .withQuote(quote)
-      .withEscape(escape)
-      .withSkipHeaderRecord(false)
-      .withHeader(fieldNames: _*)
+    if(ParserLibs.isUnivocityLib(parserLib)) {
+      readCSV(baseRDD, fieldNames, schema.fields, projection, row)
+    } else {
+      val csvFormat = CSVFormat.DEFAULT
+        .withDelimiter(delimiter)
+        .withQuote(quote)
+        .withEscape(escape)
+        .withSkipHeaderRecord(false)
+        .withHeader(fieldNames: _*)
 
-    // If header is set, make sure firstLine is materialized before sending to executors.
-    val filterLine = if (useHeader) firstLine else null
+      // If header is set, make sure firstLine is materialized before sending to executors.
+      val filterLine = if (useHeader) firstLine else null
 
-    baseRDD.mapPartitions { iter =>
-      // When using header, any input line that equals firstLine is assumed to be header
-      val csvIter = if (useHeader) {
-        iter.filter(_ != filterLine)
-      } else {
-        iter
+      baseRDD.mapPartitions { iter =>
+        // When using header, any input line that equals firstLine is assumed to be header
+        val csvIter = if (useHeader) {
+          iter.filter(_ != filterLine)
+        } else {
+          iter
+        }
+        parseCSV(csvIter, csvFormat, schema.fields, projection, row)
       }
 
-      parseCSV(csvIter, csvFormat, schema.fields, projection, row)
     }
   }
 
@@ -87,12 +101,18 @@ case class CsvRelation protected[spark] (
     if (this.userSchema != null) {
       userSchema
     } else {
-      val csvFormat = CSVFormat.DEFAULT
-        .withDelimiter(delimiter)
-        .withQuote(quote)
-        .withEscape(escape)
-        .withSkipHeaderRecord(false)
-      val firstRow = CSVParser.parse(firstLine, csvFormat).getRecords.head.toList
+      val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
+        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal)
+          .parseLine(firstLine)
+      } else {
+        val csvFormat = CSVFormat.DEFAULT
+          .withDelimiter(delimiter)
+          .withQuote(quote)
+          .withEscape(escape)
+          .withSkipHeaderRecord(false)
+        CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
+      }
       val header = if (useHeader) {
         firstRow
       } else {
@@ -119,6 +139,51 @@ case class CsvRelation protected[spark] (
       index => new AttributeReference(s"C$index", StringType, nullable = true)())
     val casts = sourceSchema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
     new InterpretedMutableProjection(casts, startSchema)
+  }
+
+  private def readCSV(
+     file: RDD[String],
+     header: Seq[String],
+     schemaFields: Seq[StructField],
+     projection: MutableProjection,
+     row: GenericMutableRow) = {
+    // If header is set, make sure firstLine is materialized before sending to executors.
+    val filterLine = if (useHeader) firstLine else null
+    val dataLines = if(useHeader) file.filter(_ != filterLine) else file
+    val rows = dataLines.mapPartitionsWithIndex({
+      case (split, iter) => {
+        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        new BulkCsvReader(iter, split,
+          headers = header, fieldSep = delimiter,
+          quote = quote, escape = escapeVal).flatMap { tokens =>
+          if (dropMalformed && schemaFields.length != tokens.size) {
+            logger.warn(s"Dropping malformed line: $tokens")
+            None
+          } else if (failFast && schemaFields.length != tokens.size) {
+            throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+          } else {
+            var index: Int = 0
+            try {
+              index = 0
+              while (index < schemaFields.length) {
+                row(index) = tokens(index)
+                index = index + 1
+              }
+              Some(projection(row))
+            } catch {
+              case aiob: ArrayIndexOutOfBoundsException if permissive =>
+                (index until schemaFields.length).foreach(ind => row(ind) = null)
+                Some(projection(row))
+              case NonFatal(e) if !failFast =>
+                logger.error(s"Exception while parsing line: $tokens. ", e)
+                None
+            }
+          }
+        }
+      }
+    }, true)
+
+    rows
   }
 
   private def parseCSV(

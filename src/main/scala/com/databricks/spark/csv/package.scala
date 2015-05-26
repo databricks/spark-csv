@@ -18,7 +18,7 @@ package com.databricks.spark
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
-import org.apache.spark.sql.{SQLContext, DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 package object csv {
 
@@ -31,25 +31,38 @@ package object csv {
                 delimiter: Char = ',',
                 quote: Char = '"',
                 escape: Character = null,
-                mode: String = "PERMISSIVE") = {
+                mode: String = "PERMISSIVE",
+                parserLib: String = "COMMONS",
+                ignoreLeadingWhiteSpace: Boolean = false,
+                ignoreTrailingWhiteSpace: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = delimiter,
         quote = quote,
         escape = escape,
-        parseMode = mode)(sqlContext)
+        parseMode = mode,
+        parserLib = parserLib,
+        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def tsvFile(filePath: String, useHeader: Boolean = true) = {
+    def tsvFile(filePath: String,
+                useHeader: Boolean = true,
+                parserLib: String = "COMMONS",
+                ignoreLeadingWhiteSpace: Boolean = false,
+                ignoreTrailingWhiteSpace: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
-        escape = null,
-        parseMode = "PERMISSIVE")(sqlContext)
+        escape = '\\',
+        parseMode = "PERMISSIVE",
+        parserLib = parserLib,
+        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
@@ -106,8 +119,19 @@ package object csv {
       } else {
         "" // There is no need to generate header in this case
       }
-      val strRDD = dataFrame.rdd.mapPartitions { iter =>
-        // When the iterator is empty but the header is set to true, the header should be rendered
+
+      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
+        val csvFormatBase = CSVFormat.DEFAULT
+          .withDelimiter(delimiterChar)
+          .withEscape(escapeChar)
+          .withSkipHeaderRecord(false)
+          .withNullString("null")
+
+        val csvFormat = quoteChar match {
+          case Some(c) => csvFormatBase.withQuote(c)
+          case _ => csvFormatBase
+        }
+
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
