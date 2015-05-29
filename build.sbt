@@ -10,8 +10,6 @@ parallelExecution in Test := false
 
 crossScalaVersions := Seq("2.10.4", "2.11.6")
 
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.3.0" % "provided"
-
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "com.univocity" % "univocity-parsers" % "1.5.1"
@@ -25,6 +23,8 @@ resolvers ++= Seq(
 )
 
 publishMavenStyle := true
+
+spAppendScalaVersion := true
 
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
@@ -55,7 +55,7 @@ pomExtra := (
     </developer>
   </developers>)
 
-sparkPackageName := "databricks/spark-csv"
+spName := "databricks/spark-csv"
 
 sparkVersion := "1.3.0"
 
