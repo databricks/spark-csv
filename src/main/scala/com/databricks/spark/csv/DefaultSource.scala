@@ -19,6 +19,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
+import com.databricks.spark.csv.util.ParserLibs
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
@@ -62,8 +63,10 @@ class DefaultSource
       throw new Exception("Quotation cannot be more than one character.")
     }
 
-    val escape = parameters.getOrElse("escape", "\\")
-    val escapeChar = if (escape.length == 1) {
+    val escape = parameters.getOrElse("escape", null)
+    val escapeChar: Character = if (escape == null) {
+      null
+    } else if (escape.length == 1) {
       escape.charAt(0)
     } else {
       throw new Exception("Escape character cannot be more than one character.")
@@ -80,12 +83,40 @@ class DefaultSource
       throw new Exception("Header flag can be true or false")
     }
 
+    val parserLib = parameters.getOrElse("parserLib", ParserLibs.DEFAULT)
+    val ignoreLeadingWhiteSpace = parameters.getOrElse("ignoreLeadingWhiteSpace", "false")
+    val ignoreLeadingWhiteSpaceFlag = if(ignoreLeadingWhiteSpace == "false") {
+      false
+    } else if(ignoreLeadingWhiteSpace == "true") {
+      if(!ParserLibs.isUnivocityLib(parserLib)) {
+        throw new Exception("Ignore whitesspace supported for Univocity parser only")
+      }
+      true
+    } else {
+      throw new Exception("Ignore white space flag can be true or false")
+    }
+    val ignoreTrailingWhiteSpace = parameters.getOrElse("ignoreTrailingWhiteSpace", "false")
+    val ignoreTrailingWhiteSpaceFlag = if(ignoreTrailingWhiteSpace == "false") {
+      false
+    } else if(ignoreTrailingWhiteSpace == "true") {
+      if(!ParserLibs.isUnivocityLib(parserLib)) {
+        throw new Exception("Ignore whitespace supported for the Univocity parser only")
+      }
+      true
+    } else {
+      throw new Exception("Ignore white space flag can be true or false")
+    }
+
+
     CsvRelation(path,
       headerFlag,
       delimiterChar,
       quoteChar,
       escapeChar,
       parseMode,
+      parserLib,
+      ignoreLeadingWhiteSpaceFlag,
+      ignoreTrailingWhiteSpaceFlag,
       schema)(sqlContext)
   }
 
