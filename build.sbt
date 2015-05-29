@@ -26,6 +26,8 @@ publishMavenStyle := true
 
 spAppendScalaVersion := true
 
+spIncludeMaven := true
+
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (version.value.endsWith("SNAPSHOT"))
