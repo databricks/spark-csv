@@ -61,8 +61,16 @@ OPTIONS (path "cars.csv", header "true")
 ```
 
 ### Scala API
-The recommended way to load CSV data is using the load/save functions in SQLContext.
+Spark 1.4+:
+```scala
+import org.apache.spark.sql.SQLContext
 
+val sqlContext = new SQLContext(sc)
+val df = sqlContext.read.format("com.databricks.spark.csv").option("header", "true").load("cars.csv")
+df.select("year", "model").write.format("com.databricks.spark.csv").save("newcars.csv")
+```
+
+Spark 1.3:
 ```scala
 import org.apache.spark.sql.SQLContext
 
@@ -71,21 +79,18 @@ val df = sqlContext.load("com.databricks.spark.csv", Map("path" -> "cars.csv", "
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
-You can also use the implicits from `com.databricks.spark.csv._`.
-
-```scala
-import org.apache.spark.sql.SQLContext
-import com.databricks.spark.csv._
-
-val sqlContext = new SQLContext(sc)
-
-val cars = sqlContext.csvFile("cars.csv")
-cars.select("year", "model").saveAsCsvFile("newcars.tsv")
-```
 
 ### Java API
-Similar to Scala, we recommend load/save functions in SQLContext.
+Spark 1.4+:
+```java
+import org.apache.spark.sql.SQLContext
 
+SQLContext sqlContext = new SQLContext(sc);
+DataFrame sqlContext.read().format("com.databricks.spark.csv").option("header", "true").load("cars.csv");
+df.select("year", "model").write().format("com.databricks.spark.csv").save("newcars.csv");
+```
+
+Spark 1.3:
 ```java
 import org.apache.spark.sql.SQLContext
 
@@ -98,20 +103,18 @@ options.put("path", "cars.csv");
 DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
 ```
-See documentations of <a href="https://spark.apache.org/docs/1.3.0/api/java/org/apache/spark/sql/SQLContext.html#load(java.lang.String)">load</a> and <a href="https://spark.apache.org/docs/1.3.0/api/java/org/apache/spark/sql/DataFrame.html#save(java.lang.String)">save</a> for more details.
-
-In Java (as well as Scala) CSV files can be read using functions in CsvParser.
-
-```java
-import com.databricks.spark.csv.CsvParser;
-SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
-
-DataFrame cars = (new CsvParser()).withUseHeader(true).csvFile(sqlContext, "cars.csv");
-```
 
 ### Python API
-In Python you can read and save CSV files using load/save functions.
+Spark 1.4+:
+```python
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
 
+df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load('cars.csv')
+df.select('year', 'model').write.format('com.databricks.spark.csv').save('newcars.csv')
+```
+
+Spark 1.3:
 ```python
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
