@@ -28,7 +28,6 @@ import TestSQLContext._
 
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
-  val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
@@ -51,17 +50,6 @@ class CsvSuite extends FunSuite {
         |CREATE TEMPORARY TABLE carsTable
         |USING com.databricks.spark.csv
         |OPTIONS (path "$carsFile", header "true")
-      """.stripMargin.replaceAll("\n", " "))
-
-    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
-  }
-
-  test("DDL test with tab separated file") {
-    sql(
-      s"""
-         |CREATE TEMPORARY TABLE carsTable
-         |USING com.databricks.spark.csv
-         |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
@@ -114,8 +102,7 @@ class CsvSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
-
-  test("Expect parsing error with wrong delimiter setting using sparkContext.csvFile") {
+  test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
     intercept[ org.apache.spark.sql.AnalysisException] {
       TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = '\'')
         .select("year")

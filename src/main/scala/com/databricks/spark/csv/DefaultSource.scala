@@ -15,7 +15,6 @@
  */
 package com.databricks.spark.csv
 
-import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
@@ -50,7 +49,7 @@ class DefaultSource
       parameters: Map[String, String],
       schema: StructType) = {
     val path = checkPath(parameters)
-    val delimiter = StringEscapeUtils.unescapeJava(parameters.getOrElse("delimiter", ","))
+    val delimiter = parameters.getOrElse("delimiter", ",")
     val delimiterChar = if (delimiter.length == 1) {
       delimiter.charAt(0)
     } else {
