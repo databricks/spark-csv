@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Databricks
+ * Copyright 2014 Databricks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,5 +48,4 @@ object TypeCast {
       case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
     }
   }
-
 }
