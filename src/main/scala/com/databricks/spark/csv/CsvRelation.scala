@@ -26,10 +26,9 @@ import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes}
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TypeCast}
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
@@ -66,13 +65,10 @@ case class CsvRelation protected[spark] (
   def buildScan = {
     val baseRDD = sqlContext.sparkContext.textFile(location)
 
-    val numFields = schema.fields.length
-    val row = new GenericMutableRow(numFields)
-    val projection = schemaCaster(asAttributes(schema))
-    val fieldNames = schema.fieldNames.toArray
+    val fieldNames = schema.fieldNames
 
     if(ParserLibs.isUnivocityLib(parserLib)) {
-      readCSV(baseRDD, fieldNames, schema.fields, projection, row)
+      univocityParseCSV(baseRDD, fieldNames, schema.fields)
     } else {
       val csvFormat = CSVFormat.DEFAULT
         .withDelimiter(delimiter)
@@ -91,9 +87,8 @@ case class CsvRelation protected[spark] (
         } else {
           iter
         }
-        parseCSV(csvIter, csvFormat, schema.fields, projection, row)
+        parseCSV(csvIter, csvFormat, schema.fields)
       }
-
     }
   }
 
@@ -134,19 +129,10 @@ case class CsvRelation protected[spark] (
     sqlContext.sparkContext.textFile(location).first()
   }
 
-  private def schemaCaster(sourceSchema: Seq[AttributeReference]): MutableProjection = {
-    val startSchema = (1 to sourceSchema.length).toSeq.map(
-      index => new AttributeReference(s"C$index", StringType, nullable = true)())
-    val casts = sourceSchema.zipWithIndex.map { case (ar, i) => Cast(startSchema(i), ar.dataType) }
-    new InterpretedMutableProjection(casts, startSchema)
-  }
-
-  private def readCSV(
+  private def univocityParseCSV(
      file: RDD[String],
      header: Seq[String],
-     schemaFields: Seq[StructField],
-     projection: MutableProjection,
-     row: GenericMutableRow) = {
+     schemaFields: Seq[StructField]) = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if(useHeader) file.filter(_ != filterLine) else file
@@ -163,17 +149,18 @@ case class CsvRelation protected[spark] (
             throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
           } else {
             var index: Int = 0
+            val rowArray = new Array[Any](schemaFields.length)
             try {
               index = 0
               while (index < schemaFields.length) {
-                row(index) = tokens(index)
+                rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
                 index = index + 1
               }
-              Some(projection(row))
+              Some(Row.fromSeq(rowArray))
             } catch {
               case aiob: ArrayIndexOutOfBoundsException if permissive =>
-                (index until schemaFields.length).foreach(ind => row(ind) = null)
-                Some(projection(row))
+                (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
+                Some(Row.fromSeq(rowArray))
               case NonFatal(e) if !failFast =>
                 logger.error(s"Exception while parsing line: $tokens. ", e)
                 None
@@ -189,11 +176,10 @@ case class CsvRelation protected[spark] (
   private def parseCSV(
       iter: Iterator[String],
       csvFormat: CSVFormat,
-      schemaFields: Seq[StructField],
-      projection: MutableProjection,
-      row: GenericMutableRow): Iterator[Row] = {
+      schemaFields: Seq[StructField]): Iterator[Row] = {
     iter.flatMap { line =>
       var index: Int = 0
+      val rowArray = new Array[Any](schemaFields.length)
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
         if (records.isEmpty) {
@@ -209,16 +195,16 @@ case class CsvRelation protected[spark] (
             throw new RuntimeException(s"Malformed line in FAILFAST mode: $line")
           } else {
             while (index < schemaFields.length) {
-              row(index) = tokens.get(index)
+              rowArray(index) = TypeCast.castTo(tokens.get(index), schemaFields(index).dataType)
               index = index + 1
             }
-            Some(projection(row))
+            Some(Row.fromSeq(rowArray))
           }
         }
       } catch {
         case aiob: ArrayIndexOutOfBoundsException if permissive =>
-          (index until schemaFields.length).foreach(ind => row(ind) = null)
-          Some(projection(row))
+          (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
+          Some(Row.fromSeq(rowArray))
         case NonFatal(e) if !failFast =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None
@@ -245,9 +231,5 @@ case class CsvRelation protected[spark] (
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
-  }
-
-  private def asAttributes(struct: StructType): Seq[AttributeReference] = {
-    struct.fields.map(field => AttributeReference(field.name, field.dataType, nullable = true)())
   }
 }
