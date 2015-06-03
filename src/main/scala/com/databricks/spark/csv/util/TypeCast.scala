@@ -41,7 +41,7 @@ object TypeCast {
       case _: FloatType => datum.toFloat
       case _: DoubleType => datum.toDouble
       case _: BooleanType => datum.toBoolean
-      case _: DecimalType =>  new BigDecimal(datum.replaceAll(",",""))
+      case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
       // TODO(hossein): would be good to support other common timestamp formats
       case _: TimestampType => Timestamp.valueOf(datum)
       // TODO(hossein): would be good to support other common date formats
