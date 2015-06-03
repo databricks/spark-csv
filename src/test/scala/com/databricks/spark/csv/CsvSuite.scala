@@ -67,6 +67,21 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
+  test("DDL test parsing decimal type") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, priceTag decimal,
+         | comments string, grp string)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sql("SELECT makeName FROM carsTable where priceTag > 60000").collect().size === 1)
+  }
+
+
   test("DSL test for DROPMALFORMED parsing mode") {
     val results = new CsvParser()
       .withParseMode("DROPMALFORMED")
