@@ -181,7 +181,7 @@ class CsvSuite extends FunSuite {
       s"""
         |CREATE TEMPORARY TABLE carsTableIO
         |USING com.databricks.spark.csv
-        |OPTIONS (path "$carsFile", header "false")
+        |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
     sql(s"""
         |CREATE TEMPORARY TABLE carsTableEmpty
@@ -190,7 +190,7 @@ class CsvSuite extends FunSuite {
         |OPTIONS (path "$tempEmptyDir", header "false")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars + 1)
+    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars)
     assert(sql("SELECT * FROM carsTableEmpty").collect().isEmpty)
 
     sql(
@@ -198,7 +198,7 @@ class CsvSuite extends FunSuite {
         |INSERT OVERWRITE TABLE carsTableEmpty
         |SELECT * FROM carsTableIO
       """.stripMargin.replaceAll("\n", " "))
-    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars + 1)
+    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars)
   }
 
   test("DSL save") {
