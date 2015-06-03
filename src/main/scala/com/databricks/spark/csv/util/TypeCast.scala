@@ -15,6 +15,7 @@
  */
 package com.databricks.spark.csv.util
 
+import java.math.BigDecimal
 import java.sql.{Timestamp, Date}
 
 import org.apache.spark.sql.types._
@@ -26,25 +27,26 @@ object TypeCast {
 
   /**
    * Casts given string datum to specified type.
-   * Currently we do not support complex types (ArrayType, MapType, StructType) and DecimalType.
+   * Currently we do not support complex types (ArrayType, MapType, StructType).
    *
    * @param datum string value
    * @param castType SparkSQL type
    */
   private[csv] def castTo(datum: String, castType: DataType): Any = {
     castType match {
-      case ByteType => datum.toByte
-      case ShortType => datum.toShort
-      case IntegerType => datum.toInt
-      case LongType => datum.toLong
-      case FloatType => datum.toFloat
-      case DoubleType => datum.toDouble
-      case BooleanType => datum.toBoolean
+      case _: ByteType => datum.toByte
+      case _: ShortType => datum.toShort
+      case _: IntegerType => datum.toInt
+      case _: LongType => datum.toLong
+      case _: FloatType => datum.toFloat
+      case _: DoubleType => datum.toDouble
+      case _: BooleanType => datum.toBoolean
+      case _: DecimalType =>  new BigDecimal(datum.replaceAll(",",""))
       // TODO(hossein): would be good to support other common timestamp formats
-      case TimestampType => Timestamp.valueOf(datum)
+      case _: TimestampType => Timestamp.valueOf(datum)
       // TODO(hossein): would be good to support other common date formats
-      case DateType => Date.valueOf(datum)
-      case StringType => datum
+      case _: DateType => Date.valueOf(datum)
+      case _: StringType => datum
       case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
     }
   }
