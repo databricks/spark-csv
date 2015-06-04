@@ -123,5 +123,16 @@ df = sqlContext.load(source="com.databricks.spark.csv", header="true", path = "c
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ```
 
+### R API
+Spark 1.4+:
+```R
+sc <- sparkR.init()
+sqlContext <- sparkRSQL.init(sc)
+carsSchema <- structType(structField("year", "integer"), structField("make", "string"), structField("model", "string"), structField("comment", "string"), structField("comment", "string"))
+df <- read.df(sqlContext, "cars.csv", source = “com.databricks.spark.csv”, schema = carsSchema)
+
+write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
+```
+
 ## Building From Source
 This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt package` from the project root. The build configuration includes support for both Scala 2.10 and 2.11.
