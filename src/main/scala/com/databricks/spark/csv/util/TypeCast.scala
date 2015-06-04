@@ -67,7 +67,7 @@ object TypeCast {
         case 'f' => '\f'
         case '\"' => '\"'
         case '\'' => '\''
-        case 'u' if str == "\u0000" => '\u0000'
+        case 'u' if str == """\u0000""" => '\u0000'
         case '0' => '\0'
         case _ => throw new RuntimeException(s"Unsupported special character for delimiter: $str")
       }
