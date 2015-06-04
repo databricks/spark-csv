@@ -28,6 +28,7 @@ import TestSQLContext._
 
 class CsvFastSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
@@ -53,6 +54,31 @@ class CsvFastSuite extends FunSuite {
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
+  test("DDL test with tab separated file") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t", parserLib "univocity")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
+  test("DDL test parsing decimal type") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, priceTag decimal,
+         | comments string, grp string)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t", parserLib "univocity")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sql("SELECT makeName FROM carsTable where priceTag > 60000").collect().size === 1)
   }
 
   test("DSL test for DROPMALFORMED parsing mode") {
@@ -187,7 +213,7 @@ class CsvFastSuite extends FunSuite {
       s"""
          |CREATE TEMPORARY TABLE carsTableIO
          |USING com.databricks.spark.csv
-         |OPTIONS (path "$carsFile", header "false", parserLib "univocity")
+         |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
     sql(s"""
            |CREATE TEMPORARY TABLE carsTableEmpty
@@ -196,7 +222,7 @@ class CsvFastSuite extends FunSuite {
            |OPTIONS (path "$tempEmptyDir", header "false", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars + 1)
+    assert(sql("SELECT * FROM carsTableIO").collect().size === numCars)
     assert(sql("SELECT * FROM carsTableEmpty").collect().isEmpty)
 
     sql(
@@ -204,7 +230,7 @@ class CsvFastSuite extends FunSuite {
          |INSERT OVERWRITE TABLE carsTableEmpty
          |SELECT * FROM carsTableIO
       """.stripMargin.replaceAll("\n", " "))
-    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars + 1)
+    assert(sql("SELECT * FROM carsTableEmpty").collect().size == numCars)
   }
 
   test("DSL save") {
