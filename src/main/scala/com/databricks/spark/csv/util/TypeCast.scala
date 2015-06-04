@@ -58,7 +58,7 @@ object TypeCast {
    *
    */
   private[csv] def toChar(str: String): Char = {
-    if (str.startsWith("\\")) {
+    if (str.charAt(0) == '\\') {
       str.charAt(1)
        match {
         case 't' => '\t'

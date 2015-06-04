@@ -33,8 +33,13 @@ class TypeCastSuite extends FunSuite {
     }
   }
 
-  test("Can parse escaped \t") {
-    val escapedStr = """\t"""
-    assert(TypeCast.toChar(escapedStr) === '\t')
+  test("Can parse escaped characters") {
+    assert(TypeCast.toChar("""\t""") === '\t')
+    assert(TypeCast.toChar("""\r""") === '\r')
+    assert(TypeCast.toChar("""\b""") === '\b')
+    assert(TypeCast.toChar("""\f""") === '\f')
+    assert(TypeCast.toChar("""\"""") === '\"')
+    assert(TypeCast.toChar("""\'""") === '\'')
+    assert(TypeCast.toChar("""\u0000""") === '\u0000')
   }
 }
