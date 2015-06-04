@@ -69,7 +69,8 @@ object TypeCast {
         case '\"' => '\"'
         case '\'' => '\''
         case 'u' if str == """\u0000""" => '\u0000'
-        case _ => throw new IllegalArgumentException(s"Unsupported special character for delimiter: $str")
+        case _ =>
+          throw new IllegalArgumentException(s"Unsupported special character for delimiter: $str")
       }
     } else if (str.length == 1) {
       str.charAt(0)
