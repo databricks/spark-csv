@@ -57,6 +57,7 @@ object TypeCast {
    * character.
    *
    */
+  @throws[IllegalArgumentException]
   private[csv] def toChar(str: String): Char = {
     if (str.charAt(0) == '\\') {
       str.charAt(1)

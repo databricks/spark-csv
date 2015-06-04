@@ -42,4 +42,18 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.toChar("""\'""") === '\'')
     assert(TypeCast.toChar("""\u0000""") === '\u0000')
   }
+
+  test("Does not accept delimiter larger than one character") {
+    val exception = intercept[IllegalArgumentException]{
+      TypeCast.toChar("ab")
+    }
+    assert(exception.getMessage.contains("cannot be more than one character"))
+  }
+
+  test("Throws exception for unsupported escaped characters") {
+    val exception = intercept[IllegalArgumentException]{
+      TypeCast.toChar("""\1""")
+    }
+    assert(exception.getMessage.contains("Unsupported special character for delimiter"))
+  }
 }
