@@ -19,7 +19,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
-import com.databricks.spark.csv.util.ParserLibs
+import com.databricks.spark.csv.util.{ParserLibs, TypeCast}
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
@@ -49,12 +49,7 @@ class DefaultSource
       parameters: Map[String, String],
       schema: StructType) = {
     val path = checkPath(parameters)
-    val delimiter = parameters.getOrElse("delimiter", ",")
-    val delimiterChar = if (delimiter.length == 1) {
-      delimiter.charAt(0)
-    } else {
-      throw new Exception("Delimiter cannot be more than one character.")
-    }
+    val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
 
     val quote = parameters.getOrElse("quote", "\"")
     val quoteChar = if (quote.length == 1) {
@@ -110,7 +105,7 @@ class DefaultSource
 
     CsvRelation(path,
       headerFlag,
-      delimiterChar,
+      delimiter,
       quoteChar,
       escapeChar,
       parseMode,

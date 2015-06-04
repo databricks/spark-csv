@@ -32,4 +32,9 @@ class TypeCastSuite extends FunSuite {
       assert(TypeCast.castTo(strVal, decimalType) === new BigDecimal(decimalVal.toString))
     }
   }
+
+  test("Can parse escaped \t") {
+    val escapedStr = """\t"""
+    assert(TypeCast.toChar(escapedStr) === '\t')
+  }
 }
