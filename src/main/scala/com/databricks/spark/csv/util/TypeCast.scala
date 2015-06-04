@@ -66,7 +66,7 @@ object TypeCast {
         case 'r' => '\r'
         case 'b' => '\b'
         case 'f' => '\f'
-        case '\"' => '\"'
+        case '\"' => '\"' // In case user changes quote char and uses \" as delimiter in options
         case '\'' => '\''
         case 'u' if str == """\u0000""" => '\u0000'
         case _ =>
