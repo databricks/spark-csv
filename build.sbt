@@ -12,8 +12,6 @@ crossScalaVersions := Seq("2.10.4", "2.11.6")
 
 libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.4"
-
 libraryDependencies += "com.univocity" % "univocity-parsers" % "1.5.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"

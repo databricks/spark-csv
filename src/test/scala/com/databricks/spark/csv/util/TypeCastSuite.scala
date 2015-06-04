@@ -32,4 +32,28 @@ class TypeCastSuite extends FunSuite {
       assert(TypeCast.castTo(strVal, decimalType) === new BigDecimal(decimalVal.toString))
     }
   }
+
+  test("Can parse escaped characters") {
+    assert(TypeCast.toChar("""\t""") === '\t')
+    assert(TypeCast.toChar("""\r""") === '\r')
+    assert(TypeCast.toChar("""\b""") === '\b')
+    assert(TypeCast.toChar("""\f""") === '\f')
+    assert(TypeCast.toChar("""\"""") === '\"')
+    assert(TypeCast.toChar("""\'""") === '\'')
+    assert(TypeCast.toChar("""\u0000""") === '\u0000')
+  }
+
+  test("Does not accept delimiter larger than one character") {
+    val exception = intercept[IllegalArgumentException]{
+      TypeCast.toChar("ab")
+    }
+    assert(exception.getMessage.contains("cannot be more than one character"))
+  }
+
+  test("Throws exception for unsupported escaped characters") {
+    val exception = intercept[IllegalArgumentException]{
+      TypeCast.toChar("""\1""")
+    }
+    assert(exception.getMessage.contains("Unsupported special character for delimiter"))
+  }
 }
