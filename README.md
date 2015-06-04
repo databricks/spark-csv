@@ -127,8 +127,7 @@ df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 Spark 1.4+:
 ```R
 sqlContext <- sparkRSQL.init(sc)
-carsSchema <- structType(structField("year", "integer"), structField("make", "string"), structField("model", "string"), structField("comment", "string"), structField("comment", "string"))
-df <- read.df(sqlContext, "cars.csv", source = “com.databricks.spark.csv”, schema = carsSchema)
+df <- read.df(sqlContext, "cars.csv", source = “com.databricks.spark.csv”)
 
 write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
 ```
