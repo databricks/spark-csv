@@ -34,6 +34,7 @@ object TypeCast {
    */
   private[csv] def castTo(datum: String, castType: DataType): Any = {
     castType match {
+      case null => null
       case _: ByteType => datum.toByte
       case _: ShortType => datum.toShort
       case _: IntegerType => datum.toInt
