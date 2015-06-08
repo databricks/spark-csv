@@ -32,6 +32,7 @@ class CsvFastSuite extends FunSuite {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
+  val carsWithNAs = "src/test/resources/missing-values.csv"
   val tempEmptyDir = "target/test/empty2/"
 
   val numCars = 3
@@ -91,6 +92,25 @@ class CsvFastSuite extends FunSuite {
       .collect()
 
     assert(results.size === numCars - 1)
+  }
+
+  test("DSL test for handling NULL values") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib("univocity")
+      .withNullValues(Seq("NULL", "NA"))
+      .csvFile(TestSQLContext, carsWithNAs)
+      .collect()
+
+    assert(results.size === numCars + 1)
+
+    val results2 = new CsvParser()
+      .withUseHeader(true)
+      .withNullValues(Seq("NULL", "NA", "NaN"))
+      .csvFile(TestSQLContext, carsWithNAs)
+      .collect()
+
+    assert(results2.size === numCars + 1)
   }
 
   test("DSL test for FAILFAST parsing mode") {

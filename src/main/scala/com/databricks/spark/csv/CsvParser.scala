@@ -34,6 +34,7 @@ class CsvParser {
   private var ignoreLeadingWhiteSpace: Boolean = false
   private var ignoreTrailingWhiteSpace: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
+  private var nullValues: Seq[String] = Seq("")
 
 
   def withUseHeader(flag: Boolean): CsvParser = {
@@ -81,6 +82,11 @@ class CsvParser {
     this
   }
 
+  def withNullValues(nullValues: Seq[String]): CsvParser = {
+    this.nullValues = nullValues
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -94,7 +100,8 @@ class CsvParser {
       parserLib,
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
-      schema)(sqlContext)
+      schema,
+      nullValues)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 

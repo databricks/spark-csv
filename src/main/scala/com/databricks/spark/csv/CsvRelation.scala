@@ -41,7 +41,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    nullValues: Seq[String] = Seq(""))(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -63,7 +64,7 @@ case class CsvRelation protected[spark] (
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-    val baseRDD = sqlContext.sparkContext.textFile(location)
+    val baseRDD = sqlContext.sparkContext.textFile(location).map(line => line.replaceAll(nullValues.mkString("|"), ""))
 
     val fieldNames = schema.fieldNames
 
