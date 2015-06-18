@@ -15,7 +15,7 @@
  */
 package com.databricks.spark.csv
 
-import java.io.File
+import java.io.{UnsupportedEncodingException, File}
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
@@ -28,6 +28,7 @@ import TestSQLContext._
 
 class CsvFastSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
@@ -45,12 +46,43 @@ class CsvFastSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
+  test("DSL test for iso-8859-1 encoded file") {
+    val dataFrame = TestSQLContext
+      .csvFile(carsFile8859, parserLib = "univocity", charset  = "iso-8859-1", delimiter = 'þ')
+
+    assert(dataFrame.select("year").collect().size === numCars)
+
+    val results = dataFrame.select("comment", "year").where(dataFrame("year") === "1997")
+    assert(results.first.getString(0) === "Go get one now they are þoing fast")
+  }
+
+  test("DSL test bad charset name") {
+    val exception = intercept[SparkException] {
+      val results = TestSQLContext
+        .csvFile(carsFile8859, parserLib = "univocity", charset = "1-9588-osi")
+        .select("year")
+        .collect()
+    }
+    assert(exception.getMessage.contains("1-9588-osi"))
+  }
+
   test("DDL test") {
     sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
+  test("DDL test with charset") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile8859", header "true", parserLib "univocity", charset "iso-8859-1", delimiter "þ")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)

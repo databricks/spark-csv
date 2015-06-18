@@ -17,6 +17,9 @@ package com.databricks.spark.csv
 
 import java.io.IOException
 
+import org.apache.hadoop.io.{Text, LongWritable}
+import org.apache.hadoop.mapred.TextInputFormat
+
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
 
@@ -41,7 +44,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    charset: String = DefaultCharset)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -63,7 +67,14 @@ case class CsvRelation protected[spark] (
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-    val baseRDD = sqlContext.sparkContext.textFile(location)
+    val baseRDD = if (charset == DefaultCharset) {
+      sqlContext.sparkContext.textFile(location)
+    } else {
+      // based on hadoop.io.Text only looking for bytes terminated by newline
+      sqlContext.sparkContext.hadoopFile[LongWritable, Text, TextInputFormat](location).map(
+        pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
+      )
+    }
 
     val fieldNames = schema.fieldNames
 
@@ -126,7 +137,14 @@ case class CsvRelation protected[spark] (
    */
   private lazy val firstLine = {
     // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    sqlContext.sparkContext.textFile(location).first()
+    if (charset == DefaultCharset) {
+      sqlContext.sparkContext.textFile(location).first()
+    } else {
+      // based on hadoop.io.Text only looking for bytes terminated by newline
+      sqlContext.sparkContext.hadoopFile[LongWritable, Text, TextInputFormat](location).map(
+        pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
+      ).first()
+    }
   }
 
   private def univocityParseCSV(

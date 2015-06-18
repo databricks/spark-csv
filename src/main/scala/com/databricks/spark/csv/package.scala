@@ -22,6 +22,8 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 
 package object csv {
 
+  val DefaultCharset = "UTF-8"
+
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
@@ -34,7 +36,8 @@ package object csv {
                 mode: String = "PERMISSIVE",
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = DefaultCharset) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -44,7 +47,8 @@ package object csv {
         parseMode = mode,
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        charset = charset)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -52,7 +56,8 @@ package object csv {
                 useHeader: Boolean = true,
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = DefaultCharset) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -62,7 +67,8 @@ package object csv {
         parseMode = "PERMISSIVE",
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        charset = charset)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

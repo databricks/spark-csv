@@ -102,6 +102,8 @@ class DefaultSource
       throw new Exception("Ignore white space flag can be true or false")
     }
 
+    val charset = parameters.getOrElse("charset", DefaultCharset)
+    // TODO validate charset?
 
     CsvRelation(path,
       headerFlag,
@@ -112,7 +114,8 @@ class DefaultSource
       parserLib,
       ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhiteSpaceFlag,
-      schema)(sqlContext)
+      schema,
+      charset)(sqlContext)
   }
 
   override def createRelation(
