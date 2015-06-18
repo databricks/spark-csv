@@ -101,7 +101,7 @@ class CsvParser {
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
       schema,
-      nullValues)(sqlContext)
+      nullValues.toSet)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
