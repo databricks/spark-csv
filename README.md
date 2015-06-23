@@ -86,7 +86,7 @@ Spark 1.4+:
 import org.apache.spark.sql.SQLContext
 
 SQLContext sqlContext = new SQLContext(sc);
-DataFrame sqlContext.read().format("com.databricks.spark.csv").option("header", "true").load("cars.csv");
+DataFrame df = sqlContext.read().format("com.databricks.spark.csv").option("header", "true").load("cars.csv");
 df.select("year", "model").write().format("com.databricks.spark.csv").save("newcars.csv");
 ```
 
