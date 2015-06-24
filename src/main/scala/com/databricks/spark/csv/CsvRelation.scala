@@ -41,7 +41,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    nullValues: Set[String] = Set(""))(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -153,7 +154,8 @@ case class CsvRelation protected[spark] (
             try {
               index = 0
               while (index < schemaFields.length) {
-                rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+                val token = if (nullValues.contains(tokens(index))) "" else tokens(index)
+                rowArray(index) = TypeCast.castTo(token, schemaFields(index).dataType)
                 index = index + 1
               }
               Some(Row.fromSeq(rowArray))
@@ -195,7 +197,8 @@ case class CsvRelation protected[spark] (
             throw new RuntimeException(s"Malformed line in FAILFAST mode: $line")
           } else {
             while (index < schemaFields.length) {
-              rowArray(index) = TypeCast.castTo(tokens.get(index), schemaFields(index).dataType)
+              val token = if (nullValues.contains(tokens.get(index))) "" else tokens.get(index)
+              rowArray(index) = TypeCast.castTo(token, schemaFields(index).dataType)
               index = index + 1
             }
             Some(Row.fromSeq(rowArray))

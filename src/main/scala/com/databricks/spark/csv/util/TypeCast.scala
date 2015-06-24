@@ -33,21 +33,25 @@ object TypeCast {
    * @param castType SparkSQL type
    */
   private[csv] def castTo(datum: String, castType: DataType): Any = {
-    castType match {
-      case _: ByteType => datum.toByte
-      case _: ShortType => datum.toShort
-      case _: IntegerType => datum.toInt
-      case _: LongType => datum.toLong
-      case _: FloatType => datum.toFloat
-      case _: DoubleType => datum.toDouble
-      case _: BooleanType => datum.toBoolean
-      case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
-      // TODO(hossein): would be good to support other common timestamp formats
-      case _: TimestampType => Timestamp.valueOf(datum)
-      // TODO(hossein): would be good to support other common date formats
-      case _: DateType => Date.valueOf(datum)
-      case _: StringType => datum
-      case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
+    if (datum.isEmpty && castType != StringType) {
+      null
+    } else {
+      castType match {
+        case _: ByteType => datum.toByte
+        case _: ShortType => datum.toShort
+        case _: IntegerType => datum.toInt
+        case _: LongType => datum.toLong
+        case _: FloatType => datum.toFloat
+        case _: DoubleType => datum.toDouble
+        case _: BooleanType => datum.toBoolean
+        case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
+        // TODO(hossein): would be good to support other common timestamp formats
+        case _: TimestampType => Timestamp.valueOf(datum)
+        // TODO(hossein): would be good to support other common date formats
+        case _: DateType => Date.valueOf(datum)
+        case _: StringType => datum
+        case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
+      }
     }
   }
 
