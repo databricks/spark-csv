@@ -17,14 +17,13 @@ package com.databricks.spark.csv
 
 import java.io.IOException
 
-import org.apache.hadoop.io.{Text, LongWritable}
-import org.apache.hadoop.mapred.TextInputFormat
-
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
 
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.{Text, LongWritable}
+import org.apache.hadoop.mapred.TextInputFormat
 import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD

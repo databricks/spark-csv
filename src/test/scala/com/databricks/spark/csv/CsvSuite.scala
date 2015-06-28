@@ -15,7 +15,7 @@
  */
 package com.databricks.spark.csv
 
-import java.io.{File}
+import java.io.File
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
