@@ -15,7 +15,7 @@
  */
 package com.databricks.spark.csv.util
 
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
 
 import org.apache.hadoop.io.{Text, LongWritable}
 import org.apache.hadoop.mapred.TextInputFormat
@@ -23,7 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 private[csv] object TextFile {
-  val DEFAULT_CHARSET = StandardCharsets.UTF_8
+  val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
   def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
     if (Charset.forName(charset) == DEFAULT_CHARSET) {

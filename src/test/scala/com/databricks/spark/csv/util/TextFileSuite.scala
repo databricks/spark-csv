@@ -15,7 +15,7 @@
  */
 package com.databricks.spark.csv.util
 
-import java.nio.charset.{UnsupportedCharsetException, StandardCharsets}
+import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.spark.sql.test.TestSQLContext
 import org.scalatest.FunSuite
@@ -26,8 +26,8 @@ class TextFileSuite extends FunSuite {
   val numLines = 6
   val numColumns = 4
   val smallThorn = '\u00fe' //non-ascii character
-  val utf8 = StandardCharsets.UTF_8.name()
-  val iso88591 = StandardCharsets.ISO_8859_1.name()
+  val utf8 = "utf-8"
+  val iso88591 = "iso-8859-1"
 
   test("read utf-8 encoded file") {
     val baseRDD = TextFile.withCharset(TestSQLContext.sparkContext, carsFile, utf8)
