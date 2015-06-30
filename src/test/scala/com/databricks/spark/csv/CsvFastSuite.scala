@@ -15,7 +15,8 @@
  */
 package com.databricks.spark.csv
 
-import java.io.{UnsupportedEncodingException, File}
+import java.io.File
+import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
@@ -57,7 +58,7 @@ class CsvFastSuite extends FunSuite {
   }
 
   test("DSL test bad charset name") {
-    val exception = intercept[SparkException] {
+    val exception = intercept[UnsupportedCharsetException] {
       val results = TestSQLContext
         .csvFile(carsFile8859, parserLib = "univocity", charset = "1-9588-osi")
         .select("year")

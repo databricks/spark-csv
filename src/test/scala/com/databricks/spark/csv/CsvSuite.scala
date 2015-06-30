@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 import java.io.File
+import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
@@ -64,7 +65,7 @@ class CsvSuite extends FunSuite {
       .withUseHeader(true)
       .withCharset("1-9588-osi")
 
-    val exception = intercept[SparkException] {
+    val exception = intercept[UnsupportedCharsetException] {
       parser.csvFile(TestSQLContext, carsFile)
         .select("year")
         .collect()

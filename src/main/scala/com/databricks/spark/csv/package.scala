@@ -19,10 +19,9 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import com.databricks.spark.csv.util.TextFile
 
 package object csv {
-
-  val DefaultCharset = "UTF-8"
 
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
@@ -37,7 +36,7 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
-                charset: String = DefaultCharset) = {
+                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -57,7 +56,7 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
-                charset: String = DefaultCharset) = {
+                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,

@@ -22,15 +22,13 @@ import scala.util.control.NonFatal
 
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.{Text, LongWritable}
-import org.apache.hadoop.mapred.TextInputFormat
 import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TypeCast}
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile, TypeCast}
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
@@ -44,7 +42,7 @@ case class CsvRelation protected[spark] (
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null,
-    charset: String = DefaultCharset)(@transient val sqlContext: SQLContext)
+    charset: String = TextFile.DEFAULT_CHARSET.name())(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -66,14 +64,7 @@ case class CsvRelation protected[spark] (
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-    val baseRDD = if (charset == DefaultCharset) {
-      sqlContext.sparkContext.textFile(location)
-    } else {
-      // based on hadoop.io.Text only looking for bytes terminated by newline
-      sqlContext.sparkContext.hadoopFile[LongWritable, Text, TextInputFormat](location).map(
-        pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
-      )
-    }
+    val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset)
 
     val fieldNames = schema.fieldNames
 
@@ -135,15 +126,7 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    if (charset == DefaultCharset) {
-      sqlContext.sparkContext.textFile(location).first()
-    } else {
-      // based on hadoop.io.Text only looking for bytes terminated by newline
-      sqlContext.sparkContext.hadoopFile[LongWritable, Text, TextInputFormat](location).map(
-        pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
-      ).first()
-    }
+    TextFile.withCharset(sqlContext.sparkContext, location, charset).first()
   }
 
   private def univocityParseCSV(
