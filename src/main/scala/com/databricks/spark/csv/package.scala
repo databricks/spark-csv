@@ -19,6 +19,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
@@ -34,7 +35,8 @@ package object csv {
                 mode: String = "PERMISSIVE",
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -44,7 +46,8 @@ package object csv {
         parseMode = mode,
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        charset = charset)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -52,7 +55,8 @@ package object csv {
                 useHeader: Boolean = true,
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -62,7 +66,8 @@ package object csv {
         parseMode = "PERMISSIVE",
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        charset = charset)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

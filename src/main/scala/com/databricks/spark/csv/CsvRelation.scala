@@ -28,7 +28,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TypeCast}
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile, TypeCast}
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
@@ -41,7 +41,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    charset: String = TextFile.DEFAULT_CHARSET.name())(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -63,7 +64,7 @@ case class CsvRelation protected[spark] (
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-    val baseRDD = sqlContext.sparkContext.textFile(location)
+    val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset)
 
     val fieldNames = schema.fieldNames
 
@@ -125,8 +126,7 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    // Using Spark to read the first line to be able to handle all Hadoop input (gz, bz, etc.)
-    sqlContext.sparkContext.textFile(location).first()
+    TextFile.withCharset(sqlContext.sparkContext, location, charset).first()
   }
 
   private def univocityParseCSV(

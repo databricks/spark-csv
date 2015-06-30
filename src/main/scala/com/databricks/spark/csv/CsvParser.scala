@@ -18,7 +18,7 @@ package com.databricks.spark.csv
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.types.StructType
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes}
+import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -34,7 +34,7 @@ class CsvParser {
   private var ignoreLeadingWhiteSpace: Boolean = false
   private var ignoreTrailingWhiteSpace: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
-
+  private var charset: String = TextFile.DEFAULT_CHARSET.name()
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -81,6 +81,11 @@ class CsvParser {
     this
   }
 
+  def withCharset(charset: String): CsvParser = {
+    this.charset = charset
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -94,7 +99,8 @@ class CsvParser {
       parserLib,
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
-      schema)(sqlContext)
+      schema,
+      charset)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 

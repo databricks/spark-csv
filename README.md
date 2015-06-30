@@ -35,6 +35,7 @@ When reading files the API accepts several options:
   * `PERMISSIVE`: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
   * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected
   * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
+* `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
