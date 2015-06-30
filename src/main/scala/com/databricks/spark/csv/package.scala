@@ -17,6 +17,7 @@ package com.databricks.spark
 
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.spark.sql.types.DataType
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
@@ -26,7 +27,9 @@ package object csv {
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
   implicit class CsvContext(sqlContext: SQLContext) {
+
     def csvFile(filePath: String,
+                columnsTypeMap: Map[String, DataType] = Map.empty,
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
                 quote: Char = '"',
@@ -44,7 +47,8 @@ package object csv {
         parseMode = mode,
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        columnsTypeMap = columnsTypeMap)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 

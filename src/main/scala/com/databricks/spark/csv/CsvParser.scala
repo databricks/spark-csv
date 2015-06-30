@@ -17,7 +17,7 @@ package com.databricks.spark.csv
 
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DataType, StructType}
 import com.databricks.spark.csv.util.{ParserLibs, ParseModes}
 
 /**
@@ -34,6 +34,7 @@ class CsvParser {
   private var ignoreLeadingWhiteSpace: Boolean = false
   private var ignoreTrailingWhiteSpace: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
+  private var columnsTypeMap: Map[String, DataType] = Map.empty
 
 
   def withUseHeader(flag: Boolean): CsvParser = {
@@ -81,6 +82,11 @@ class CsvParser {
     this
   }
 
+  def withTypedFields(columnsTypeMap: Map[String, DataType]): CsvParser = {
+    this.columnsTypeMap = columnsTypeMap
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -94,7 +100,8 @@ class CsvParser {
       parserLib,
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
-      schema)(sqlContext)
+      schema,
+      columnsTypeMap)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 

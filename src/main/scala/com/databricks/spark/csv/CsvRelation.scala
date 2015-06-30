@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.types.{DataType, StringType, StructField, StructType}
 import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TypeCast}
 import com.databricks.spark.sql.readers._
 
@@ -41,7 +41,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    columnsTypeMap: Map[String, DataType] = Map.empty)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -115,7 +116,7 @@ case class CsvRelation protected[spark] (
       }
       // By default fields are assumed to be StringType
       val schemaFields = header.map { fieldName =>
-        StructField(fieldName.toString, StringType, nullable = true)
+        StructField(fieldName.toString, columnsTypeMap.getOrElse(fieldName, StringType), nullable = true)
       }
       StructType(schemaFields)
     }

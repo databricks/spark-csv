@@ -28,6 +28,8 @@ import TestSQLContext._
 
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsTypedColumnsFile = "src/test/resources/cars-typed.csv"
+  val carsTypedColumnsFailFile = "src/test/resources/cars-typed-fail.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val emptyFile = "src/test/resources/empty.csv"
@@ -129,6 +131,37 @@ class CsvSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
+  test("DSL test typed columns using sparkContext.csvFile") {
+    val typedColumnsMap = Map("price" -> DoubleType, "new" -> BooleanType)
+
+    val expectedColumnNamesAndTheirTypes =
+      Array("year" -> StringType.toString,
+        "make" -> StringType.toString,
+        "model" -> StringType.toString,
+        "comment" -> StringType.toString,
+        "price" -> DoubleType.toString,
+        "new" -> BooleanType.toString,
+        "blank" -> StringType.toString)
+
+    val results = TestSQLContext.csvFile(carsTypedColumnsFile, columnsTypeMap = typedColumnsMap)
+    assume(results.dtypes containsSlice expectedColumnNamesAndTheirTypes)
+  }
+
+  test("DSL test typed values using sparkContext.csvFile") {
+    val typedColumnsMap = Map("price" -> DoubleType, "new" -> BooleanType)
+
+    val results = TestSQLContext.csvFile(carsTypedColumnsFile, columnsTypeMap = typedColumnsMap)
+    assert(results.collect().map(_.getDouble(4)) === Seq(90000.00d, 23000d, 40000.6767d))
+    assert(results.collect().map(_.getBoolean(5)) === Seq(false, true, false))
+  }
+
+  test("Expect parsing error with wrong type for FailFast mode using sparkContext.csvFile") {
+    val typedColumnsMap = Map("price" -> DoubleType, "new" -> BooleanType)
+
+    intercept[SparkException] {
+      TestSQLContext.csvFile(carsTypedColumnsFailFile, columnsTypeMap = typedColumnsMap, mode = "FAILFAST").collect()
+    }
+  }
 
   test("Expect parsing error with wrong delimiter setting using sparkContext.csvFile") {
     intercept[ org.apache.spark.sql.AnalysisException] {
