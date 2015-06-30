@@ -116,7 +116,9 @@ case class CsvRelation protected[spark] (
       }
       // By default fields are assumed to be StringType
       val schemaFields = header.map { fieldName =>
-        StructField(fieldName.toString, columnsTypeMap.getOrElse(fieldName, StringType), nullable = true)
+        StructField(fieldName.toString,
+                    columnsTypeMap.getOrElse(fieldName, StringType),
+                    nullable = true)
       }
       StructType(schemaFields)
     }
