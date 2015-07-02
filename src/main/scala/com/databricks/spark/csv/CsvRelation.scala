@@ -28,7 +28,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TypeCast}
+import com.databricks.spark.csv.util.{ParseModes, ParserLibs, TypeCast}
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
@@ -135,7 +135,15 @@ case class CsvRelation protected[spark] (
      schemaFields: Seq[StructField]) = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
-    val dataLines = if(useHeader) file.filter(_ != filterLine) else file
+    val dataLines = if (useHeader) {
+      file.mapPartitionsWithIndex({
+        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
+      }, true)
+    }
+    else {
+      file
+    }
+
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
         val escapeVal = if(escape == null) '\\' else escape.charValue()

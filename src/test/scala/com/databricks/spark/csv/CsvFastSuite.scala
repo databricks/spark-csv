@@ -240,7 +240,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false"))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
@@ -255,7 +255,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false"), classOf[GzipCodec])
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
@@ -270,7 +270,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true",  "headerPerPart" -> "false", "quote" -> "\""))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
@@ -285,7 +285,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile)
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "!"))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true",  "headerPerPart" -> "false", "quote" -> "!"))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", quote = '!', parserLib = "univocity")
 
@@ -300,7 +300,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "escape-copy.csv"
 
     val escape = TestSQLContext.csvFile(escapeFile, escape='|', quote='"')
-    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true",  "headerPerPart" -> "false", "quote" -> "\""))
 
     val escapeCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
