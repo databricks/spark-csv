@@ -16,9 +16,10 @@
 package com.databricks.spark.csv
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 import com.databricks.spark.csv.util.{ParserLibs, TypeCast}
 
 /**
@@ -102,16 +103,17 @@ class DefaultSource
       throw new Exception("Ignore white space flag can be true or false")
     }
 
+    val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
+      quoteChar = quoteChar,
+      escapeChar = escapeChar,
+      ignoreLeadingWhitespace = ignoreLeadingWhiteSpaceFlag,
+      ignoreTrailingWhitespace = ignoreTrailingWhiteSpaceFlag)
 
     CsvRelation(path,
       headerFlag,
-      delimiter,
-      quoteChar,
-      escapeChar,
+      csvParsingOpts,
       parseMode,
       parserLib,
-      ignoreLeadingWhiteSpaceFlag,
-      ignoreTrailingWhiteSpaceFlag,
       schema)(sqlContext)
   }
 

@@ -34,14 +34,13 @@ import com.databricks.spark.sql.readers._
 case class CsvRelation protected[spark] (
     location: String,
     useHeader: Boolean,
-    delimiter: Char,
-    quote: Char,
-    escape: Character,
+    csvParsingOpts: CSVParsingOpts,
     parseMode: String,
     parserLib: String,
-    ignoreLeadingWhiteSpace: Boolean,
-    ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null)(@transient val sqlContext: SQLContext)
+    userSchema: StructType = null,
+    lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
+    numberParsingOpts: NumberParsingOpts = NumberParsingOpts(),
+    stringParsingOpts: StringParsingOpts = StringParsingOpts())(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -51,8 +50,10 @@ case class CsvRelation protected[spark] (
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
 
-  if((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
-    logger.warn(s"Ignore white space options may not work with Commons parserLib option")
+  if ((csvParsingOpts.ignoreLeadingWhitespace ||
+    csvParsingOpts.ignoreTrailingWhitespace) &&
+    ParserLibs.isCommonsLib(parserLib)) {
+    logger.warn(s"Ignore white space options only supported with univocity parser option")
   }
 
   private val failFast = ParseModes.isFailFastMode(parseMode)
@@ -71,9 +72,9 @@ case class CsvRelation protected[spark] (
       univocityParseCSV(baseRDD, fieldNames, schema.fields)
     } else {
       val csvFormat = CSVFormat.DEFAULT
-        .withDelimiter(delimiter)
-        .withQuote(quote)
-        .withEscape(escape)
+        .withDelimiter(csvParsingOpts.delimiter)
+        .withQuote(csvParsingOpts.quoteChar)
+        .withEscape(csvParsingOpts.escapeChar)
         .withSkipHeaderRecord(false)
         .withHeader(fieldNames: _*)
 
@@ -97,14 +98,16 @@ case class CsvRelation protected[spark] (
       userSchema
     } else {
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
-        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal)
+        val escapeVal = if (csvParsingOpts.escapeChar == null) '\\' else csvParsingOpts.escapeChar.charValue()
+        new LineCsvReader(fieldSep = csvParsingOpts.delimiter,
+          quote = csvParsingOpts.quoteChar,
+          escape = escapeVal)
           .parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
-          .withDelimiter(delimiter)
-          .withQuote(quote)
-          .withEscape(escape)
+          .withDelimiter(csvParsingOpts.delimiter)
+          .withQuote(csvParsingOpts.quoteChar)
+          .withEscape(csvParsingOpts.escapeChar)
           .withSkipHeaderRecord(false)
         CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
       }
@@ -144,17 +147,19 @@ case class CsvRelation protected[spark] (
 
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        val escapeVal = if(csvParsingOpts.escapeChar == null) '\\' else csvParsingOpts.escapeChar.charValue()
         new BulkCsvReader(iter, split,
-          headers = header, fieldSep = delimiter,
-          quote = quote, escape = escapeVal).flatMap { tokens =>
+          headers = header, fieldSep = csvParsingOpts.delimiter,
+          quote = csvParsingOpts.quoteChar, escape = escapeVal).flatMap { tokens =>
 
-          lazy val errorDetail = s"${tokens.mkString(delimiter.toString)}"
+          lazy val errorDetail = s"${tokens.mkString(csvParsingOpts.delimiter.toString)}"
 
-          if (dropMalformed && schemaFields.length != tokens.size) {
+          if (schemaFields.length != tokens.size &&
+            (dropMalformed || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Ignore)) {
             logger.warn(s"Dropping malformed line: $errorDetail")
             None
-          } else if (failFast && schemaFields.length != tokens.size) {
+          } else if (schemaFields.length != tokens.size &&
+            (failFast || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Abort)) {
             throw new RuntimeException(s"Malformed line in FAILFAST mode: $errorDetail")
           } else {
             var index: Int = 0
@@ -162,12 +167,24 @@ case class CsvRelation protected[spark] (
             try {
               index = 0
               while (index < schemaFields.length) {
-                rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+                try {
+                  rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+                } catch {
+                  case _ : NumberFormatException if numberParsingOpts.enable =>
+                    if(numberParsingOpts.nanStrings.contains(tokens(index)))
+                      rowArray(index) = numberParsingOpts.nanValue
+                    else if(tokens(index).isEmpty)
+                      rowArray(index) =
+                        TypeCast.castTo(numberParsingOpts.emptyStringReplace, schemaFields(index).dataType)
+                    else
+                      rowArray(index) = null
+                }
                 index = index + 1
               }
               Some(Row.fromSeq(rowArray))
             } catch {
-              case aiob: ArrayIndexOutOfBoundsException if permissive =>
+              case aiob: ArrayIndexOutOfBoundsException
+                if permissive || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Fill =>
                 (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
                 Some(Row.fromSeq(rowArray))
               case NonFatal(e) if !failFast =>
@@ -236,7 +253,7 @@ case class CsvRelation protected[spark] (
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
-      data.saveAsCsvFile(location, Map("delimiter" -> delimiter.toString))
+      data.saveAsCsvFile(location, Map("delimiter" -> csvParsingOpts.delimiter.toString))
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }

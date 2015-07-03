@@ -35,16 +35,17 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false) = {
+      val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
+        quoteChar = quote,
+        escapeChar = escape,
+        ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhitespace = ignoreTrailingWhiteSpace)
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
-        delimiter = delimiter,
-        quote = quote,
-        escape = escape,
+        csvParsingOpts = csvParsingOpts,
         parseMode = mode,
-        parserLib = parserLib,
-        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        parserLib = parserLib)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -53,16 +54,18 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false) = {
+      val csvParsingOpts = CSVParsingOpts(delimiter = '\t',
+        quoteChar = '"',
+        escapeChar = '\\',
+        ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhitespace = ignoreTrailingWhiteSpace)
+
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
-        delimiter = '\t',
-        quote = '"',
-        escape = '\\',
+        csvParsingOpts = csvParsingOpts,
         parseMode = "PERMISSIVE",
-        parserLib = parserLib,
-        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace)(sqlContext)
+        parserLib = parserLib)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
