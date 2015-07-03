@@ -133,8 +133,6 @@ case class CsvRelation protected[spark] (
      file: RDD[String],
      header: Seq[String],
      schemaFields: Seq[StructField]) = {
-    // If header is set, make sure firstLine is materialized before sending to executors.
-    val filterLine = if (useHeader) firstLine else null
     val dataLines = if (useHeader) {
       file.mapPartitionsWithIndex({
         case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
@@ -150,11 +148,14 @@ case class CsvRelation protected[spark] (
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
           quote = quote, escape = escapeVal).flatMap { tokens =>
+
+          lazy val errorDetail = s"${tokens.mkString(delimiter.toString)}"
+
           if (dropMalformed && schemaFields.length != tokens.size) {
-            logger.warn(s"Dropping malformed line: $tokens")
+            logger.warn(s"Dropping malformed line: $errorDetail")
             None
           } else if (failFast && schemaFields.length != tokens.size) {
-            throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+            throw new RuntimeException(s"Malformed line in FAILFAST mode: $errorDetail")
           } else {
             var index: Int = 0
             val rowArray = new Array[Any](schemaFields.length)
@@ -170,7 +171,7 @@ case class CsvRelation protected[spark] (
                 (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
                 Some(Row.fromSeq(rowArray))
               case NonFatal(e) if !failFast =>
-                logger.error(s"Exception while parsing line: $tokens. ", e)
+                logger.error(s"Exception while parsing line: $errorDetail. ", e)
                 None
             }
           }
