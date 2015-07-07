@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile, TypeCast}
+import org.apache.spark.sql.types._
+import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
@@ -42,7 +42,8 @@ case class CsvRelation protected[spark] (
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null,
-    charset: String = TextFile.DEFAULT_CHARSET.name())(@transient val sqlContext: SQLContext)
+    charset: String = TextFile.DEFAULT_CHARSET.name(),
+    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -62,21 +63,19 @@ case class CsvRelation protected[spark] (
 
   val schema = inferSchema()
 
-  // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
-  def buildScan = {
+  def tokenRdd(header: Array[String]): RDD[Array[String]] = {
+
     val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset)
 
-    val fieldNames = schema.fieldNames
-
     if(ParserLibs.isUnivocityLib(parserLib)) {
-      univocityParseCSV(baseRDD, fieldNames, schema.fields)
+      univocityParseCSV(baseRDD, header)
     } else {
       val csvFormat = CSVFormat.DEFAULT
         .withDelimiter(delimiter)
         .withQuote(quote)
         .withEscape(escape)
         .withSkipHeaderRecord(false)
-        .withHeader(fieldNames: _*)
+        .withHeader(header: _*)
 
       // If header is set, make sure firstLine is materialized before sending to executors.
       val filterLine = if (useHeader) firstLine else null
@@ -88,15 +87,52 @@ case class CsvRelation protected[spark] (
         } else {
           iter
         }
-        parseCSV(csvIter, csvFormat, schema.fields)
+        parseCSV(csvIter, csvFormat)
       }
     }
+
+  }
+
+  // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
+  def buildScan = {
+
+    val schemaFields = schema.fields
+    tokenRdd(schemaFields.map(_.name)).flatMap{ tokens =>
+
+      if (dropMalformed && schemaFields.length != tokens.size) {
+        logger.warn(s"Dropping malformed line: $tokens")
+        None
+      } else if (failFast && schemaFields.length != tokens.size) {
+        throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+      } else {
+        var index: Int = 0
+        val rowArray = new Array[Any](schemaFields.length)
+        try {
+          index = 0
+          while (index < schemaFields.length) {
+            rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+            index = index + 1
+          }
+          Some(Row.fromSeq(rowArray))
+        } catch {
+          case aiob: ArrayIndexOutOfBoundsException if permissive =>
+            (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
+            Some(Row.fromSeq(rowArray))
+          case NonFatal(e) if !failFast =>
+            logger.error(s"Exception while parsing line: $tokens. ", e)
+            None
+        }
+      }
+    }
+
   }
 
   private def inferSchema(): StructType = {
+
     if (this.userSchema != null) {
       userSchema
     } else {
+
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if(escape == null) '\\' else escape.charValue()
         new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal)
@@ -109,16 +145,22 @@ case class CsvRelation protected[spark] (
           .withSkipHeaderRecord(false)
         CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
       }
+
       val header = if (useHeader) {
         firstRow
       } else {
         firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
-      // By default fields are assumed to be StringType
-      val schemaFields = header.map { fieldName =>
-        StructField(fieldName.toString, StringType, nullable = true)
+
+      if (this.inferCsvSchema) {
+        InferSchema(tokenRdd(header), header)
+      } else{
+        // By default fields are assumed to be StringType
+        val schemaFields =  header.map { fieldName =>
+          StructField(fieldName.toString, StringType, nullable = true)
+        }
+        StructType(schemaFields)
       }
-      StructType(schemaFields)
     }
   }
 
@@ -131,8 +173,7 @@ case class CsvRelation protected[spark] (
 
   private def univocityParseCSV(
      file: RDD[String],
-     header: Seq[String],
-     schemaFields: Seq[StructField]) = {
+     header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if(useHeader) file.filter(_ != filterLine) else file
@@ -141,32 +182,7 @@ case class CsvRelation protected[spark] (
         val escapeVal = if(escape == null) '\\' else escape.charValue()
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quote, escape = escapeVal).flatMap { tokens =>
-          if (dropMalformed && schemaFields.length != tokens.size) {
-            logger.warn(s"Dropping malformed line: $tokens")
-            None
-          } else if (failFast && schemaFields.length != tokens.size) {
-            throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
-          } else {
-            var index: Int = 0
-            val rowArray = new Array[Any](schemaFields.length)
-            try {
-              index = 0
-              while (index < schemaFields.length) {
-                rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
-                index = index + 1
-              }
-              Some(Row.fromSeq(rowArray))
-            } catch {
-              case aiob: ArrayIndexOutOfBoundsException if permissive =>
-                (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
-                Some(Row.fromSeq(rowArray))
-              case NonFatal(e) if !failFast =>
-                logger.error(s"Exception while parsing line: $tokens. ", e)
-                None
-            }
-          }
-        }
+          quote = quote, escape = escapeVal)
       }
     }, true)
 
@@ -175,36 +191,17 @@ case class CsvRelation protected[spark] (
 
   private def parseCSV(
       iter: Iterator[String],
-      csvFormat: CSVFormat,
-      schemaFields: Seq[StructField]): Iterator[Row] = {
+      csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
-      var index: Int = 0
-      val rowArray = new Array[Any](schemaFields.length)
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
         if (records.isEmpty) {
           logger.warn(s"Ignoring empty line: $line")
           None
         } else {
-          val tokens = records.head
-          index = 0
-          if (dropMalformed && schemaFields.length != tokens.size) {
-            logger.warn(s"Dropping malformed line: $line")
-            None
-          } else if (failFast && schemaFields.length != tokens.size) {
-            throw new RuntimeException(s"Malformed line in FAILFAST mode: $line")
-          } else {
-            while (index < schemaFields.length) {
-              rowArray(index) = TypeCast.castTo(tokens.get(index), schemaFields(index).dataType)
-              index = index + 1
-            }
-            Some(Row.fromSeq(rowArray))
-          }
+          Some(records.head.toArray)
         }
       } catch {
-        case aiob: ArrayIndexOutOfBoundsException if permissive =>
-          (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
-          Some(Row.fromSeq(rowArray))
         case NonFatal(e) if !failFast =>
           logger.error(s"Exception while parsing line: $line. ", e)
           None

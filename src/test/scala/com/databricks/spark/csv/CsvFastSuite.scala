@@ -341,4 +341,51 @@ class CsvFastSuite extends FunSuite {
     assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
     assert(escapeCopy.head().getString(0) == "\"thing")
   }
+
+  test("DSL test schema inferred correctly") {
+
+    val results = TestSQLContext
+      .csvFile(carsFile, parserLib = "univocity", inferSchema = true)
+
+    assert(results.schema == StructType(List(
+      StructField("year",IntegerType,true),
+      StructField("make",StringType,true),
+      StructField("model",StringType,true),
+      StructField("comment",StringType,true),
+      StructField("blank",StringType,true))
+    ))
+
+    assert(results.collect().size === numCars)
+
+  }
+
+  test("DSL test inferred schema passed through") {
+
+    val dataFrame = TestSQLContext
+      .csvFile(carsFile, parserLib = "univocity", inferSchema = true)
+
+    val results = dataFrame
+      .select("comment", "year")
+      .where(dataFrame("year") === 2012)
+
+    assert(results.first.getString(0) === "No comment")
+    assert(results.first.getInt(1) === 2012)
+
+  }
+
+  test("DDL test with inferred schema") {
+
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile", header "true", parserLib "univocity", inferSchema "true")
+      """.stripMargin.replaceAll("\n", " "))
+
+    val results = sql("select year from carsTable where make = 'Ford'")
+
+    assert(results.first().getInt(0) === 1997)
+
+  }
+
 }
