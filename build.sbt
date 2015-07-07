@@ -12,20 +12,9 @@ libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
 
 libraryDependencies += "com.univocity" % "univocity-parsers" % "1.5.1"
 
-libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
+libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % Provided
 
-libraryDependencies ++= Seq(
-  ("org.apache.spark" %% "spark-sql" % "1.4.0").
-//    exclude("org.mortbay.jetty", "servlet-api").
-    exclude("commons-beanutils", "commons-beanutils-core").
-    exclude("commons-collections", "commons-collections").
-    exclude("commons-logging", "commons-logging").
-    exclude("org.slf4j", "slf4j-api").
-    exclude("org.apache.hadoop", "hadoop-yarn-api").
-    exclude("org.apache.hadoop", "hadoop-yarn-common").
-    exclude("com.esotericsoftware.minlog", "minlog")
-)
-
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.4.0" % Provided
 
 resolvers ++= Seq(
   "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
