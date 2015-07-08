@@ -30,24 +30,27 @@ private[csv] object InferSchema {
    */
   def apply(tokenRdd: RDD[Array[String]], header: Array[String]): StructType = {
 
-    val rootTypes: Array[DataType] = tokenRdd.map { tokens =>
-      tokens.map(inferField)
-    }.treeReduce {
-      case (firstTypeArray, secondTypeArray) =>
-        firstTypeArray.zipAll(secondTypeArray, NullType, NullType).map { case ((a, b)) =>
-          val tpe = findTightestCommonType(a, b).getOrElse(StringType)
-          tpe match {
-            case _: NullType => StringType
-            case other => other
-          }
-        }
-    }
+    val rootTypes = tokenRdd.aggregate(Array[DataType]())(inferRowType, mergeRowTypes)
 
     val stuctFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       StructField(thisHeader, rootType, nullable = true)
     }
 
     StructType(stuctFields)
+  }
+
+  private[csv] def inferRowType(rowSoFar: Array[DataType], next: Array[String]) = {
+    mergeRowTypes(rowSoFar, next.map(inferField))
+  }
+
+  private[csv] def mergeRowTypes(first: Array[DataType], second: Array[DataType]) = {
+    first.zipAll(second, NullType, NullType).map { case ((a, b)) =>
+      val tpe = findTightestCommonType(a, b).getOrElse(StringType)
+      tpe match {
+        case _: NullType => StringType
+        case other => other
+      }
+    }
   }
 
   private[csv] def inferField(field: String): DataType = {
