@@ -16,7 +16,6 @@
 package com.databricks.spark.csv.util
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion
 import org.apache.spark.sql.types._
 
 import scala.util.control.Exception._
@@ -39,7 +38,7 @@ private[csv] object InferSchema {
     }.treeReduce {
       case (firstTypeArray, secondTypeArray) =>
         firstTypeArray.zipAll(secondTypeArray, NullType, NullType).map { case ((a, b)) =>
-          val tpe = HiveTypeCoercion.findTightestCommonType(a, b).getOrElse(StringType)
+          val tpe = findTightestCommonType(a, b).getOrElse(StringType)
           tpe match {
             case _: NullType => StringType
             case other => other
@@ -68,6 +67,41 @@ private[csv] object InferSchema {
       StringType
     }
 
+  }
+
+  /**
+   * Copied from internal Spark api
+   * {@link org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion}
+   */
+  private val numericPrecedence =
+    IndexedSeq(
+      ByteType,
+      ShortType,
+      IntegerType,
+      LongType,
+      FloatType,
+      DoubleType,
+      DecimalType.Unlimited)
+
+  /**
+   * Copied from internal Spark api
+   * {@link org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion}
+   */
+  val findTightestCommonType: (DataType, DataType) => Option[DataType] = {
+    case (t1, t2) if t1 == t2 => Some(t1)
+    case (NullType, t1) => Some(t1)
+    case (t1, NullType) => Some(t1)
+
+    // Promote numeric types to the highest of the two and all numeric types to unlimited decimal
+    case (t1, t2) if Seq(t1, t2).forall(numericPrecedence.contains) =>
+      val index = numericPrecedence.lastIndexWhere(t => t == t1 || t == t2)
+      Some(numericPrecedence(index))
+
+    // Fixed-precision decimals can up-cast into unlimited
+    case (DecimalType.Unlimited, _: DecimalType) => Some(DecimalType.Unlimited)
+    case (_: DecimalType, DecimalType.Unlimited) => Some(DecimalType.Unlimited)
+
+    case _ => None
   }
 
 }
