@@ -40,7 +40,7 @@ private[csv] object InferSchema {
   }
 
   private[csv] def inferRowType(rowSoFar: Array[DataType], next: Array[String]) = {
-    mergeRowTypes(rowSoFar, next.map(inferField))
+    rowSoFar.zipAll(next, NullType, null).map{case (tpe, field) => inferField(tpe, field)}
   }
 
   private[csv] def mergeRowTypes(first: Array[DataType], second: Array[DataType]) = {
@@ -53,20 +53,41 @@ private[csv] object InferSchema {
     }
   }
 
-  private[csv] def inferField(field: String): DataType = {
+  /**
+   * Infer type of string field. Given known type Double, and a string "1", there is no
+   * point checking if it is an Int, as the final type must be Double or higher.
+   */
+  private[csv] def inferField(typeSoFar: DataType, field: String): DataType = {
 
-    if (field == null || field.isEmpty) {
-      NullType
-    } else if ((allCatch opt field.toInt).isDefined) {
-      IntegerType
-    } else if ((allCatch opt field.toLong).isDefined) {
-      LongType
-    } else if ((allCatch opt field.toDouble).isDefined) {
-      DoubleType
+    if (field == null || field.isEmpty){
+      typeSoFar
     } else {
-      StringType
+      typeSoFar match {
+        case NullType => tryParseInteger(field)
+        case IntegerType => tryParseInteger(field)
+        case LongType => tryParseLong(field)
+        case DoubleType => tryParseDouble(field)
+        case StringType => StringType
+      }
     }
+  }
 
+  def tryParseDouble(field: String) = if ((allCatch opt field.toDouble).isDefined){
+    DoubleType
+  } else {
+    StringType
+  }
+
+  def tryParseLong(field: String) = if ((allCatch opt field.toLong).isDefined){
+    LongType
+  }else {
+    tryParseDouble(field)
+  }
+
+  def tryParseInteger(field: String) = if((allCatch opt field.toInt).isDefined){
+    IntegerType
+  } else {
+    tryParseLong(field)
   }
 
   /**
