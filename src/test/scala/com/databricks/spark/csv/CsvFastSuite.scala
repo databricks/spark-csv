@@ -387,5 +387,4 @@ class CsvFastSuite extends FunSuite {
     assert(results.first().getInt(0) === 1997)
 
   }
-
 }

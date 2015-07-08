@@ -90,12 +90,10 @@ case class CsvRelation protected[spark] (
         parseCSV(csvIter, csvFormat)
       }
     }
-
   }
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-
     val schemaFields = schema.fields
     tokenRdd(schemaFields.map(_.name)).flatMap{ tokens =>
 
@@ -124,15 +122,12 @@ case class CsvRelation protected[spark] (
         }
       }
     }
-
   }
 
   private def inferSchema(): StructType = {
-
     if (this.userSchema != null) {
       userSchema
     } else {
-
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if(escape == null) '\\' else escape.charValue()
         new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal)
@@ -145,13 +140,11 @@ case class CsvRelation protected[spark] (
           .withSkipHeaderRecord(false)
         CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
       }
-
       val header = if (useHeader) {
         firstRow
       } else {
         firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
-
       if (this.inferCsvSchema) {
         InferSchema(tokenRdd(header), header)
       } else{

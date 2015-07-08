@@ -390,5 +390,4 @@ class CsvSuite extends FunSuite {
     assert(results.first().getInt(0) === 1997)
 
   }
-
 }

@@ -28,10 +28,7 @@ private[csv] object InferSchema {
    *     2. Merge row types to find common type
    *     3. Replace any null types with string type
    */
-  def apply(
-             tokenRdd: RDD[Array[String]],
-             header: Array[String]
-             ): StructType = {
+  def apply(tokenRdd: RDD[Array[String]], header: Array[String]): StructType = {
 
     val rootTypes: Array[DataType] = tokenRdd.map { tokens =>
       tokens.map(inferField)
@@ -103,5 +100,4 @@ private[csv] object InferSchema {
 
     case _ => None
   }
-
 }
