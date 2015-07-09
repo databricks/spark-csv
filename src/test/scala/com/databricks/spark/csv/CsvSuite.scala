@@ -347,8 +347,10 @@ class CsvSuite extends FunSuite {
 
   test("DSL test schema inferred correctly") {
 
-    val results = TestSQLContext
-      .csvFile(carsFile, inferSchema = true)
+    val results = new CsvParser()
+      .withInferSchema(true)
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsFile)
 
     assert(results.schema == StructType(List(
       StructField("year",IntegerType,true),
