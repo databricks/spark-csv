@@ -23,7 +23,7 @@ import scala.util.control.Exception._
 private[csv] object InferSchema {
 
   /**
-   * Similar to the JSON schema inference. {@link org.apache.spark.sql.json.InferSchema}
+   * Similar to the JSON schema inference. [[org.apache.spark.sql.json.InferSchema]]
    *     1. Infer type of each row
    *     2. Merge row types to find common type
    *     3. Replace any null types with string type
@@ -92,7 +92,7 @@ private[csv] object InferSchema {
 
   /**
    * Copied from internal Spark api
-   * {@link org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion}
+   * [[org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion]]
    */
   private val numericPrecedence =
     IndexedSeq(
@@ -106,7 +106,7 @@ private[csv] object InferSchema {
 
   /**
    * Copied from internal Spark api
-   * {@link org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion}
+   * [[org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion]]
    */
   val findTightestCommonType: (DataType, DataType) => Option[DataType] = {
     case (t1, t2) if t1 == t2 => Some(t1)
