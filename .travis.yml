@@ -7,5 +7,7 @@ jdk:
 sudo: false
 script:
   - sbt -jvm-opts travis/jvmopts.compile compile
-  - sbt -jvm-opts travis/jvmopts.test test
+  - sbt -jvm-opts travis/jvmopts.test coverage test
   - sbt -jvm-opts travis/jvmopts.test scalastyle
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
