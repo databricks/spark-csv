@@ -30,7 +30,8 @@ private[csv] object InferSchema {
    */
   def apply(tokenRdd: RDD[Array[String]], header: Array[String]): StructType = {
 
-    val rootTypes = tokenRdd.aggregate(Array[DataType]())(inferRowType, mergeRowTypes)
+    val startType = Array.fill[DataType](header.length)(NullType)
+    val rootTypes = tokenRdd.aggregate(startType)(inferRowType, mergeRowTypes)
 
     val stuctFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       StructField(thisHeader, rootType, nullable = true)
@@ -40,7 +41,12 @@ private[csv] object InferSchema {
   }
 
   private[csv] def inferRowType(rowSoFar: Array[DataType], next: Array[String]) = {
-    rowSoFar.zipAll(next, NullType, null).map{case (tpe, field) => inferField(tpe, field)}
+    var i = 0
+    while(i < math.min(rowSoFar.length, next.length)){  // May have columns on right missing.
+      rowSoFar(i) = inferField(rowSoFar(i), next(i))
+      i+=1
+    }
+    rowSoFar
   }
 
   private[csv] def mergeRowTypes(first: Array[DataType], second: Array[DataType]) = {
