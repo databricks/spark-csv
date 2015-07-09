@@ -3,6 +3,7 @@
 A library for parsing and querying CSV data with Apache Spark, for Spark SQL and DataFrames.
 
 [![Build Status](https://travis-ci.org/databricks/spark-csv.svg?branch=master)](https://travis-ci.org/databricks/spark-csv)
+[![codecov.io](http://codecov.io/github/databricks/spark-csv/coverage.svg?branch=master)](http://codecov.io/github/databricks/spark-csv?branch=master)
 
 ## Requirements
 
