@@ -116,9 +116,6 @@ case class CsvRelation protected[spark] (
           case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
-          case NonFatal(e) if !failFast =>
-            logger.error(s"Exception while parsing line: $tokens. ", e)
-            None
         }
       }
     }
