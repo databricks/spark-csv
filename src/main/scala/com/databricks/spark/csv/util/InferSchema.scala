@@ -118,10 +118,6 @@ private[csv] object InferSchema {
       val index = numericPrecedence.lastIndexWhere(t => t == t1 || t == t2)
       Some(numericPrecedence(index))
 
-    // Fixed-precision decimals can up-cast into unlimited
-    case (DecimalType.Unlimited, _: DecimalType) => Some(DecimalType.Unlimited)
-    case (_: DecimalType, DecimalType.Unlimited) => Some(DecimalType.Unlimited)
-
     case _ => None
   }
 }

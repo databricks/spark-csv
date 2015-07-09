@@ -19,5 +19,13 @@ class InferSchemaSuite extends FunSuite {
     assert(InferSchema.inferField(LongType, "test") == StringType)
     assert(InferSchema.inferField(IntegerType, "1.0") == DoubleType)
     assert(InferSchema.inferField(DoubleType, null) == DoubleType)
+    assert(InferSchema.inferField(DoubleType, "test") == StringType)
   }
+
+  test("Type arrays are merged to highest common type"){
+    assert(InferSchema.mergeRowTypes(Array(StringType), Array(DoubleType)).deep == Array(StringType).deep)
+    assert(InferSchema.mergeRowTypes(Array(IntegerType), Array(LongType)).deep == Array(LongType).deep)
+    assert(InferSchema.mergeRowTypes(Array(DoubleType), Array(LongType)).deep == Array(DoubleType).deep)
+  }
+
 }
