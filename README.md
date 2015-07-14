@@ -12,17 +12,25 @@ This library requires Spark 1.3+
 ## Linking
 You can link against this library in your program at the following coordiates:
 
+### Scala 2.10
+```
+groupId: com.databricks
+artifactId: spark-csv_2.10
+version: 1.1.0
+```
+### Scala 2.11
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.0.3
+version: 1.1.0
 ```
+
 
 ## Using with Spark shell
 This package can be added to  Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.0.3
+$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.1.0
 ```
 
 ## Features
