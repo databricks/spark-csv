@@ -36,7 +36,8 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
-                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
+                charset: String = TextFile.DEFAULT_CHARSET.name(),
+                inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -47,7 +48,8 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
-        charset = charset)(sqlContext)
+        charset = charset,
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -56,7 +58,8 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
-                charset: String = TextFile.DEFAULT_CHARSET.name()) = {
+                charset: String = TextFile.DEFAULT_CHARSET.name(),
+                inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
@@ -67,7 +70,8 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
-        charset = charset)(sqlContext)
+        charset = charset,
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

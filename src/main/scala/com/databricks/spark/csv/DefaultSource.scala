@@ -105,6 +105,15 @@ class DefaultSource
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
 
+    val inferSchema = parameters.getOrElse("inferSchema", "false")
+    val inferSchemaFlag = if(inferSchema == "false") {
+      false
+    } else if(inferSchema == "true") {
+      true
+    } else {
+      throw new Exception("Infer schema flag can be true or false")
+    }
+
     CsvRelation(path,
       headerFlag,
       delimiter,
@@ -115,7 +124,8 @@ class DefaultSource
       ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhiteSpaceFlag,
       schema,
-      charset)(sqlContext)
+      charset,
+      inferSchemaFlag)(sqlContext)
   }
 
   override def createRelation(

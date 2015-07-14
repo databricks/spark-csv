@@ -35,6 +35,7 @@ class CsvParser {
   private var ignoreTrailingWhiteSpace: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
   private var charset: String = TextFile.DEFAULT_CHARSET.name()
+  private var inferSchema: Boolean = false
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -86,6 +87,11 @@ class CsvParser {
     this
   }
 
+  def withInferSchema(inferSchema: Boolean) = {
+    this.inferSchema = inferSchema
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -100,7 +106,8 @@ class CsvParser {
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
       schema,
-      charset)(sqlContext)
+      charset,
+      inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
