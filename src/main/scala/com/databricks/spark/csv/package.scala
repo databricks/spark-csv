@@ -17,8 +17,9 @@ package com.databricks.spark
 
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.spark.rdd.RDD
 
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrameReader, DataFrame, SQLContext}
 import com.databricks.spark.csv.util.TextFile
 
 package object csv {
@@ -26,7 +27,7 @@ package object csv {
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
-  implicit class CsvContext(sqlContext: SQLContext) {
+  implicit class CsvContext(sqlContext: SQLContext) extends Serializable{
     def csvFile(filePath: String,
                 useHeader: Boolean = true,
                 delimiter: Char = ',',
@@ -40,7 +41,8 @@ package object csv {
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
-        location = filePath,
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        location = Some(filePath),
         useHeader = useHeader,
         delimiter = delimiter,
         quote = quote,
@@ -63,7 +65,8 @@ package object csv {
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
-        location = filePath,
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        location = Some(filePath),
         useHeader = useHeader,
         delimiter = '\t',
         quote = '"',
@@ -171,4 +174,5 @@ package object csv {
       }
     }
   }
+
 }
