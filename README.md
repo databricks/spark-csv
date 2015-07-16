@@ -45,6 +45,7 @@ When reading files the API accepts several options:
   * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected
   * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
+* `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
@@ -136,6 +137,9 @@ df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
 ### R API
 Spark 1.4+:
 ```R
+library(SparkR)
+
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.1.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv")
 
