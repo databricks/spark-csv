@@ -29,25 +29,33 @@ object TypeCast {
    * Casts given string datum to specified type.
    * Currently we do not support complex types (ArrayType, MapType, StructType).
    *
+   * For string types, this is simply the datum. For other types.
+   * For other nullable types, this is null if the string datum is empty.
+   *
    * @param datum string value
    * @param castType SparkSQL type
    */
-  private[csv] def castTo(datum: String, castType: DataType): Any = {
-    castType match {
-      case _: ByteType => datum.toByte
-      case _: ShortType => datum.toShort
-      case _: IntegerType => datum.toInt
-      case _: LongType => datum.toLong
-      case _: FloatType => datum.toFloat
-      case _: DoubleType => datum.toDouble
-      case _: BooleanType => datum.toBoolean
-      case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
-      // TODO(hossein): would be good to support other common timestamp formats
-      case _: TimestampType => Timestamp.valueOf(datum)
-      // TODO(hossein): would be good to support other common date formats
-      case _: DateType => Date.valueOf(datum)
-      case _: StringType => datum
-      case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
+  private[csv] def castTo(datum: String, castType: DataType, nullable: Boolean = true): Any = {
+    if (castType.isInstanceOf[StringType]){
+      datum
+    } else if (nullable && datum == ""){
+      null
+    } else {
+      castType match {
+        case _: ByteType => datum.toByte
+        case _: ShortType => datum.toShort
+        case _: IntegerType => datum.toInt
+        case _: LongType => datum.toLong
+        case _: FloatType => datum.toFloat
+        case _: DoubleType => datum.toDouble
+        case _: BooleanType => datum.toBoolean
+        case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
+        // TODO(hossein): would be good to support other common timestamp formats
+        case _: TimestampType => Timestamp.valueOf(datum)
+        // TODO(hossein): would be good to support other common date formats
+        case _: DateType => Date.valueOf(datum)
+        case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
+      }
     }
   }
 

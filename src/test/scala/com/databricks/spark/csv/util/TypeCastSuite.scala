@@ -19,7 +19,7 @@ import java.math.BigDecimal
 
 import org.scalatest.FunSuite
 
-import org.apache.spark.sql.types.DecimalType
+import org.apache.spark.sql.types.{StringType, IntegerType, DecimalType}
 
 class TypeCastSuite extends FunSuite {
 
@@ -55,5 +55,21 @@ class TypeCastSuite extends FunSuite {
       TypeCast.toChar("""\1""")
     }
     assert(exception.getMessage.contains("Unsupported special character for delimiter"))
+  }
+
+  test("Nullable types are handled"){
+    assert(TypeCast.castTo("", IntegerType, nullable = true) == null)
+  }
+
+  test("String type should always return the same as the input"){
+    assert(TypeCast.castTo("", StringType, nullable = true) == "")
+    assert(TypeCast.castTo("", StringType, nullable = false) == "")
+  }
+
+  test("Throws exception for empty string with non null type"){
+    val exception = intercept[NumberFormatException]{
+      TypeCast.castTo("", IntegerType, nullable = false)
+    }
+    assert(exception.getMessage.contains("For input string: \"\""))
   }
 }
