@@ -32,6 +32,7 @@ class CsvFastSuite extends FunSuite {
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty2/"
@@ -385,6 +386,21 @@ class CsvFastSuite extends FunSuite {
     val results = sql("select year from carsTable where make = 'Ford'")
 
     assert(results.first().getInt(0) === 1997)
+
+  }
+
+  test("DSL test nullable fields"){
+
+    val results = new CsvParser()
+      .withSchema(StructType(List(StructField("name", StringType, false), StructField("age", IntegerType, true))))
+      .withUseHeader(true)
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, nullNumbersFile)
+      .collect()
+
+    assert(results.head.toSeq == Seq("alice", 35))
+    assert(results(1).toSeq == Seq("bob", null))
+    assert(results(2).toSeq == Seq("", 24))
 
   }
 }
