@@ -36,9 +36,7 @@ object TypeCast {
    * @param castType SparkSQL type
    */
   private[csv] def castTo(datum: String, castType: DataType, nullable: Boolean = true): Any = {
-    if (castType.isInstanceOf[StringType]){
-      datum
-    } else if (nullable && datum == ""){
+    if (datum == "" && nullable && !castType.isInstanceOf[StringType]){
       null
     } else {
       castType match {
@@ -54,6 +52,7 @@ object TypeCast {
         case _: TimestampType => Timestamp.valueOf(datum)
         // TODO(hossein): would be good to support other common date formats
         case _: DateType => Date.valueOf(datum)
+        case _: StringType => datum
         case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")
       }
     }
