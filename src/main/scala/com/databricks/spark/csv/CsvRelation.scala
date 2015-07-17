@@ -108,7 +108,8 @@ case class CsvRelation protected[spark] (
         try {
           index = 0
           while (index < schemaFields.length) {
-            rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+            val field = schemaFields(index)
+            rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable)
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))
