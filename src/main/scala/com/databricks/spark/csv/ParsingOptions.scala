@@ -84,4 +84,5 @@ case class CSVParsingOpts(var delimiter: Character = ',',
                           var quoteChar: Character = '"',
                           var escapeChar: Character = '\\',
                           var ignoreLeadingWhitespace: Boolean = true,
-                          var ignoreTrailingWhitespace: Boolean = true)
+                          var ignoreTrailingWhitespace: Boolean = true,
+                          var numParts: Int = 0)

@@ -64,7 +64,7 @@ case class CsvRelation protected[spark] (
 
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
-    val baseRDD = sqlContext.sparkContext.textFile(location)
+    val baseRDD = sqlContext.sparkContext.textFile(location, csvParsingOpts.numParts)
 
     val fieldNames = schema.fieldNames
 
