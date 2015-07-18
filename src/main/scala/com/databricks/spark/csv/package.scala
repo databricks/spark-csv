@@ -123,8 +123,8 @@ package object csv {
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
 
-      val isSparse: Array[Boolean] =  dataFrame.columns.flatMap { colName: String =>
-        if (sparseColInfo.contains(colName)) {
+      val isSparse: Array[Boolean] = dataFrame.columns.flatMap { colName: String =>
+        if (sparseColInfo != null && sparseColInfo.contains(colName)) {
           Array.fill(sparseColInfo(colName).size)(true)
         } else {
           Array(false)
