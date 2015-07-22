@@ -43,7 +43,8 @@ case class CsvRelation protected[spark] (
     ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null,
     charset: String = TextFile.DEFAULT_CHARSET.name(),
-    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+    inferCsvSchema: Boolean,
+    columnsTypeMap: Map[String, DataType] = Map.empty)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -145,10 +146,13 @@ case class CsvRelation protected[spark] (
       }
       if (this.inferCsvSchema) {
         InferSchema(tokenRdd(header), header)
-      } else{
+      } else {
         // By default fields are assumed to be StringType
         val schemaFields =  header.map { fieldName =>
-          StructField(fieldName.toString, StringType, nullable = true)
+          StructField(
+            fieldName.toString,
+            columnsTypeMap.getOrElse(fieldName, StringType),
+            nullable = true)
         }
         StructType(schemaFields)
       }
