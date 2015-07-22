@@ -37,6 +37,7 @@ case class CsvRelation protected[spark] (
     delimiter: Char,
     quote: Char,
     escape: Character,
+    commentMarker: Character,
     parseMode: String,
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
@@ -45,6 +46,11 @@ case class CsvRelation protected[spark] (
     charset: String = TextFile.DEFAULT_CHARSET.name(),
     inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
+
+  /**
+   * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
+   */
+  private val MAX_COMMENT_LINES_IN_HEADER = 100
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
@@ -76,6 +82,7 @@ case class CsvRelation protected[spark] (
         .withEscape(escape)
         .withSkipHeaderRecord(false)
         .withHeader(header: _*)
+        .withCommentMarker(commentMarker)
 
       // If header is set, make sure firstLine is materialized before sending to executors.
       val filterLine = if (useHeader) firstLine else null
@@ -159,8 +166,17 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    TextFile.withCharset(sqlContext.sparkContext, location, charset).first()
-  }
+    val csv = TextFile.withCharset(sqlContext.sparkContext, location, charset)
+    if(commentMarker == null) {
+      csv.first()
+    } else {
+      csv.take(MAX_COMMENT_LINES_IN_HEADER)
+        .find(! _.startsWith(commentMarker.toString)) match {
+        case Some(line) => line
+        case None => throw new RuntimeException(s"No uncommented header line in first $MAX_COMMENT_LINES_IN_HEADER lines")
+      }
+    }
+   }
 
   private def univocityParseCSV(
      file: RDD[String],
