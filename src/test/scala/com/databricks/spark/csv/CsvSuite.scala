@@ -413,7 +413,7 @@ class CsvSuite extends FunSuite {
   test("Commented lines in CSV data") {
     val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
-      .withComment('#')
+      .withComment('~')
       .csvFile(TestSQLContext, commentsFile)
       .collect()
 

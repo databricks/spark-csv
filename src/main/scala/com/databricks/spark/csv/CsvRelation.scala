@@ -50,7 +50,7 @@ case class CsvRelation protected[spark] (
   /**
    * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
    */
-  private val MAX_COMMENT_LINES_IN_HEADER = 100
+  private val MAX_COMMENT_LINES_IN_HEADER = 10
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
@@ -187,9 +187,13 @@ case class CsvRelation protected[spark] (
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
         val escapeVal = if(escape == null) '\\' else escape.charValue()
+
+        // Note: univocity supports # comments by default, so we preserve that here
+        // to avoid a change in default behavior
+        val commentChar: Char = if(commentMarker == null) '#' else commentMarker
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quote, escape = escapeVal)
+          quote = quote, escape = escapeVal, commentMarker = commentChar)
       }
     }, true)
 
