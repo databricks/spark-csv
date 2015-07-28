@@ -23,9 +23,15 @@ class InferSchemaSuite extends FunSuite {
   }
 
   test("Type arrays are merged to highest common type"){
-    assert(InferSchema.mergeRowTypes(Array(StringType), Array(DoubleType)).deep == Array(StringType).deep)
-    assert(InferSchema.mergeRowTypes(Array(IntegerType), Array(LongType)).deep == Array(LongType).deep)
-    assert(InferSchema.mergeRowTypes(Array(DoubleType), Array(LongType)).deep == Array(DoubleType).deep)
+    assert(
+      InferSchema.mergeRowTypes(Array(StringType),
+      Array(DoubleType)).deep == Array(StringType).deep)
+    assert(
+      InferSchema.mergeRowTypes(Array(IntegerType),
+      Array(LongType)).deep == Array(LongType).deep)
+    assert(
+      InferSchema.mergeRowTypes(Array(DoubleType),
+      Array(LongType)).deep == Array(DoubleType).deep)
   }
 
 }
