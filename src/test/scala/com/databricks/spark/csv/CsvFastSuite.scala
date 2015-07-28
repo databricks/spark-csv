@@ -84,7 +84,8 @@ class CsvFastSuite extends FunSuite {
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |USING com.databricks.spark.csv
-         |OPTIONS (path "$carsFile8859", header "true", parserLib "univocity", charset "iso-8859-1", delimiter "þ")
+         |OPTIONS (path "$carsFile8859", header "true", parserLib "univocity",
+         |charset "iso-8859-1", delimiter "þ")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
@@ -158,7 +159,12 @@ class CsvFastSuite extends FunSuite {
 
   test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
     val results =
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '\'', parserLib = "univocity")
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = '|',
+        quote = '\'',
+        parserLib = "univocity")
         .select("year")
         .collect()
 
@@ -167,7 +173,12 @@ class CsvFastSuite extends FunSuite {
 
   test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
     intercept[ org.apache.spark.sql.AnalysisException] {
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = '\'', parserLib = "univocity")
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = ',',
+        quote = '\'',
+        parserLib = "univocity")
         .select("year")
         .collect()
     }
@@ -175,7 +186,12 @@ class CsvFastSuite extends FunSuite {
 
   test("Expect wrong parsing results with wrong quote setting using sparkContext.csvFile") {
     val results =
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '"', parserLib = "univocity")
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = '|',
+        quote = '"',
+        parserLib = "univocity")
         .select("year")
         .collect()
 
@@ -188,7 +204,8 @@ class CsvFastSuite extends FunSuite {
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |USING com.databricks.spark.csv
-         |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|", parserLib "univocity")
+         |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|",
+         |parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
