@@ -67,7 +67,7 @@ class DefaultSource
       throw new Exception("Escape character cannot be more than one character.")
     }
 
-    val comment = parameters.getOrElse("comment", null)
+    val comment = parameters.getOrElse("comment", "#")
     val commentChar: Character = if (comment == null) {
       null
     } else if (comment.length == 1) {

@@ -29,7 +29,7 @@ class CsvParser {
   private var delimiter: Character = ','
   private var quote: Character = '"'
   private var escape: Character = null
-  private var comment: Character = null
+  private var comment: Character = '#'
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
   private var ignoreLeadingWhiteSpace: Boolean = false

@@ -173,7 +173,8 @@ case class CsvRelation protected[spark] (
       csv.take(MAX_COMMENT_LINES_IN_HEADER)
         .find(! _.startsWith(commentMarker.toString)) match {
         case Some(line) => line
-        case None => throw new RuntimeException(s"No uncommented header line in first $MAX_COMMENT_LINES_IN_HEADER lines")
+        case None =>
+          throw new RuntimeException(s"No uncommented header line in first $MAX_COMMENT_LINES_IN_HEADER lines")
       }
     }
    }
