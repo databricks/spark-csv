@@ -56,11 +56,12 @@ object ParsingOptions {
  * @param nanStrings these strings are NaNs
  * @param enable make this false to stop attempting to parse numbers i.e. treat them as strings
  */
-case class RealNumberParsingOpts(var nanStrings: Set[String] =  ParsingOptions.defaultNaNStrings,
-                                 var infPosStrings: Set[String] = ParsingOptions.defaultInfPosString,
-                                 var infNegStrings: Set[String] = ParsingOptions.defaultInfNegString,
-                                 var nullStrings: Set[String] = ParsingOptions.defaultNullStrings,
-                                 var enable: Boolean = true)
+case class RealNumberParsingOpts(
+    var nanStrings: Set[String] = ParsingOptions.defaultNaNStrings,
+    var infPosStrings: Set[String] = ParsingOptions.defaultInfPosString,
+    var infNegStrings: Set[String] = ParsingOptions.defaultInfNegString,
+    var nullStrings: Set[String] = ParsingOptions.defaultNullStrings,
+    var enable: Boolean = true)
 
 /**
  * Options to control parsing of integral numbers e.g. the types Int and Long
@@ -81,13 +82,14 @@ case class StringParsingOpts(var emptyStringReplace: String = "",
  * @param badLinePolicy abort, ignore line or fill with nulls when a bad line is encountered
  * @param fillValue if line exception policy is to fill in the blanks, use this value to fill
  */
-case class LineParsingOpts(var badLinePolicy: LineExceptionPolicy.EnumVal = LineExceptionPolicy.Fill,
-                           var fillValue: String = "")
+case class LineParsingOpts(
+   var badLinePolicy: LineExceptionPolicy.EnumVal = LineExceptionPolicy.Fill,
+   var fillValue: String = "")
 
 /**
  * CSV parsing options
- * @param quoteChar fields containing delimiters, other special chars are quoted using this character
- *                  e.g. "this is a comma ,"
+ * @param quoteChar fields containing delimiters, other special chars are quoted using this
+ *                  character e.g. "this is a comma ,"
  * @param escapeChar if a quote character appears in a field, it is escaped using this
  *                   e.g. "this is a quote \""
  * @param ignoreLeadingWhitespace ignore white space before a field

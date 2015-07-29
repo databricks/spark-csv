@@ -41,7 +41,8 @@ case class CsvRelation protected[spark] (
     lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
     realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
     intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
-    stringParsingOpts: StringParsingOpts = StringParsingOpts())(@transient val sqlContext: SQLContext)
+    stringParsingOpts: StringParsingOpts = StringParsingOpts())
+                                        (@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -99,7 +100,8 @@ case class CsvRelation protected[spark] (
       userSchema
     } else {
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if (csvParsingOpts.escapeChar == null) '\\' else csvParsingOpts.escapeChar.charValue()
+        val escapeVal = if (csvParsingOpts.escapeChar == null) '\\'
+          else csvParsingOpts.escapeChar.charValue()
         new LineCsvReader(fieldSep = csvParsingOpts.delimiter,
           quote = csvParsingOpts.quoteChar,
           escape = escapeVal)
@@ -139,7 +141,7 @@ case class CsvRelation protected[spark] (
      schemaFields: Seq[StructField]) = {
     val dataLines = if (useHeader) {
       file.mapPartitionsWithIndex({
-        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter  //FIXME: empty partition?
+        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
       }, true)
     }
     else {
@@ -148,7 +150,8 @@ case class CsvRelation protected[spark] (
 
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
-        val escapeVal = if(csvParsingOpts.escapeChar == null) '\\' else csvParsingOpts.escapeChar.charValue()
+        val escapeVal = if(csvParsingOpts.escapeChar == null) '\\'
+          else csvParsingOpts.escapeChar.charValue()
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = csvParsingOpts.delimiter,
           quote = csvParsingOpts.quoteChar, escape = escapeVal,
@@ -173,27 +176,33 @@ case class CsvRelation protected[spark] (
                 try {
                   rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
                 } catch {
-                  case e : NumberFormatException if realNumOpts.enable &&
-                    (schemaFields(index).dataType == DoubleType ||  schemaFields(index).dataType == FloatType) =>
+                  case e: NumberFormatException if realNumOpts.enable &&
+                    (schemaFields(index).dataType == DoubleType ||
+                      schemaFields(index).dataType == FloatType) =>
 
-                    rowArray(index) = if (realNumOpts.nullStrings.contains(tokens(index)))
+                    rowArray(index) = if (realNumOpts.nullStrings.contains(tokens(index))) {
                       null
-                    else if (realNumOpts.nanStrings.contains(tokens(index)))
+                    } else if (realNumOpts.nanStrings.contains(tokens(index))) {
                       TypeCast.castTo("NaN", schemaFields(index).dataType)
-                    else if (realNumOpts.infPosStrings.contains(tokens(index)))
+                    } else if (realNumOpts.infPosStrings.contains(tokens(index))) {
                       TypeCast.castTo("Infinity", schemaFields(index).dataType)
-                    else if (realNumOpts.infNegStrings.contains(tokens(index)))
+                    } else if (realNumOpts.infNegStrings.contains(tokens(index))) {
                       TypeCast.castTo("-Infinity", schemaFields(index).dataType)
-                    else
-                      throw new IllegalStateException(s"Failed to parse as double/float number ${tokens(index)}")
+                    } else {
+                      throw new IllegalStateException(
+                        s"Failed to parse as double/float number ${tokens(index)}")
+                    }
 
                   case _ : NumberFormatException if intNumOpts.enable &&
-                    (schemaFields(index).dataType == IntegerType ||  schemaFields(index).dataType == LongType) =>
+                    (schemaFields(index).dataType == IntegerType ||
+                      schemaFields(index).dataType == LongType) =>
 
-                    rowArray(index) = if (intNumOpts.nullStrings.contains(tokens(index)))
+                    rowArray(index) = if (intNumOpts.nullStrings.contains(tokens(index))) {
                       null
-                    else
-                      throw new IllegalStateException(s"Failed to parse as int/long number ${tokens(index)}")
+                    } else {
+                      throw new IllegalStateException(
+                        s"Failed to parse as int/long number ${tokens(index)}")
+                    }
                 }
                 index = index + 1
               }
@@ -202,7 +211,8 @@ case class CsvRelation protected[spark] (
               case aiob: ArrayIndexOutOfBoundsException
                 if permissive || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Fill =>
                 (index until schemaFields.length).foreach { ind =>
-                  rowArray(ind) = TypeCast.castTo(lineExceptionPolicy.fillValue, schemaFields(index).dataType)
+                  rowArray(ind) = TypeCast.castTo(lineExceptionPolicy.fillValue,
+                    schemaFields(index).dataType)
                 }
                 Some(Row.fromSeq(rowArray))
               case NonFatal(e) if !failFast =>

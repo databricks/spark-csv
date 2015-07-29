@@ -144,10 +144,11 @@ package object csv {
       }
 
       val header = if (generateHeader) {
-        if (sparseColInfo == null)
+        if (sparseColInfo == null) {
           csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
-        else
+        } else {
           makeHeader
+        }
       } else {
         "" // There is no need to generate header in this case
       }
