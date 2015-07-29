@@ -36,8 +36,8 @@ package object csv {
                 escape: Character = null,
                 mode: String = "PERMISSIVE",
                 parserLib: String = "COMMONS",
-                ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreLeadingWhiteSpace: Boolean = true,
+                ignoreTrailingWhiteSpace: Boolean = true) = {
       val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
         quoteChar = quote,
         escapeChar = escape,

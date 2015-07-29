@@ -28,7 +28,8 @@ class CsvParser {
   private var useHeader: Boolean = false
   private var csvParsingOpts: CSVParsingOpts = CSVParsingOpts()
   private var lineParsingOpts: LineParsingOpts = LineParsingOpts()
-  private var numberParsingOpts: NumberParsingOpts = NumberParsingOpts()
+  private var realNumberParsingOpts: RealNumberParsingOpts = RealNumberParsingOpts()
+  private var intNumberParsingOpts: IntNumberParsingOpts = IntNumberParsingOpts()
   private var stringParsingOpts: StringParsingOpts = StringParsingOpts()
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
@@ -89,10 +90,16 @@ class CsvParser {
     this
   }
 
-  def withNumberParsingOpts(numberParsingOpts: NumberParsingOpts) = {
-    this.numberParsingOpts = numberParsingOpts
+  def withRealNumberParsingOpts(numberParsingOpts: RealNumberParsingOpts) = {
+    this.realNumberParsingOpts = numberParsingOpts
     this
   }
+
+  def withIntNumberParsingOpts(numberParsingOpts: IntNumberParsingOpts) = {
+    this.intNumberParsingOpts = numberParsingOpts
+    this
+  }
+
 
   def withStringParsingOpts(stringParsingOpts: StringParsingOpts) = {
     this.stringParsingOpts = stringParsingOpts
@@ -110,7 +117,8 @@ class CsvParser {
       parserLib,
       schema,
       lineParsingOpts,
-      numberParsingOpts,
+      realNumberParsingOpts,
+      intNumberParsingOpts,
       stringParsingOpts)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }

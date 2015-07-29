@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.types._
 import com.databricks.spark.csv.util.{ParseModes, ParserLibs, TypeCast}
 import com.databricks.spark.sql.readers._
 
@@ -39,7 +39,8 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     userSchema: StructType = null,
     lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
-    numberParsingOpts: NumberParsingOpts = NumberParsingOpts(),
+    realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
+    intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
     stringParsingOpts: StringParsingOpts = StringParsingOpts())(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
@@ -138,7 +139,7 @@ case class CsvRelation protected[spark] (
      schemaFields: Seq[StructField]) = {
     val dataLines = if (useHeader) {
       file.mapPartitionsWithIndex({
-        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter
+        case (partitionIndex, iter) => if (partitionIndex == 0) iter.drop(1) else iter  //FIXME: empty partition?
       }, true)
     }
     else {
@@ -150,7 +151,9 @@ case class CsvRelation protected[spark] (
         val escapeVal = if(csvParsingOpts.escapeChar == null) '\\' else csvParsingOpts.escapeChar.charValue()
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = csvParsingOpts.delimiter,
-          quote = csvParsingOpts.quoteChar, escape = escapeVal).flatMap { tokens =>
+          quote = csvParsingOpts.quoteChar, escape = escapeVal,
+          ignoreLeadingSpace = csvParsingOpts.ignoreLeadingWhitespace,
+          ignoreTrailingSpace = csvParsingOpts.ignoreTrailingWhitespace).flatMap { tokens =>
 
           lazy val errorDetail = s"${tokens.mkString(csvParsingOpts.delimiter.toString)}"
 
@@ -170,14 +173,27 @@ case class CsvRelation protected[spark] (
                 try {
                   rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
                 } catch {
-                  case _ : NumberFormatException if numberParsingOpts.enable =>
-                    if(numberParsingOpts.nanStrings.contains(tokens(index)))
-                      rowArray(index) = numberParsingOpts.nanValue
-                    else if(tokens(index).isEmpty)
-                      rowArray(index) =
-                        TypeCast.castTo(numberParsingOpts.emptyStringReplace, schemaFields(index).dataType)
+                  case e : NumberFormatException if realNumOpts.enable &&
+                    (schemaFields(index).dataType == DoubleType ||  schemaFields(index).dataType == FloatType) =>
+
+                    rowArray(index) = if (realNumOpts.nullStrings.contains(tokens(index)))
+                      null
+                    else if (realNumOpts.nanStrings.contains(tokens(index)))
+                      TypeCast.castTo("NaN", schemaFields(index).dataType)
+                    else if (realNumOpts.infPosStrings.contains(tokens(index)))
+                      TypeCast.castTo("Infinity", schemaFields(index).dataType)
+                    else if (realNumOpts.infNegStrings.contains(tokens(index)))
+                      TypeCast.castTo("-Infinity", schemaFields(index).dataType)
                     else
-                      rowArray(index) = null
+                      throw new IllegalStateException(s"Failed to parse as double/float number ${tokens(index)}")
+
+                  case _ : NumberFormatException if intNumOpts.enable &&
+                    (schemaFields(index).dataType == IntegerType ||  schemaFields(index).dataType == LongType) =>
+
+                    rowArray(index) = if (intNumOpts.nullStrings.contains(tokens(index)))
+                      null
+                    else
+                      throw new IllegalStateException(s"Failed to parse as int/long number ${tokens(index)}")
                 }
                 index = index + 1
               }
@@ -185,7 +201,9 @@ case class CsvRelation protected[spark] (
             } catch {
               case aiob: ArrayIndexOutOfBoundsException
                 if permissive || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Fill =>
-                (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
+                (index until schemaFields.length).foreach { ind =>
+                  rowArray(ind) = TypeCast.castTo(lineExceptionPolicy.fillValue, schemaFields(index).dataType)
+                }
                 Some(Row.fromSeq(rowArray))
               case NonFatal(e) if !failFast =>
                 logger.error(s"Exception while parsing line: $errorDetail. ", e)

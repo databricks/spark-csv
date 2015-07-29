@@ -145,7 +145,7 @@ class CsvSuite extends FunSuite {
       .collect()
 
     assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
-      Seq("'2012'", "1997", "2015"))
+      Seq(" '2012' ", " 1997", "2015 "))
   }
 
   test("DDL test with alternative delimiter and quote") {
