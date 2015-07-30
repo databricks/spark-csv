@@ -38,6 +38,7 @@ class CsvFastSuite extends FunSuite {
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty2/"
   val commentsFile = "src/test/resources/comments.csv"
+  val disableCommentsFile = "src/test/resources/disable_comments.csv"
 
   val numCars = 3
 
@@ -421,5 +422,22 @@ class CsvFastSuite extends FunSuite {
 
     assert(results.toSeq.map(_.toSeq) == expected)
   }
+
+  test("Setting commment to null disables comment support") {
+    val results: Array[Row] = new CsvParser()
+      .withDelimiter(',')
+      .withComment(null)
+      .withParserLib("UNIVOCITY")
+      .csvFile(TestSQLContext, disableCommentsFile)
+      .collect()
+
+    val expected =
+      Seq(
+        Seq("#1", "2", "3"),
+        Seq("4", "5", "6"))
+
+    assert(results.toSeq.map(_.toSeq) == expected)
+  }
+
 
 }
