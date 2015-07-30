@@ -136,8 +136,8 @@ case class CsvRelation protected[spark] (
       val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if(escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
-        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal, commentMarker = commentChar)
-          .parseLine(firstLine)
+        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal,
+          commentMarker = commentChar).parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
           .withDelimiter(delimiter)
