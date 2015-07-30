@@ -106,6 +106,15 @@ class CsvParser {
     this
   }
 
+  def withOpts(optMap: Map[String, String]) = {
+    this.stringParsingOpts = StringParsingOpts(optMap)
+    this.lineParsingOpts = LineParsingOpts(optMap)
+    this.realNumberParsingOpts = RealNumberParsingOpts(optMap)
+    this.intNumberParsingOpts = IntNumberParsingOpts(optMap)
+    this.csvParsingOpts = CSVParsingOpts(optMap)
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {

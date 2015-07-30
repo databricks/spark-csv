@@ -120,6 +120,20 @@ class CsvSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
+  test("DSL test with alternative delimiter and quote using simple options API") {
+    val optMap = Map("csvParsingOpts.quote" -> "'",
+      "csvParsingOpts.delimiter" -> "|"
+    )
+
+    val results = new CsvParser().withOpts(optMap)
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
+
   test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
     val results =
       TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '\'')

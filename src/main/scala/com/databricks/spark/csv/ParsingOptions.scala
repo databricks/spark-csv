@@ -49,42 +49,51 @@ object ParsingOptions {
   val defaultNaNStrings = HashSet("NaN", "nan")
   val defaultInfPosString = HashSet("+Inf", "Inf", "Infinity", "+Infinity", "inf", "+inf")
   val defaultInfNegString = HashSet("-Inf", "-inf", "-Infinity")
+
+  private[csv] def delimitedStringToSet(str: String) = {
+    str.split(",").toSet
+  }
 }
 
 /**
  * Options to control parsing of real numbers e.g. the types Float and Double
- * @param nanStrings these strings are NaNs
- * @param enable make this false to stop attempting to parse numbers i.e. treat them as strings
+ * @param nanStrings NaNs
+ * @param nullStrings nulls
+ * @param infNegStrings negative infinity
+ * @param infPosStrings positive infinity
+ * @param enable false to not apply these options, default true
  */
 case class RealNumberParsingOpts(
-    var nanStrings: Set[String] = ParsingOptions.defaultNaNStrings,
-    var infPosStrings: Set[String] = ParsingOptions.defaultInfPosString,
-    var infNegStrings: Set[String] = ParsingOptions.defaultInfNegString,
-    var nullStrings: Set[String] = ParsingOptions.defaultNullStrings,
-    var enable: Boolean = true)
+  var nanStrings: Set[String] = ParsingOptions.defaultNaNStrings,
+  var infPosStrings: Set[String] = ParsingOptions.defaultInfPosString,
+  var infNegStrings: Set[String] = ParsingOptions.defaultInfNegString,
+  var nullStrings: Set[String] = ParsingOptions.defaultNullStrings,
+  var enable: Boolean = true)
 
 /**
  * Options to control parsing of integral numbers e.g. the types Int and Long
- * @param enable make this false to stop attempting to parse numbers i.e. treat them as strings
+ * @param nullStrings nulls
+ * @param enable false to not apply these options, default true
  */
 case class IntNumberParsingOpts(var nullStrings: Set[String] = ParsingOptions.defaultNullStrings,
                                 var enable: Boolean = true)
 
 /**
  * Options to control parsing of strings
+ * @param nullStrings nulls
  * @param emptyStringReplace replace empty string with this string
  */
 case class StringParsingOpts(var emptyStringReplace: String = "",
-                             var nullStrings: Set[String] =  ParsingOptions.defaultNullStrings)
+                             var nullStrings: Set[String] = ParsingOptions.defaultNullStrings)
 
 /**
  * options to handle exceptions while parsing a line
- * @param badLinePolicy abort, ignore line or fill with nulls when a bad line is encountered
+ * @param badLinePolicy abort, ignore line or fill with fillValue when not enough fields are parsed
  * @param fillValue if line exception policy is to fill in the blanks, use this value to fill
  */
 case class LineParsingOpts(
-   var badLinePolicy: LineExceptionPolicy.EnumVal = LineExceptionPolicy.Fill,
-   var fillValue: String = "")
+  var badLinePolicy: LineExceptionPolicy.EnumVal = LineExceptionPolicy.Fill,
+  var fillValue: String = "")
 
 /**
  * CSV parsing options
@@ -102,3 +111,131 @@ case class CSVParsingOpts(var delimiter: Character = ',',
                           var ignoreLeadingWhitespace: Boolean = true,
                           var ignoreTrailingWhitespace: Boolean = true,
                           var numParts: Int = 0)
+
+/**
+ * builds a [[RealNumberParsingOpts]] instance from "text"
+ * realNumParsingOpts.{nans, infs, -infs, nulls, enable} are supported
+ */
+object RealNumberParsingOpts {
+  val prefix = "realNumParsingOpts."
+  val build = RealNumberParsingOpts()
+
+  def apply(opts: Map[String, String]): RealNumberParsingOpts = {
+    for (opt <- opts if opt._1.startsWith(prefix)) {
+      (opt._1.stripPrefix(prefix), opt._2) match {
+        case ("nans", value: String) =>
+          build.nanStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("infs", value: String) =>
+          build.infPosStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("-infs", value: String) =>
+          build.infNegStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("nulls", value: String) =>
+          build.nullStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("enable", value: String) => build.enable = value.toBoolean
+        case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+      }
+    }
+
+    build
+  }
+}
+
+/**
+ * builds a [[IntNumberParsingOpts]] instance from "text"
+ * intNumParsingOpts.{nulls, enable} are supported
+ */
+object IntNumberParsingOpts {
+  val prefix = "intNumParsingOpts."
+  val build = IntNumberParsingOpts()
+
+  def apply(opts: Map[String, String]): IntNumberParsingOpts = {
+    for (opt <- opts if opt._1.startsWith(prefix)) {
+      (opt._1.stripPrefix(prefix), opt._2) match {
+        case ("nulls", value: String) =>
+          build.nullStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("enable", value: String) => build.enable = value.toBoolean
+        case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+      }
+    }
+
+    build
+  }
+}
+
+/**
+ * builds a [[StringParsingOpts]] instance from "text"
+ * stringParsingOpts.{nulls, emptyStringReplace} are supported
+ */
+object StringParsingOpts {
+  val prefix = "stringParsingOpts."
+  val build = StringParsingOpts()
+
+  def apply(opts: Map[String, String]): StringParsingOpts = {
+    for (opt <- opts if opt._1.startsWith(prefix)) {
+      (opt._1.stripPrefix(prefix), opt._2) match {
+        case ("nulls", value: String) =>
+          build.nullStrings = ParsingOptions.delimitedStringToSet(value)
+        case ("emptyStringReplace", value: String) => build.emptyStringReplace = value
+        case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+      }
+    }
+
+    build
+  }
+}
+
+/**
+ * builds a [[LineParsingOpts]] instance from "text"
+ * lineParsingOpts.{badLinePolicy, fillValue} are supported
+ * lineParsingOpts.badLinePolicy can be one of fill, ignore or abort
+ */
+object LineParsingOpts {
+  val prefix = "lineParsingOpts."
+  val build = LineParsingOpts()
+
+  def apply(opts: Map[String, String]): LineParsingOpts = {
+    for (opt <- opts if opt._1.startsWith(prefix)) {
+      (opt._1.stripPrefix(prefix), opt._2) match {
+        case ("badLinePolicy", value: String) =>
+          build.badLinePolicy = value.toLowerCase match {
+            case "fill" => LineExceptionPolicy.Fill
+            case "ignore" => LineExceptionPolicy.Ignore
+            case "abort" => LineExceptionPolicy.Abort
+            case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+          }
+        case ("fillValue", value: String) => build.fillValue = value
+        case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+      }
+    }
+
+    build
+  }
+}
+
+/**
+ * builds a [[CSVParsingOpts]] instance from "text"
+ * csvParsingOpts.{delimiter, quote, escape, ignoreLeadingWhiteSpace, ignoreTrailingWhiteSpace,
+ *  numParts} are supported
+ */
+object CSVParsingOpts {
+  val prefix = "csvParsingOpts."
+  val build = CSVParsingOpts()
+
+  def apply(opts: Map[String, String]): CSVParsingOpts = {
+    for (opt <- opts if opt._1.startsWith(prefix)) {
+      (opt._1.stripPrefix(prefix), opt._2) match {
+        case ("delimiter", value: String) => build.delimiter = value.charAt(0);
+        case ("quote", value: String) => build.quoteChar = value.charAt(0)
+        case ("escape", value: String) => build.escapeChar = value.charAt(0)
+        case ("ignoreLeadingSpace", value: String) =>
+          build.ignoreLeadingWhitespace = value.toBoolean
+        case ("ignoreTrailingSpace", value: String) =>
+          build.ignoreTrailingWhitespace = value.toBoolean
+        case ("numParts", value: String) => build.numParts = value.toInt
+        case _ => throw new IllegalArgumentException(s"Unknown option $opt")
+      }
+    }
+
+    build
+  }
+}
