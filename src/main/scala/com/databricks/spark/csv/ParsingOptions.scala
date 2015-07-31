@@ -93,7 +93,7 @@ case class StringParsingOpts(var emptyStringReplace: String = "",
  */
 case class LineParsingOpts(
   var badLinePolicy: LineExceptionPolicy.EnumVal = LineExceptionPolicy.Fill,
-  var fillValue: String = "")
+  var fillValue: String = null)
 
 /**
  * CSV parsing options

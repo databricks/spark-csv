@@ -16,10 +16,11 @@
 package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
+import java.sql.{Date, Timestamp}
 
 import org.scalatest.FunSuite
 
-import org.apache.spark.sql.types.{FloatType, DoubleType, DecimalType}
+import org.apache.spark.sql.types._
 
 class TypeCastSuite extends FunSuite {
 
@@ -68,5 +69,34 @@ class TypeCastSuite extends FunSuite {
       TypeCast.toChar("""\1""")
     }
     assert(exception.getMessage.contains("Unsupported special character for delimiter"))
+  }
+
+  test("Nullable types are handled"){
+    assert(TypeCast.castTo("", IntegerType, nullable = true) == null)
+  }
+
+  test("String type should always return the same as the input"){
+    assert(TypeCast.castTo("", StringType, nullable = true) == "")
+    assert(TypeCast.castTo("", StringType, nullable = false) == "")
+  }
+
+  test("Throws exception for empty string with non null type"){
+    val exception = intercept[NumberFormatException]{
+      TypeCast.castTo("", IntegerType, nullable = false)
+    }
+    assert(exception.getMessage.contains("For input string: \"\""))
+  }
+
+  test("Types are cast correctly"){
+    assert(TypeCast.castTo("10", ByteType) == 10)
+    assert(TypeCast.castTo("10", ShortType) == 10)
+    assert(TypeCast.castTo("10", IntegerType) == 10)
+    assert(TypeCast.castTo("10", LongType) == 10)
+    assert(TypeCast.castTo("1.00", FloatType) == 1.0)
+    assert(TypeCast.castTo("1.00", DoubleType) == 1.0)
+    assert(TypeCast.castTo("true", BooleanType) == true)
+    val timestamp = "2015-01-01 00:00:00"
+    assert(TypeCast.castTo(timestamp, TimestampType) == Timestamp.valueOf(timestamp))
+    assert(TypeCast.castTo("2015-01-01", DateType) == Date.valueOf("2015-01-01"))
   }
 }

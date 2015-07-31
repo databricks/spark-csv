@@ -31,6 +31,8 @@ addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.3.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8")
 
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.1.0")
+
 libraryDependencies += "org.ow2.asm"  % "asm" % "5.0.3"
 
 libraryDependencies += "org.ow2.asm"  % "asm-commons" % "5.0.3"

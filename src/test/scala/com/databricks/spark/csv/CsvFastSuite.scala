@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 import java.io.File
+import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.scalatest.FunSuite
@@ -30,8 +31,10 @@ import org.apache.spark.sql.test.TestSQLContext._
 
 class CsvFastSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val numbersFile = "src/test/resources/numbers.csv"
@@ -48,12 +51,44 @@ class CsvFastSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
+  test("DSL test for iso-8859-1 encoded file") {
+    val dataFrame = TestSQLContext
+      .csvFile(carsFile8859, parserLib = "univocity", charset  = "iso-8859-1", delimiter = 'þ')
+
+    assert(dataFrame.select("year").collect().size === numCars)
+
+    val results = dataFrame.select("comment", "year").where(dataFrame("year") === "1997")
+    assert(results.first.getString(0) === "Go get one now they are þoing fast")
+  }
+
+  test("DSL test bad charset name") {
+    val exception = intercept[UnsupportedCharsetException] {
+      val results = TestSQLContext
+        .csvFile(carsFile8859, parserLib = "univocity", charset = "1-9588-osi")
+        .select("year")
+        .collect()
+    }
+    assert(exception.getMessage.contains("1-9588-osi"))
+  }
+
   test("DDL test") {
     sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
+  test("DDL test with charset") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile8859", header "true", parserLib "univocity",
+         |charset "iso-8859-1", delimiter "þ")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
@@ -282,7 +317,12 @@ class CsvFastSuite extends FunSuite {
 
   test("DSL test with alternative delimiter and quote using sparkContext.csvFile") {
     val results =
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '\'', parserLib = "univocity")
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = '|',
+        quote = '\'',
+        parserLib = "univocity")
         .select("year")
         .collect()
 
@@ -290,8 +330,13 @@ class CsvFastSuite extends FunSuite {
   }
 
   test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
-    intercept[org.apache.spark.sql.AnalysisException] {
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = ',', quote = '\'', parserLib = "univocity")
+    intercept[ org.apache.spark.sql.AnalysisException] {
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = ',',
+        quote = '\'',
+        parserLib = "univocity")
         .select("year")
         .collect()
     }
@@ -299,12 +344,17 @@ class CsvFastSuite extends FunSuite {
 
   test("Expect wrong parsing results with wrong quote setting using sparkContext.csvFile") {
     val results =
-      TestSQLContext.csvFile(carsAltFile, useHeader = true, delimiter = '|', quote = '"', parserLib = "univocity")
+      TestSQLContext.csvFile(
+        carsAltFile,
+        useHeader = true,
+        delimiter = '|',
+        quote = '"',
+        parserLib = "univocity")
         .select("year")
         .collect()
 
     assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
-      Seq("'2012'", "1997", "2015"))
+      Seq(" '2012' ", " 1997", "2015 "))
   }
 
   test("DDL test with alternative delimiter and quote") {
@@ -312,7 +362,8 @@ class CsvFastSuite extends FunSuite {
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |USING com.databricks.spark.csv
-         |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|", parserLib "univocity")
+         |OPTIONS (path "$carsAltFile", header "true", quote "'", delimiter "|",
+         |parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
@@ -351,7 +402,7 @@ class CsvFastSuite extends FunSuite {
 
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
     assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
-      .collect().head(0) === 2008)
+      .collect().head(0) === 2004.5)
   }
 
   test("DSL column names test") {
@@ -465,5 +516,66 @@ class CsvFastSuite extends FunSuite {
     assert(escapeCopy.count == escape.count)
     assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
     assert(escapeCopy.head().getString(0) == "\"thing")
+  }
+
+  test("DSL test schema inferred correctly") {
+
+    val results = TestSQLContext
+      .csvFile(carsFile, parserLib = "univocity", inferSchema = true)
+
+    assert(results.schema == StructType(List(
+      StructField("year",IntegerType,true),
+      StructField("make",StringType,true),
+      StructField("model",StringType,true),
+      StructField("comment",StringType,true),
+      StructField("blank",StringType,true))
+    ))
+
+    assert(results.collect().size === numCars)
+
+  }
+
+  test("DSL test inferred schema passed through") {
+
+    val dataFrame = TestSQLContext
+      .csvFile(carsFile, parserLib = "univocity", inferSchema = true)
+
+    val results = dataFrame
+      .select("comment", "year")
+      .where(dataFrame("year") === 2012)
+
+    assert(results.first.getString(0) === "No comment")
+    assert(results.first.getInt(1) === 2012)
+
+  }
+
+  test("DDL test with inferred schema") {
+
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile", header "true", parserLib "univocity", inferSchema "true")
+      """.stripMargin.replaceAll("\n", " "))
+
+    val results = sql("select year from carsTable where make = 'Ford'")
+
+    assert(results.first().getInt(0) === 1997)
+
+  }
+
+  test("DSL test nullable fields"){
+
+    val results = new CsvParser()
+      .withSchema(StructType(List(StructField("name", StringType, false), StructField("age", IntegerType, true))))
+      .withUseHeader(true)
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, nullNumbersFile)
+      .collect()
+
+    assert(results.head.toSeq == Seq("alice", 35))
+    assert(results(1).toSeq == Seq("bob", null))
+    assert(results(2).toSeq == Seq("", 24))
+
   }
 }

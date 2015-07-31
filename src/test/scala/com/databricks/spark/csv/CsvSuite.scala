@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 import java.io.File
+import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.test._
@@ -28,8 +29,10 @@ import TestSQLContext._
 
 class CsvSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
+  val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
@@ -43,6 +46,33 @@ class CsvSuite extends FunSuite {
       .collect()
 
     assert(results.size === numCars)
+  }
+
+  test("DSL test for iso-8859-1 encoded file") {
+    val dataFrame = new CsvParser()
+      .withUseHeader(true)
+      .withCharset("iso-8859-1")
+      .withDelimiter('þ')
+      .csvFile(TestSQLContext, carsFile8859)
+
+    assert(dataFrame.select("year").collect().size === numCars)
+
+    val results = dataFrame.select("comment", "year").where(dataFrame("year") === "1997")
+    assert(results.first.getString(0) === "Go get one now they are þoing fast")
+  }
+
+  test("DSL test for bad charset name") {
+    val parser = new CsvParser()
+      .withUseHeader(true)
+      .withCharset("1-9588-osi")
+
+    val exception = intercept[UnsupportedCharsetException] {
+      parser.csvFile(TestSQLContext, carsFile)
+        .select("year")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("1-9588-osi"))
   }
 
   test("DDL test") {
@@ -173,6 +203,16 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
+  test("DDL test with charset") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile8859", header "true", delimiter "þ", charset "iso-8859-1")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
 
   test("DSL test with empty file and known schema") {
     val results = new CsvParser()
@@ -201,7 +241,6 @@ class CsvSuite extends FunSuite {
         |USING com.databricks.spark.csv
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
-
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
     assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
       .collect().head(0) === 2004.5)
@@ -317,5 +356,68 @@ class CsvSuite extends FunSuite {
     assert(escapeCopy.count == escape.count)
     assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
     assert(escapeCopy.head().getString(0) == "\"thing")
+  }
+
+
+  test("DSL test schema inferred correctly") {
+
+    val results = new CsvParser()
+      .withInferSchema(true)
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsFile)
+
+    assert(results.schema == StructType(List(
+      StructField("year",IntegerType,true),
+      StructField("make",StringType,true),
+      StructField("model",StringType,true),
+      StructField("comment",StringType,true),
+      StructField("blank",StringType,true))
+    ))
+
+    assert(results.collect().size === numCars)
+
+  }
+
+  test("DSL test inferred schema passed through") {
+
+    val dataFrame = TestSQLContext
+      .csvFile(carsFile, inferSchema = true)
+
+    val results = dataFrame
+      .select("comment", "year")
+      .where(dataFrame("year") === 2012)
+
+    assert(results.first.getString(0) === "No comment")
+    assert(results.first.getInt(1) === 2012)
+
+  }
+
+  test("DDL test with inferred schema") {
+
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsFile", header "true", inferSchema "true")
+      """.stripMargin.replaceAll("\n", " "))
+
+    val results = sql("select year from carsTable where make = 'Ford'")
+
+    assert(results.first().getInt(0) === 1997)
+
+  }
+
+  test("DSL test nullable fields"){
+
+    val results = new CsvParser()
+      .withSchema(StructType(List(StructField("name", StringType, false), StructField("age", IntegerType, true))))
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, nullNumbersFile)
+      .collect()
+
+    assert(results.head.toSeq == Seq("alice", 35))
+    assert(results(1).toSeq == Seq("bob", null))
+    assert(results(2).toSeq == Seq("", 24))
+
   }
 }

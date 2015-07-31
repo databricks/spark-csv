@@ -22,6 +22,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
@@ -36,9 +37,11 @@ package object csv {
                 escape: Character = null,
                 mode: String = "PERMISSIVE",
                 parserLib: String = "COMMONS",
-                ignoreLeadingWhiteSpace: Boolean = true,
-                ignoreTrailingWhiteSpace: Boolean = true) = {
-      val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
+                ignoreLeadingWhiteSpace: Boolean = false,
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = TextFile.DEFAULT_CHARSET.name(),
+                inferSchema: Boolean = false) = {
+    val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
         quoteChar = quote,
         escapeChar = escape,
         ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
@@ -48,7 +51,9 @@ package object csv {
         useHeader = useHeader,
         csvParsingOpts = csvParsingOpts,
         parseMode = mode,
-        parserLib = parserLib)(sqlContext)
+        parserLib = parserLib,
+        charset = charset,
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -56,19 +61,23 @@ package object csv {
                 useHeader: Boolean = true,
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false) = {
+                ignoreTrailingWhiteSpace: Boolean = false,
+                charset: String = TextFile.DEFAULT_CHARSET.name(),
+                inferSchema: Boolean = false) = {
       val csvParsingOpts = CSVParsingOpts(delimiter = '\t',
         quoteChar = '"',
         escapeChar = '\\',
         ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhitespace = ignoreTrailingWhiteSpace)
-
+            
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
         csvParsingOpts = csvParsingOpts,
         parseMode = "PERMISSIVE",
-        parserLib = parserLib)(sqlContext)
+        parserLib = parserLib,
+        charset = charset,
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }

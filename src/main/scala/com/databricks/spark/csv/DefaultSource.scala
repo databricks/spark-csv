@@ -19,8 +19,9 @@ import org.apache.hadoop.fs.Path
 
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
+
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
-import com.databricks.spark.csv.util.{ParserLibs, TypeCast}
+import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
@@ -109,12 +110,25 @@ class DefaultSource
       ignoreLeadingWhitespace = ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhitespace = ignoreTrailingWhiteSpaceFlag)
 
+    val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
+    // TODO validate charset?
+    val inferSchema = parameters.getOrElse("inferSchema", "false")
+    val inferSchemaFlag = if(inferSchema == "false") {
+      false
+    } else if(inferSchema == "true") {
+      true
+    } else {
+      throw new Exception("Infer schema flag can be true or false")
+    }
+
     CsvRelation(path,
-      headerFlag,
-      csvParsingOpts,
-      parseMode,
-      parserLib,
-      schema)(sqlContext)
+      useHeader = headerFlag,
+      csvParsingOpts = csvParsingOpts,
+      parseMode = parseMode,
+      parserLib = parserLib,
+      userSchema = schema,
+      charset = charset,
+      inferCsvSchema = inferSchemaFlag)(sqlContext)
   }
 
   override def createRelation(
