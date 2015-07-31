@@ -134,7 +134,7 @@ class CsvSuite extends FunSuite {
         .collect()
     }
 
-    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+    assert(exception.getMessage.contains("Malformed line in FAILFAST or Abort mode"))
   }
 
 

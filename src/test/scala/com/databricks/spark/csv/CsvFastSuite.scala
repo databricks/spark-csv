@@ -299,7 +299,7 @@ class CsvFastSuite extends FunSuite {
         .collect()
     }
 
-    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+    assert(exception.getMessage.contains("Malformed line in FAILFAST or Abort mode"))
   }
 
   test("DSL test with alternative delimiter and quote") {
@@ -451,7 +451,7 @@ class CsvFastSuite extends FunSuite {
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
     cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false"))
 
-    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
@@ -494,7 +494,8 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile)
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "!"))
+    cars.saveAsCsvFile(copyFilePath,
+      Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "!"))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", quote = '!', parserLib = "univocity")
 
@@ -509,7 +510,8 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "escape-copy.csv"
 
     val escape = TestSQLContext.csvFile(escapeFile, escape = '|', quote = '"')
-    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "\""))
+    escape.saveAsCsvFile(copyFilePath,
+      Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "\""))
 
     val escapeCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 

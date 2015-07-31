@@ -29,10 +29,11 @@ private[csv] object TextFile {
   def withCharset(context: SparkContext, location: String,
                   charset: String, numParts: Int = 0): RDD[String] = {
     if (Charset.forName(charset) == DEFAULT_CHARSET) {
-      if (numParts == 0)
+      if (numParts == 0) {
         context.textFile(location)
-      else
+      } else {
         context.textFile(location, numParts)
+      }
     } else {
       // can't pass a Charset object here cause its not serializable
       // TODO: maybe use mapPartitions instead?

@@ -118,9 +118,9 @@ case class CSVParsingOpts(var delimiter: Character = ',',
  */
 object RealNumberParsingOpts {
   val prefix = "realNumParsingOpts."
-  val build = RealNumberParsingOpts()
 
   def apply(opts: Map[String, String]): RealNumberParsingOpts = {
+    val build = RealNumberParsingOpts()
     for (opt <- opts if opt._1.startsWith(prefix)) {
       (opt._1.stripPrefix(prefix), opt._2) match {
         case ("nans", value: String) =>
@@ -146,9 +146,9 @@ object RealNumberParsingOpts {
  */
 object IntNumberParsingOpts {
   val prefix = "intNumParsingOpts."
-  val build = IntNumberParsingOpts()
 
   def apply(opts: Map[String, String]): IntNumberParsingOpts = {
+    val build = IntNumberParsingOpts()
     for (opt <- opts if opt._1.startsWith(prefix)) {
       (opt._1.stripPrefix(prefix), opt._2) match {
         case ("nulls", value: String) =>
@@ -168,9 +168,9 @@ object IntNumberParsingOpts {
  */
 object StringParsingOpts {
   val prefix = "stringParsingOpts."
-  val build = StringParsingOpts()
 
   def apply(opts: Map[String, String]): StringParsingOpts = {
+    val build = StringParsingOpts()
     for (opt <- opts if opt._1.startsWith(prefix)) {
       (opt._1.stripPrefix(prefix), opt._2) match {
         case ("nulls", value: String) =>
@@ -191,9 +191,9 @@ object StringParsingOpts {
  */
 object LineParsingOpts {
   val prefix = "lineParsingOpts."
-  val build = LineParsingOpts()
 
   def apply(opts: Map[String, String]): LineParsingOpts = {
+    val build = LineParsingOpts()
     for (opt <- opts if opt._1.startsWith(prefix)) {
       (opt._1.stripPrefix(prefix), opt._2) match {
         case ("badLinePolicy", value: String) =>
@@ -219,9 +219,9 @@ object LineParsingOpts {
  */
 object CSVParsingOpts {
   val prefix = "csvParsingOpts."
-  val build = CSVParsingOpts()
 
   def apply(opts: Map[String, String]): CSVParsingOpts = {
+    val build = CSVParsingOpts()
     for (opt <- opts if opt._1.startsWith(prefix)) {
       (opt._1.stripPrefix(prefix), opt._2) match {
         case ("delimiter", value: String) => build.delimiter = value.charAt(0);

@@ -32,18 +32,18 @@ import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark](
-                                         location: String,
-                                         useHeader: Boolean,
-                                         csvParsingOpts: CSVParsingOpts,
-                                         parseMode: String,
-                                         parserLib: String,
-                                         userSchema: StructType = null,
-                                         lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
-                                         realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
-                                         intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
-                                         stringParsingOpts: StringParsingOpts = StringParsingOpts(),
-                                         charset: String = TextFile.DEFAULT_CHARSET.name(),
-                                         inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+   location: String,
+   useHeader: Boolean,
+   csvParsingOpts: CSVParsingOpts,
+   parseMode: String,
+   parserLib: String,
+   userSchema: StructType = null,
+   lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
+   realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
+   intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
+   stringParsingOpts: StringParsingOpts = StringParsingOpts(),
+   charset: String = TextFile.DEFAULT_CHARSET.name(),
+   inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
@@ -106,7 +106,7 @@ case class CsvRelation protected[spark](
         None
       } else if (schemaFields.length != tokens.size &&
         (failFast || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Abort)) {
-        throw new RuntimeException(s"Malformed line in FAILFAST mode: $errorDetail")
+        throw new RuntimeException(s"Malformed line in FAILFAST or Abort mode: $errorDetail")
       } else {
         var index: Int = 0
         val rowArray = new Array[Any](schemaFields.length)
