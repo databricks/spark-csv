@@ -168,16 +168,13 @@ case class CsvRelation protected[spark] (
    */
   private lazy val firstLine = {
     val csv = TextFile.withCharset(sqlContext.sparkContext, location, charset)
-    if(comment == null) {
+    if (comment == null) {
       csv.first()
     } else {
       csv.take(MAX_COMMENT_LINES_IN_HEADER)
-        .find(! _.startsWith(comment.toString)) match {
-        case Some(line) => line
-        case None =>
-          throw new RuntimeException(s"No uncommented header line in " +
-            s"first $MAX_COMMENT_LINES_IN_HEADER lines")
-      }
+        .find(! _.startsWith(comment.toString))
+        .getOrElse(sys.error(s"No uncommented header line in " +
+          s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
     }
    }
 
