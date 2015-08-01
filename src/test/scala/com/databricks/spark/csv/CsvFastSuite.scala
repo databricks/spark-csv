@@ -456,6 +456,9 @@ class CsvFastSuite extends FunSuite {
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
+    //remove --- debug travis test
+    TestSQLContext.sparkContext.textFile(copyFilePath + "/").foreach(println)
+
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
