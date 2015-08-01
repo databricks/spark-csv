@@ -165,8 +165,6 @@ package object csv {
         "" // There is no need to generate header in this case
       }
 
-      val headerPerPart = parameters.getOrElse("headerPerPart", "true").toBoolean
-
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
         val csvFormatBase = CSVFormat.DEFAULT
           .withDelimiter(delimiterChar)
@@ -180,7 +178,7 @@ package object csv {
         }
 
         new Iterator[String] {
-          var firstRow: Boolean = if(headerPerPart) generateHeader else generateHeader && index == 0
+          var firstRow: Boolean = generateHeader
 
           override def hasNext = iter.hasNext || firstRow
 

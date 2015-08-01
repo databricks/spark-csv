@@ -29,7 +29,6 @@ class OptionsSuite extends FunSuite {
       "csvParsingOpts.ignoreTrailingSpace" -> "true",
       "csvParsingOpts.escape" -> ":",
       "csvParsingOpts.numParts" -> "5")
-    println(optMap)
     val opts = CSVParsingOpts(optMap)
 
     assert(opts.delimiter === '|')
@@ -43,7 +42,6 @@ class OptionsSuite extends FunSuite {
   test("line opts") {
     val optMap = Map("lineParsingOpts.badLinePolicy" -> "abort",
       "lineParsingOpts.fillValue" -> "duh")
-    println(optMap)
     val opts = LineParsingOpts(optMap)
 
     assert(opts.fillValue === "duh")
@@ -53,7 +51,6 @@ class OptionsSuite extends FunSuite {
   test("string opts") {
     val optMap = Map("stringParsingOpts.nulls" -> "abcd,efg",
       "stringParsingOpts.emptyStringReplace" -> "<empty>")
-    println(optMap)
     val opts = StringParsingOpts(optMap)
 
     assert(opts.nullStrings === HashSet("abcd", "efg"))
@@ -63,7 +60,6 @@ class OptionsSuite extends FunSuite {
   test("int opts") {
     val optMap = Map("intNumParsingOpts.nulls" -> "abcd,efg",
       "intNumParsingOpts.enable" -> "false")
-    println(optMap)
     val opts = IntNumberParsingOpts(optMap)
 
     assert(opts.nullStrings === HashSet("abcd", "efg"))
@@ -76,7 +72,6 @@ class OptionsSuite extends FunSuite {
       "realNumParsingOpts.nans" -> "NaN,nan",
       "realNumParsingOpts.infs" -> "iinnff,IINNFF",
       "realNumParsingOpts.-infs" -> "minusInf")
-    println(optMap)
     val opts = RealNumberParsingOpts(optMap)
 
     assert(opts.nullStrings === HashSet("abcd", "efg"))
