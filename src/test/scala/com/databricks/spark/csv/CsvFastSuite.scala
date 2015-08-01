@@ -22,6 +22,7 @@ import org.apache.hadoop.io.compress.GzipCodec
 import org.scalatest.FunSuite
 
 import org.apache.spark.SparkException
+import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.test._
 import org.apache.spark.sql.types._
 
@@ -39,6 +40,8 @@ class CsvFastSuite extends FunSuite {
   val escapeFile = "src/test/resources/escape.csv"
   val numbersFile = "src/test/resources/numbers.csv"
   val tempEmptyDir = "target/test/empty2/"
+  val commentsFile = "src/test/resources/comments.csv"
+  val disableCommentsFile = "src/test/resources/disable_comments.csv"
 
   val numCars = 3
 
@@ -580,4 +583,39 @@ class CsvFastSuite extends FunSuite {
     assert(results(2).toSeq == Seq("", 24))
 
   }
+
+  test("Commented lines in CSV data") {
+    val results: Array[Row] = new CsvParser()
+      .withDelimiter(',')
+      .withComment('~')
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, commentsFile)
+      .collect()
+
+    val expected =
+      Seq(Seq("1", "2", "3", "4", "5"),
+          Seq("6", "7", "8", "9", "0"),
+          Seq("1", "2", "3", "4", "5"))
+
+    assert(results.toSeq.map(_.toSeq) == expected)
+  }
+
+  test("Setting commment to null disables comment support") {
+    val results: Array[Row] = new CsvParser()
+      .withDelimiter(',')
+      .withComment(null)
+      .withParserLib("UNIVOCITY")
+      .csvFile(TestSQLContext, disableCommentsFile)
+      .collect()
+
+    val expected =
+      Seq(
+        Seq("#1", "2", "3"),
+        Seq("4", "5", "6"))
+
+    assert(results.toSeq.map(_.toSeq) == expected)
+  }
+
+
 }
+

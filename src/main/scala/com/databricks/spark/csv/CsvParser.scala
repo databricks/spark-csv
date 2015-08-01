@@ -25,13 +25,13 @@ import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
  * A collection of static functions for working with CSV files in Spark SQL
  */
 class CsvParser {
-
   private var useHeader: Boolean = false
   private var csvParsingOpts: CSVParsingOpts = CSVParsingOpts()
   private var lineParsingOpts: LineParsingOpts = LineParsingOpts()
   private var realNumberParsingOpts: RealNumberParsingOpts = RealNumberParsingOpts()
   private var intNumberParsingOpts: IntNumberParsingOpts = IntNumberParsingOpts()
   private var stringParsingOpts: StringParsingOpts = StringParsingOpts()
+  private var comment: Character = '#'
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
   private var parserLib: String = ParserLibs.DEFAULT
@@ -65,6 +65,11 @@ class CsvParser {
 
   def withEscape(escapeChar: Character): CsvParser = {
     this.csvParsingOpts.escapeChar = escapeChar
+    this
+  }
+
+  def withComment(commentChar: Character) : CsvParser = {
+    this.comment = commentChar
     this
   }
 
@@ -138,6 +143,7 @@ class CsvParser {
       parseMode,
       parserLib,
       schema,
+      comment,
       lineParsingOpts,
       realNumberParsingOpts,
       intNumberParsingOpts,

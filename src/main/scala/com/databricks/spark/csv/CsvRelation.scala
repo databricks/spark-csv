@@ -38,6 +38,7 @@ case class CsvRelation protected[spark](
    parseMode: String,
    parserLib: String,
    userSchema: StructType = null,
+   comment: Character,
    lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
    realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
    intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
@@ -45,6 +46,11 @@ case class CsvRelation protected[spark](
    charset: String = TextFile.DEFAULT_CHARSET.name(),
    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
+
+  /**
+   * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
+   */
+  private val MAX_COMMENT_LINES_IN_HEADER = 10
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
@@ -78,6 +84,7 @@ case class CsvRelation protected[spark](
         .withEscape(csvParsingOpts.escapeChar)
         .withSkipHeaderRecord(false)
         .withHeader(header: _*)
+        .withCommentMarker(comment)
 
       // If header is set, make sure firstLine is materialized before sending to executors.
       val filterLine = if (useHeader) firstLine else null
@@ -170,9 +177,11 @@ case class CsvRelation protected[spark](
       val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if (csvParsingOpts.escapeChar == null) '\\'
         else csvParsingOpts.escapeChar.charValue()
+        val commentChar: Char = if (comment == null) '\0' else comment
         new LineCsvReader(fieldSep = csvParsingOpts.delimiter,
           quote = csvParsingOpts.quoteChar,
-          escape = escapeVal)
+          escape = escapeVal,
+          commentMarker = commentChar)
           .parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
@@ -203,8 +212,16 @@ case class CsvRelation protected[spark](
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    TextFile.withCharset(sqlContext.sparkContext, location, charset).first()
-  }
+    val csv = TextFile.withCharset(sqlContext.sparkContext, location, charset)
+    if (comment == null) {
+      csv.first()
+    } else {
+      csv.take(MAX_COMMENT_LINES_IN_HEADER)
+        .find(! _.startsWith(comment.toString))
+        .getOrElse(sys.error(s"No uncommented header line in " +
+          s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
+    }
+   }
 
   private def univocityParseCSV(file: RDD[String], header: Seq[String]) = {
     val dataLines = if (useHeader) {
@@ -219,11 +236,14 @@ case class CsvRelation protected[spark](
       case (split, iter) => {
         val escapeVal = if (csvParsingOpts.escapeChar == null) '\\'
         else csvParsingOpts.escapeChar.charValue()
+        val commentChar: Char = if (comment == null) '\0' else comment
+
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = csvParsingOpts.delimiter,
           quote = csvParsingOpts.quoteChar, escape = escapeVal,
           ignoreLeadingSpace = csvParsingOpts.ignoreLeadingWhitespace,
-          ignoreTrailingSpace = csvParsingOpts.ignoreTrailingWhitespace)
+          ignoreTrailingSpace = csvParsingOpts.ignoreTrailingWhitespace,
+          commentMarker = commentChar)
       }
     }, true)
 

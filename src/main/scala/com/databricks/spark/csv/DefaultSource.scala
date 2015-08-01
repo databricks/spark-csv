@@ -68,6 +68,15 @@ class DefaultSource
       throw new Exception("Escape character cannot be more than one character.")
     }
 
+    val comment = parameters.getOrElse("comment", "#")
+    val commentChar: Character = if (comment == null) {
+      null
+    } else if (comment.length == 1) {
+      comment.charAt(0)
+    } else {
+      throw new Exception("Comment marker cannot be more than one character.")
+    }
+
     val parseMode = parameters.getOrElse("mode", "PERMISSIVE")
 
     val useHeader = parameters.getOrElse("header", "false")
@@ -141,6 +150,7 @@ class DefaultSource
       parseMode = parseMode,
       parserLib = parserLib,
       userSchema = schema,
+      comment = commentChar,
       charset = charset,
       inferCsvSchema = inferSchemaFlag)(sqlContext)
   }

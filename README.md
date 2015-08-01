@@ -46,6 +46,7 @@ When reading files the API accepts several options:
   * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
+* `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
