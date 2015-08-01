@@ -97,6 +97,17 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
+  test("DDL test with tab separated file, using newer options") {
+    sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsTsvFile", header "true", "csvParsingOpts.delimiter" "\t")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
   test("DDL test parsing decimal type") {
     sql(
       s"""
