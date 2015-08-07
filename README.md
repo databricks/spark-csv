@@ -16,13 +16,13 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 1.1.0
+version: 1.2.0
 ```
 ### Scala 2.11
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.1.0
+version: 1.2.0
 ```
 
 
@@ -30,7 +30,7 @@ version: 1.1.0
 This package can be added to  Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
 ```
-$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.1.0
+$ bin/spark-shell --packages com.databricks:spark-csv_2.10:1.2.0
 ```
 
 ## Features
@@ -140,7 +140,7 @@ Spark 1.4+:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.1.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv")
 
