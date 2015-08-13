@@ -492,4 +492,13 @@ class CsvFastSuite extends FunSuite {
     }
     assert(exception.getMessage.contains("Cannot INSERT into table with no path defined"))
   }
+
+  test("DSL tsv test") {
+    val results = TestSQLContext
+      .tsvFile(carsTsvFile, parserLib = "UNIVOCITY")
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
 }
