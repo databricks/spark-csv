@@ -91,8 +91,7 @@ package object csv {
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
      */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
-                      compressionCodec: Class[_ <: CompressionCodec] = null,
-                      sparseColInfo: mutable.Map[String, mutable.Map[String, Int]] = null): Unit = {
+                      compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
 
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
@@ -135,32 +134,8 @@ package object csv {
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
 
-      val isSparse: Array[Boolean] = dataFrame.columns.flatMap { colName: String =>
-        if (sparseColInfo != null && sparseColInfo.contains(colName)) {
-          Array.fill(sparseColInfo(colName).size)(true)
-        } else {
-          Array(false)
-        }
-      }
-
-      def makeHeader : String = {
-        val hs = dataFrame.columns.flatMap { colName: String =>
-          if (sparseColInfo.contains(colName)) {
-            require(sparseColInfo.contains(colName))
-            sparseColInfo(colName).toSeq.sortBy(_._2).map(_._1)
-          } else {
-            Seq(colName)
-          }
-        }
-        csvFormat.format(hs : _*)
-      }
-
       val header = if (generateHeader) {
-        if (sparseColInfo == null) {
-          csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
-        } else {
-          makeHeader
-        }
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
       } else {
         "" // There is no need to generate header in this case
       }
@@ -184,17 +159,7 @@ package object csv {
 
           override def next: String = {
             if(!iter.isEmpty) {
-              def makeCsvRow(inFields: Seq[Any]) : String = {
-                val fields = inFields.flatMap { f =>
-                  if(isSparse(inFields.indexOf(f))) {
-                    f.asInstanceOf[ArrayBuffer[Any]]
-                  } else {
-                    ArrayBuffer(f)
-                  }
-                }
-                csvFormat.format(fields.map(_.asInstanceOf[AnyRef]): _*)
-              }
-              val row = makeCsvRow(iter.next.toSeq)
+              val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
               if (firstRow) {
                 firstRow = false
                 header + csvFormat.getRecordSeparator() + row
