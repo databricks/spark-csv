@@ -100,6 +100,18 @@ class CsvSuite extends FunSuite {
     assert(sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
+//FIXME: the dot doesn't seem to work.
+//  test("DDL test with tab separated file, using newer options") {
+//    sql(
+//      s"""
+//         |CREATE TEMPORARY TABLE carsTable
+//         |USING com.databricks.spark.csv
+//         |OPTIONS (path "$carsTsvFile", header "true", "csvParsingOpts.delimiter" "\t")
+//      """.stripMargin.replaceAll("\n", " "))
+//
+//    assert(sql("SELECT year FROM carsTable").collect().size === numCars)
+//  }
+
   test("DDL test parsing decimal type") {
     sql(
       s"""
@@ -137,7 +149,7 @@ class CsvSuite extends FunSuite {
         .collect()
     }
 
-    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+    assert(exception.getMessage.contains("Malformed line in FAILFAST or Abort mode"))
   }
 
 
@@ -145,6 +157,20 @@ class CsvSuite extends FunSuite {
     val results = new CsvParser()
       .withDelimiter('|')
       .withQuoteChar('\'')
+      .withUseHeader(true)
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
+
+  test("DSL test with alternative delimiter and quote using simple options API") {
+    val optMap = Map("csvParsingOpts.quote" -> "'",
+      "csvParsingOpts.delimiter" -> "|"
+    )
+
+    val results = new CsvParser().withOpts(optMap)
       .withUseHeader(true)
       .csvFile(TestSQLContext, carsAltFile)
       .select("year")
@@ -178,7 +204,7 @@ class CsvSuite extends FunSuite {
       .collect()
 
     assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
-      Seq("'2012'", "1997", "2015"))
+      Seq(" '2012' ", " 1997", "2015 "))
   }
 
   test("DDL test with alternative delimiter and quote") {
@@ -230,7 +256,6 @@ class CsvSuite extends FunSuite {
         |USING com.databricks.spark.csv
         |OPTIONS (path "$carsFile", header "true")
       """.stripMargin.replaceAll("\n", " "))
-
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
     assert(sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
       .collect().head(0) === 2004.5)

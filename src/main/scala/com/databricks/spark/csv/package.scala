@@ -15,6 +15,9 @@
  */
 package com.databricks.spark
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
@@ -39,17 +42,18 @@ package object csv {
                 ignoreTrailingWhiteSpace: Boolean = false,
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
+    val csvParsingOpts = CSVParsingOpts(delimiter = delimiter,
+        quoteChar = quote,
+        escapeChar = escape,
+        ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhitespace = ignoreTrailingWhiteSpace)
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
-        delimiter = delimiter,
-        quote = quote,
-        escape = escape,
+        csvParsingOpts = csvParsingOpts,
         comment = comment,
         parseMode = mode,
         parserLib = parserLib,
-        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         charset = charset,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
@@ -62,17 +66,19 @@ package object csv {
                 ignoreTrailingWhiteSpace: Boolean = false,
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
+      val csvParsingOpts = CSVParsingOpts(delimiter = '\t',
+        quoteChar = '"',
+        escapeChar = '\\',
+        ignoreLeadingWhitespace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhitespace = ignoreTrailingWhiteSpace)
+            
       val csvRelation = CsvRelation(
         location = filePath,
         useHeader = useHeader,
-        delimiter = '\t',
-        quote = '"',
-        escape = '\\',
+        csvParsingOpts = csvParsingOpts,
         comment = '#',
         parseMode = "PERMISSIVE",
         parserLib = parserLib,
-        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
-        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         charset = charset,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
@@ -86,6 +92,7 @@ package object csv {
      */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
+
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
       val delimiterChar = if (delimiter.length == 1) {
@@ -126,8 +133,9 @@ package object csv {
       }
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
+
       val header = if (generateHeader) {
-        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
       } else {
         "" // There is no need to generate header in this case
       }

@@ -19,14 +19,16 @@ import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.test._
-import org.apache.spark.SparkException
-import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
+import org.apache.spark.SparkException
+import org.apache.spark.sql.catalyst.expressions.Row
+import org.apache.spark.sql.test._
+import org.apache.spark.sql.types._
+
 /* Implicits */
-import TestSQLContext._
+
+import org.apache.spark.sql.test.TestSQLContext._
 
 class CsvFastSuite extends FunSuite {
   val carsFile = "src/test/resources/cars.csv"
@@ -36,6 +38,7 @@ class CsvFastSuite extends FunSuite {
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val escapeFile = "src/test/resources/escape.csv"
+  val numbersFile = "src/test/resources/numbers.csv"
   val tempEmptyDir = "target/test/empty2/"
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
@@ -110,7 +113,7 @@ class CsvFastSuite extends FunSuite {
       s"""
          |CREATE TEMPORARY TABLE carsTable
          |(yearMade double, makeName string, modelName string, priceTag decimal,
-         | comments string, grp string)
+         |comments string, grp string)
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
@@ -118,6 +121,162 @@ class CsvFastSuite extends FunSuite {
     assert(sql("SELECT yearMade FROM carsTable").collect().size === numCars)
     assert(sql("SELECT makeName FROM carsTable where priceTag > 60000").collect().size === 1)
   }
+
+  test("DSL test for Line exception policy") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withLineParsingOpts(LineParsingOpts(badLinePolicy = LineExceptionPolicy.Fill, fillValue = "fill"))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsFile)
+      .collect()
+    val volt = results.filter(row => row.get(2).asInstanceOf[String] == "Volt").head
+    assert(volt.get(3).asInstanceOf[String] === "fill")
+    assert(volt.get(4).asInstanceOf[String] === "fill")
+  }
+
+  test("DSL test for CSV Parsing Opts: delimiter") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(delimiter = '\t'))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsTsvFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
+
+  test("DSL test for CSV Parsing Opts: numParts") {
+    val rdd = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(numParts = 1, delimiter = '\t'))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsTsvFile)
+      .select("year")
+      .rdd
+
+    assert(rdd.partitions.size === 1)
+  }
+
+  test("DSL test for CSV Parsing Opts: quote") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(quoteChar = '\'', delimiter = '|', numParts = 1))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+
+    val years = results.map(_.get(0).asInstanceOf[String])
+    assert(years === Array("2012", "1997", "2015"))
+  }
+
+  test("DSL test for CSV Parsing Opts: whitespace") {
+    var results = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(delimiter = '|', numParts = 1, ignoreLeadingWhitespace = false))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+
+    var years = results.map(_.get(0).asInstanceOf[String])
+    assert(years === Array(" \'2012\'", " 1997", "2015"))
+
+    results = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(delimiter = '|', numParts = 1, ignoreLeadingWhitespace = false))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+
+    years = results.map(_.get(0).asInstanceOf[String])
+    assert(years === Array(" \'2012\'", " 1997", "2015"))
+
+    results = new CsvParser()
+      .withUseHeader(true)
+      .withCsvParsingOpts(CSVParsingOpts(delimiter = '|', numParts = 1, ignoreTrailingWhitespace = false))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+
+    years = results.map(_.get(0).asInstanceOf[String])
+    assert(years === Array("\'2012\' ", "1997", "2015 "))
+  }
+
+  test("DSL test for CSV Parsing Opts: special") {
+    var results = new CsvParser()
+      .withUseHeader(true)
+      .withSchema(StructType(Seq(StructField("double", DoubleType),
+      StructField("float", FloatType),
+      StructField("int", IntegerType),
+      StructField("long", LongType))))
+      .withCsvParsingOpts(CSVParsingOpts(numParts = 1))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, numbersFile)
+      .collect()
+
+    assert(results.size === 6)
+
+    var doubles = results.map(_.get(0))
+    assert(doubles.count(_.asInstanceOf[Double].isNaN) === 1)
+    assert(doubles.count(_.asInstanceOf[Double].isInfinite) === 2)
+    assert(doubles.count(_.asInstanceOf[Double] == 0.0) === 2)
+
+    var floats = results.map(_.get(1))
+    assert(floats.count(_.asInstanceOf[Float].isNaN) === 1)
+    assert(floats.count(_.asInstanceOf[Float].isInfinite) === 2)
+    assert(floats.count(_.asInstanceOf[Float] == 0.0) === 2)
+
+    var ints = results.map(_.get(2))
+    assert(ints.count(_.asInstanceOf[Int] == 0) === 2)
+
+    var longs = results.map(_.get(3))
+    assert(longs.count(_.asInstanceOf[Long] == 0) === 2)
+
+   results = new CsvParser()
+      .withUseHeader(true)
+      .withSchema(StructType(Seq(StructField("double", DoubleType),
+      StructField("float", FloatType),
+      StructField("int", IntegerType),
+      StructField("long", LongType))))
+      .withCsvParsingOpts(CSVParsingOpts(numParts = 1))
+      .withRealNumberParsingOpts(RealNumberParsingOpts(
+          infNegStrings = ParsingOptions.defaultInfNegString + "-Inff"))
+      .withParserLib("univocity")
+      .csvFile(TestSQLContext, numbersFile)
+      .collect()
+
+    assert(results.size === 7)
+
+    doubles = results.map(_.get(0))
+    assert(doubles.count(_.asInstanceOf[Double].isNaN) === 1)
+    assert(doubles.count(_.asInstanceOf[Double].isInfinite) === 3)
+    assert(doubles.count(_.asInstanceOf[Double] == 0.0) === 2)
+
+    floats = results.map(_.get(1))
+    assert(floats.count(_.asInstanceOf[Float].isNaN) === 1)
+    assert(floats.count(_.asInstanceOf[Float].isInfinite) === 3)
+    assert(floats.count(_.asInstanceOf[Float] == 0.0) === 2)
+
+    ints = results.map(_.get(2))
+    assert(ints.count(_.asInstanceOf[Int] == 0) === 2)
+
+    longs = results.map(_.get(3))
+    assert(longs.count(_.asInstanceOf[Long] == 0) === 2)
+
+  }
+
 
   test("DSL test for DROPMALFORMED parsing mode") {
     val results = new CsvParser()
@@ -137,15 +296,14 @@ class CsvFastSuite extends FunSuite {
       .withUseHeader(true)
       .withParserLib("univocity")
 
-    val exception = intercept[SparkException]{
+    val exception = intercept[SparkException] {
       parser.csvFile(TestSQLContext, carsFile)
         .select("year")
         .collect()
     }
 
-    assert(exception.getMessage.contains("Malformed line in FAILFAST mode"))
+    assert(exception.getMessage.contains("Malformed line in FAILFAST or Abort mode"))
   }
-
 
   test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()
@@ -199,7 +357,7 @@ class CsvFastSuite extends FunSuite {
         .collect()
 
     assert(results.slice(0, numCars).toSeq.map(_(0).asInstanceOf[String]) ==
-      Seq("'2012'", "1997", "2015"))
+      Seq(" '2012' ", " 1997", "2015 "))
   }
 
   test("DDL test with alternative delimiter and quote") {
@@ -227,22 +385,22 @@ class CsvFastSuite extends FunSuite {
   }
 
   test("DDL test with empty file") {
-    sql(s"""
-           |CREATE TEMPORARY TABLE carsTable
-           |(yearMade double, makeName string, modelName string, comments string, grp string)
-           |USING com.databricks.spark.csv
-           |OPTIONS (path "$emptyFile", header "false", parserLib "univocity")
+    sql( s"""
+            |CREATE TEMPORARY TABLE carsTable
+            |(yearMade double, makeName string, modelName string, comments string, grp string)
+            |USING com.databricks.spark.csv
+            |OPTIONS (path "$emptyFile", header "false", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT count(*) FROM carsTable").collect().head(0) === 0)
   }
 
   test("DDL test with schema") {
-    sql(s"""
-           |CREATE TEMPORARY TABLE carsTable
-           |(yearMade double, makeName string, modelName string, comments string, grp string)
-           |USING com.databricks.spark.csv
-           |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
+    sql( s"""
+            |CREATE TEMPORARY TABLE carsTable
+            |(yearMade double, makeName string, modelName string, comments string, grp string)
+            |USING com.databricks.spark.csv
+            |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT makeName FROM carsTable").collect().size === numCars)
@@ -269,11 +427,11 @@ class CsvFastSuite extends FunSuite {
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsFile", header "true", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
-    sql(s"""
-           |CREATE TEMPORARY TABLE carsTableEmpty
-           |(yearMade double, makeName string, modelName string, comments string, grp string)
-           |USING com.databricks.spark.csv
-           |OPTIONS (path "$tempEmptyDir", header "false", parserLib "univocity")
+    sql( s"""
+            |CREATE TEMPORARY TABLE carsTableEmpty
+            |(yearMade double, makeName string, modelName string, comments string, grp string)
+            |USING com.databricks.spark.csv
+            |OPTIONS (path "$tempEmptyDir", header "false", parserLib "univocity")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sql("SELECT * FROM carsTableIO").collect().size === numCars)
@@ -294,9 +452,9 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false"))
 
-    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
+    val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
@@ -309,7 +467,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false"), classOf[GzipCodec])
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/")
 
@@ -324,7 +482,7 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile, parserLib = "univocity")
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "\""))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
@@ -339,7 +497,8 @@ class CsvFastSuite extends FunSuite {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = TestSQLContext.csvFile(carsFile)
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "!"))
+    cars.saveAsCsvFile(copyFilePath,
+      Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "!"))
 
     val carsCopy = TestSQLContext.csvFile(copyFilePath + "/", quote = '!', parserLib = "univocity")
 
@@ -353,8 +512,9 @@ class CsvFastSuite extends FunSuite {
     new File(tempEmptyDir).mkdirs()
     val copyFilePath = tempEmptyDir + "escape-copy.csv"
 
-    val escape = TestSQLContext.csvFile(escapeFile, escape='|', quote='"')
-    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+    val escape = TestSQLContext.csvFile(escapeFile, escape = '|', quote = '"')
+    escape.saveAsCsvFile(copyFilePath,
+      Map("header" -> "true", "headerPerPart" -> "false", "quote" -> "\""))
 
     val escapeCopy = TestSQLContext.csvFile(copyFilePath + "/", parserLib = "univocity")
 
@@ -458,3 +618,4 @@ class CsvFastSuite extends FunSuite {
 
 
 }
+

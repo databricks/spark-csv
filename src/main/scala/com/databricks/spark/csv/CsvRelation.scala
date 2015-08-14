@@ -31,20 +31,20 @@ import org.apache.spark.sql.types._
 import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
 
-case class CsvRelation protected[spark] (
-    location: String,
-    useHeader: Boolean,
-    delimiter: Char,
-    quote: Char,
-    escape: Character,
-    comment: Character,
-    parseMode: String,
-    parserLib: String,
-    ignoreLeadingWhiteSpace: Boolean,
-    ignoreTrailingWhiteSpace: Boolean,
-    userSchema: StructType = null,
-    charset: String = TextFile.DEFAULT_CHARSET.name(),
-    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+case class CsvRelation protected[spark](
+   location: String,
+   useHeader: Boolean,
+   csvParsingOpts: CSVParsingOpts,
+   parseMode: String,
+   parserLib: String,
+   userSchema: StructType = null,
+   comment: Character,
+   lineExceptionPolicy: LineParsingOpts = LineParsingOpts(),
+   realNumOpts: RealNumberParsingOpts = RealNumberParsingOpts(),
+   intNumOpts: IntNumberParsingOpts = IntNumberParsingOpts(),
+   stringParsingOpts: StringParsingOpts = StringParsingOpts(),
+   charset: String = TextFile.DEFAULT_CHARSET.name(),
+   inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
   /**
@@ -59,8 +59,10 @@ case class CsvRelation protected[spark] (
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
 
-  if((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
-    logger.warn(s"Ignore white space options may not work with Commons parserLib option")
+  if ((csvParsingOpts.ignoreLeadingWhitespace ||
+    csvParsingOpts.ignoreTrailingWhitespace) &&
+    ParserLibs.isCommonsLib(parserLib)) {
+    logger.warn(s"Ignore white space options only supported with univocity parser option")
   }
 
   private val failFast = ParseModes.isFailFastMode(parseMode)
@@ -70,16 +72,16 @@ case class CsvRelation protected[spark] (
   val schema = inferSchema()
 
   def tokenRdd(header: Array[String]): RDD[Array[String]] = {
+    val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset,
+      csvParsingOpts.numParts)
 
-    val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset)
-
-    if(ParserLibs.isUnivocityLib(parserLib)) {
+    if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD, header)
     } else {
       val csvFormat = CSVFormat.DEFAULT
-        .withDelimiter(delimiter)
-        .withQuote(quote)
-        .withEscape(escape)
+        .withDelimiter(csvParsingOpts.delimiter)
+        .withQuote(csvParsingOpts.quoteChar)
+        .withEscape(csvParsingOpts.escapeChar)
         .withSkipHeaderRecord(false)
         .withHeader(header: _*)
         .withCommentMarker(comment)
@@ -102,28 +104,67 @@ case class CsvRelation protected[spark] (
   // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
   def buildScan = {
     val schemaFields = schema.fields
-    tokenRdd(schemaFields.map(_.name)).flatMap{ tokens =>
+    tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
+      lazy val errorDetail = s"${tokens.mkString(csvParsingOpts.delimiter.toString)}"
 
-      if (dropMalformed && schemaFields.length != tokens.size) {
-        logger.warn(s"Dropping malformed line: $tokens")
+      if (schemaFields.length != tokens.size &&
+        (dropMalformed || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Ignore)) {
+        logger.warn(s"Dropping malformed line: $errorDetail")
         None
-      } else if (failFast && schemaFields.length != tokens.size) {
-        throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+      } else if (schemaFields.length != tokens.size &&
+        (failFast || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Abort)) {
+        throw new RuntimeException(s"Malformed line in FAILFAST or Abort mode: $errorDetail")
       } else {
         var index: Int = 0
         val rowArray = new Array[Any](schemaFields.length)
         try {
           index = 0
           while (index < schemaFields.length) {
-            val field = schemaFields(index)
-            rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable)
+            try {
+              rowArray(index) = TypeCast.castTo(tokens(index), schemaFields(index).dataType)
+            } catch {
+              case e: NumberFormatException if realNumOpts.enable &&
+                (schemaFields(index).dataType == DoubleType ||
+                  schemaFields(index).dataType == FloatType) =>
+
+                rowArray(index) = if (realNumOpts.nullStrings.contains(tokens(index))) {
+                  null
+                } else if (realNumOpts.nanStrings.contains(tokens(index))) {
+                  TypeCast.castTo("NaN", schemaFields(index).dataType)
+                } else if (realNumOpts.infPosStrings.contains(tokens(index))) {
+                  TypeCast.castTo("Infinity", schemaFields(index).dataType)
+                } else if (realNumOpts.infNegStrings.contains(tokens(index))) {
+                  TypeCast.castTo("-Infinity", schemaFields(index).dataType)
+                } else {
+                  throw new IllegalStateException(
+                    s"Failed to parse as double/float number ${tokens(index)}")
+                }
+
+              case _: NumberFormatException if intNumOpts.enable &&
+                (schemaFields(index).dataType == IntegerType ||
+                  schemaFields(index).dataType == LongType) =>
+
+                rowArray(index) = if (intNumOpts.nullStrings.contains(tokens(index))) {
+                  null
+                } else {
+                  throw new IllegalStateException(
+                    s"Failed to parse as int/long number ${tokens(index)}")
+                }
+            }
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))
         } catch {
-          case aiob: ArrayIndexOutOfBoundsException if permissive =>
-            (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
+          case aiob: ArrayIndexOutOfBoundsException
+            if permissive || lineExceptionPolicy.badLinePolicy == LineExceptionPolicy.Fill =>
+            (index until schemaFields.length).foreach { ind =>
+              rowArray(ind) = TypeCast.castTo(lineExceptionPolicy.fillValue,
+                schemaFields(index).dataType)
+            }
             Some(Row.fromSeq(rowArray))
+          case NonFatal(e) if !failFast =>
+            logger.error(s"Exception while parsing line: $errorDetail. ", e)
+            None
         }
       }
     }
@@ -133,29 +174,33 @@ case class CsvRelation protected[spark] (
     if (this.userSchema != null) {
       userSchema
     } else {
-      val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
+      val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
+        val escapeVal = if (csvParsingOpts.escapeChar == null) '\\'
+        else csvParsingOpts.escapeChar.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
-        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal,
-          commentMarker = commentChar).parseLine(firstLine)
+        new LineCsvReader(fieldSep = csvParsingOpts.delimiter,
+          quote = csvParsingOpts.quoteChar,
+          escape = escapeVal,
+          commentMarker = commentChar)
+          .parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
-          .withDelimiter(delimiter)
-          .withQuote(quote)
-          .withEscape(escape)
+          .withDelimiter(csvParsingOpts.delimiter)
+          .withQuote(csvParsingOpts.quoteChar)
+          .withEscape(csvParsingOpts.escapeChar)
           .withSkipHeaderRecord(false)
         CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
       }
       val header = if (useHeader) {
         firstRow
       } else {
-        firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
+        firstRow.zipWithIndex.map { case (value, index) => s"C$index" }
       }
       if (this.inferCsvSchema) {
         InferSchema(tokenRdd(header), header)
-      } else{
+      } else {
         // By default fields are assumed to be StringType
-        val schemaFields =  header.map { fieldName =>
+        val schemaFields = header.map { fieldName =>
           StructField(fieldName.toString, StringType, nullable = true)
         }
         StructType(schemaFields)
@@ -178,29 +223,30 @@ case class CsvRelation protected[spark] (
     }
    }
 
-  private def univocityParseCSV(
-     file: RDD[String],
-     header: Seq[String]): RDD[Array[String]] = {
+  private def univocityParseCSV(file: RDD[String], header: Seq[String]) = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if(useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        val escapeVal = if (csvParsingOpts.escapeChar == null) '\\'
+        else csvParsingOpts.escapeChar.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
 
         new BulkCsvReader(iter, split,
-          headers = header, fieldSep = delimiter,
-          quote = quote, escape = escapeVal, commentMarker = commentChar)
+          headers = header, fieldSep = csvParsingOpts.delimiter,
+          quote = csvParsingOpts.quoteChar, escape = escapeVal,
+          ignoreLeadingSpace = csvParsingOpts.ignoreLeadingWhitespace,
+          ignoreTrailingSpace = csvParsingOpts.ignoreTrailingWhitespace,
+          commentMarker = commentChar)
       }
     }, true)
 
     rows
   }
 
-  private def parseCSV(
-      iter: Iterator[String],
-      csvFormat: CSVFormat): Iterator[Array[String]] = {
+  private def parseCSV(iter: Iterator[String],
+                       csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
@@ -233,7 +279,7 @@ case class CsvRelation protected[spark] (
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
-      data.saveAsCsvFile(location, Map("delimiter" -> delimiter.toString))
+      data.saveAsCsvFile(location, Map("delimiter" -> csvParsingOpts.delimiter.toString))
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }

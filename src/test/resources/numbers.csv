@@ -1,0 +1,11 @@
+double, float, int, long
+1.0, 1.0, 1, 1
+ , , ,
+NaN, NaN, 3, 3
+NULL, null, N/A, n/a
+Inf, Inf, 5, 5
+-Inff, -Inff, 6, 6
+Infinity, Infinity, 7, 7
+
+
+
