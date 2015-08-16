@@ -29,7 +29,7 @@ version: 1.2.0
 ## Using with Spark shell
 This package can be added to  Spark using the `--jars` command line option.  For example, to include it when starting the spark shell:
 
-### Spark compiled with Scala 2.10
+### Spark compiled with Scala 2.11
 ```
 $SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.2.0-s_2.11
 ```
