@@ -8,6 +8,8 @@ resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositori
 
 resolvers += "Spark Package Main Repo" at "https://dl.bintray.com/spark-packages/maven"
 
+resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
+
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.2.0")
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")

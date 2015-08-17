@@ -16,24 +16,24 @@
 package com.databricks.spark.csv
 
 
-import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SQLContext}
+
 import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
  */
 class CsvParser {
-
   private var useHeader: Boolean = false
-  private var delimiter: Character = ','
-  private var quote: Character = '"'
-  private var escape: Character = null
+  private var csvParsingOpts: CSVParsingOpts = CSVParsingOpts()
+  private var lineParsingOpts: LineParsingOpts = LineParsingOpts()
+  private var realNumberParsingOpts: RealNumberParsingOpts = RealNumberParsingOpts()
+  private var intNumberParsingOpts: IntNumberParsingOpts = IntNumberParsingOpts()
+  private var stringParsingOpts: StringParsingOpts = StringParsingOpts()
   private var comment: Character = '#'
   private var schema: StructType = null
   private var parseMode: String = ParseModes.DEFAULT
-  private var ignoreLeadingWhiteSpace: Boolean = false
-  private var ignoreTrailingWhiteSpace: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
   private var charset: String = TextFile.DEFAULT_CHARSET.name()
   private var inferSchema: Boolean = false
@@ -44,12 +44,12 @@ class CsvParser {
   }
 
   def withDelimiter(delimiter: Character): CsvParser = {
-    this.delimiter = delimiter
+    this.csvParsingOpts.delimiter = delimiter
     this
   }
 
   def withQuoteChar(quote: Character): CsvParser = {
-    this.quote = quote
+    this.csvParsingOpts.quoteChar = quote
     this
   }
 
@@ -64,7 +64,7 @@ class CsvParser {
   }
 
   def withEscape(escapeChar: Character): CsvParser = {
-    this.escape = escapeChar
+    this.csvParsingOpts.escapeChar = escapeChar
     this
   }
 
@@ -74,17 +74,52 @@ class CsvParser {
   }
 
   def withIgnoreLeadingWhiteSpace(ignore: Boolean): CsvParser = {
-    this.ignoreLeadingWhiteSpace = ignore
+    this.csvParsingOpts.ignoreLeadingWhitespace = ignore
     this
   }
 
   def withIgnoreTrailingWhiteSpace(ignore: Boolean): CsvParser = {
-    this.ignoreTrailingWhiteSpace = ignore
+    this.csvParsingOpts.ignoreTrailingWhitespace = ignore
     this
   }
 
   def withParserLib(parserLib: String): CsvParser = {
     this.parserLib = parserLib
+    this
+  }
+
+  def withCsvParsingOpts(csvParsingOpts: CSVParsingOpts) = {
+    this.csvParsingOpts = csvParsingOpts
+    this
+  }
+
+  def withLineParsingOpts(lineParsingOpts: LineParsingOpts) = {
+    this.lineParsingOpts = lineParsingOpts
+    this
+  }
+
+  def withRealNumberParsingOpts(numberParsingOpts: RealNumberParsingOpts) = {
+    this.realNumberParsingOpts = numberParsingOpts
+    this
+  }
+
+  def withIntNumberParsingOpts(numberParsingOpts: IntNumberParsingOpts) = {
+    this.intNumberParsingOpts = numberParsingOpts
+    this
+  }
+
+
+  def withStringParsingOpts(stringParsingOpts: StringParsingOpts) = {
+    this.stringParsingOpts = stringParsingOpts
+    this
+  }
+
+  def withOpts(optMap: Map[String, String]) = {
+    this.stringParsingOpts = StringParsingOpts(optMap)
+    this.lineParsingOpts = LineParsingOpts(optMap)
+    this.realNumberParsingOpts = RealNumberParsingOpts(optMap)
+    this.intNumberParsingOpts = IntNumberParsingOpts(optMap)
+    this.csvParsingOpts = CSVParsingOpts(optMap)
     this
   }
 
@@ -104,15 +139,15 @@ class CsvParser {
     val relation: CsvRelation = CsvRelation(
       path,
       useHeader,
-      delimiter,
-      quote,
-      escape,
-      comment,
+      csvParsingOpts,
       parseMode,
       parserLib,
-      ignoreLeadingWhiteSpace,
-      ignoreTrailingWhiteSpace,
       schema,
+      comment,
+      lineParsingOpts,
+      realNumberParsingOpts,
+      intNumberParsingOpts,
+      stringParsingOpts,
       charset,
       inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)

@@ -16,9 +16,10 @@
 package com.databricks.spark.csv
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 
 /**
@@ -45,9 +46,9 @@ class DefaultSource
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
   override def createRelation(
-      sqlContext: SQLContext,
-      parameters: Map[String, String],
-      schema: StructType) = {
+                               sqlContext: SQLContext,
+                               parameters: Map[String, String],
+                               schema: StructType) = {
     val path = checkPath(parameters)
     val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
 
@@ -89,10 +90,10 @@ class DefaultSource
 
     val parserLib = parameters.getOrElse("parserLib", ParserLibs.DEFAULT)
     val ignoreLeadingWhiteSpace = parameters.getOrElse("ignoreLeadingWhiteSpace", "false")
-    val ignoreLeadingWhiteSpaceFlag = if(ignoreLeadingWhiteSpace == "false") {
+    val ignoreLeadingWhiteSpaceFlag = if (ignoreLeadingWhiteSpace == "false") {
       false
-    } else if(ignoreLeadingWhiteSpace == "true") {
-      if(!ParserLibs.isUnivocityLib(parserLib)) {
+    } else if (ignoreLeadingWhiteSpace == "true") {
+      if (!ParserLibs.isUnivocityLib(parserLib)) {
         throw new Exception("Ignore whitesspace supported for Univocity parser only")
       }
       true
@@ -100,10 +101,10 @@ class DefaultSource
       throw new Exception("Ignore white space flag can be true or false")
     }
     val ignoreTrailingWhiteSpace = parameters.getOrElse("ignoreTrailingWhiteSpace", "false")
-    val ignoreTrailingWhiteSpaceFlag = if(ignoreTrailingWhiteSpace == "false") {
+    val ignoreTrailingWhiteSpaceFlag = if (ignoreTrailingWhiteSpace == "false") {
       false
-    } else if(ignoreTrailingWhiteSpace == "true") {
-      if(!ParserLibs.isUnivocityLib(parserLib)) {
+    } else if (ignoreTrailingWhiteSpace == "true") {
+      if (!ParserLibs.isUnivocityLib(parserLib)) {
         throw new Exception("Ignore whitespace supported for the Univocity parser only")
       }
       true
@@ -113,36 +114,52 @@ class DefaultSource
 
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
-
     val inferSchema = parameters.getOrElse("inferSchema", "false")
-    val inferSchemaFlag = if(inferSchema == "false") {
+    val inferSchemaFlag = if (inferSchema == "false") {
       false
-    } else if(inferSchema == "true") {
+    } else if (inferSchema == "true") {
       true
     } else {
       throw new Exception("Infer schema flag can be true or false")
     }
 
+    val lineParsingOpts = LineParsingOpts(parameters)
+    val realNumParsingOpts = RealNumberParsingOpts(parameters)
+    val intNumParsingOpts = IntNumberParsingOpts(parameters)
+    val stringParsingOpts = StringParsingOpts(parameters)
+
+    val csvParsingOpts = if (!parameters.exists { case (k, v) =>
+      k.startsWith("csvParsingOpts.")
+    }) {
+      CSVParsingOpts(delimiter = delimiter,
+        quoteChar = quoteChar,
+        escapeChar = escapeChar,
+        ignoreLeadingWhitespace = ignoreLeadingWhiteSpaceFlag,
+        ignoreTrailingWhitespace = ignoreTrailingWhiteSpaceFlag)
+    } else {
+      CSVParsingOpts(parameters)
+    }
+
     CsvRelation(path,
-      headerFlag,
-      delimiter,
-      quoteChar,
-      escapeChar,
-      commentChar,
-      parseMode,
-      parserLib,
-      ignoreLeadingWhiteSpaceFlag,
-      ignoreTrailingWhiteSpaceFlag,
-      schema,
-      charset,
-      inferSchemaFlag)(sqlContext)
+      useHeader = headerFlag,
+      csvParsingOpts = csvParsingOpts,
+      lineExceptionPolicy = lineParsingOpts,
+      realNumOpts = realNumParsingOpts,
+      intNumOpts = intNumParsingOpts,
+      stringParsingOpts = stringParsingOpts,
+      parseMode = parseMode,
+      parserLib = parserLib,
+      userSchema = schema,
+      comment = commentChar,
+      charset = charset,
+      inferCsvSchema = inferSchemaFlag)(sqlContext)
   }
 
   override def createRelation(
-      sqlContext: SQLContext,
-      mode: SaveMode,
-      parameters: Map[String, String],
-      data: DataFrame): BaseRelation = {
+                               sqlContext: SQLContext,
+                               mode: SaveMode,
+                               parameters: Map[String, String],
+                               data: DataFrame): BaseRelation = {
     val path = checkPath(parameters)
     val filesystemPath = new Path(path)
     val fs = filesystemPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)

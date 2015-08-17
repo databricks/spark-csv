@@ -34,6 +34,19 @@ class TypeCastSuite extends FunSuite {
     }
   }
 
+  test("Can parse special") {
+    val strValues = Seq("NaN", "Infinity", "-Infinity")
+    val doubleChecks: Seq[Double => Boolean] = Seq(x => x.isNaN, x => x.isPosInfinity, x => x.isNegInfinity)
+    val floatChecks: Seq[Float => Boolean] = Seq(x => x.isNaN, x => x.isPosInfinity, x => x.isNegInfinity)
+
+    strValues.zip(doubleChecks).foreach { case (strVal, checker) =>
+      assert(checker(TypeCast.castTo(strVal, DoubleType).asInstanceOf[Double]))
+    }
+    strValues.zip(floatChecks).foreach { case (strVal, checker) =>
+      assert(checker(TypeCast.castTo(strVal, FloatType).asInstanceOf[Float]))
+    }
+  }
+
   test("Can parse escaped characters") {
     assert(TypeCast.toChar("""\t""") === '\t')
     assert(TypeCast.toChar("""\r""") === '\r')
