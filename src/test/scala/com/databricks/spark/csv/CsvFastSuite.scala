@@ -380,6 +380,23 @@ class CsvFastSuite extends FunSuite {
 
   }
 
+  test("DSL test custom schema") {
+
+    val results = TestSQLContext
+      .csvFile(carsFile, columnsTypeMap = Map("year" -> IntegerType))
+
+    assert(results.schema == StructType(List(
+      StructField("year",IntegerType,true),
+      StructField("make",StringType,true),
+      StructField("model",StringType,true),
+      StructField("comment",StringType,true),
+      StructField("blank",StringType,true))
+    ))
+
+    assert(results.collect().size === numCars)
+
+  }
+
   test("DSL test inferred schema passed through") {
 
     val dataFrame = TestSQLContext
