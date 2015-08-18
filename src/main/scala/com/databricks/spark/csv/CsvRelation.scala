@@ -44,7 +44,6 @@ case class CsvRelation protected[spark] (
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null,
-    charset: String = TextFile.DEFAULT_CHARSET.name(),
     inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 

@@ -136,7 +136,6 @@ class DefaultSource
       ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhiteSpaceFlag,
       schema,
-      charset,
       inferSchemaFlag)(sqlContext)
   }
 

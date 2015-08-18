@@ -51,7 +51,6 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
-        charset = charset,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -75,7 +74,6 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
-        charset = charset,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -173,5 +171,4 @@ package object csv {
       }
     }
   }
-
 }
