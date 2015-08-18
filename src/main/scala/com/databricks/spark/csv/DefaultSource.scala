@@ -123,7 +123,9 @@ class DefaultSource
       throw new Exception("Infer schema flag can be true or false")
     }
 
-    CsvRelation(path,
+    CsvRelation(
+      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      Some(path),
       headerFlag,
       delimiter,
       quoteChar,
@@ -134,7 +136,6 @@ class DefaultSource
       ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhiteSpaceFlag,
       schema,
-      charset,
       inferSchemaFlag)(sqlContext)
   }
 

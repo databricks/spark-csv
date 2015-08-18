@@ -32,7 +32,8 @@ import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
-    location: String,
+    baseRDD: () => RDD[String],
+    location: Option[String],
     useHeader: Boolean,
     delimiter: Char,
     quote: Char,
@@ -43,7 +44,6 @@ case class CsvRelation protected[spark] (
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
     userSchema: StructType = null,
-    charset: String = TextFile.DEFAULT_CHARSET.name(),
     inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
 
@@ -71,10 +71,8 @@ case class CsvRelation protected[spark] (
 
   def tokenRdd(header: Array[String]): RDD[Array[String]] = {
 
-    val baseRDD = TextFile.withCharset(sqlContext.sparkContext, location, charset)
-
     if(ParserLibs.isUnivocityLib(parserLib)) {
-      univocityParseCSV(baseRDD, header)
+      univocityParseCSV(baseRDD(), header)
     } else {
       val csvFormat = CSVFormat.DEFAULT
         .withDelimiter(delimiter)
@@ -87,7 +85,7 @@ case class CsvRelation protected[spark] (
       // If header is set, make sure firstLine is materialized before sending to executors.
       val filterLine = if (useHeader) firstLine else null
 
-      baseRDD.mapPartitions { iter =>
+      baseRDD().mapPartitions { iter =>
         // When using header, any input line that equals firstLine is assumed to be header
         val csvIter = if (useHeader) {
           iter.filter(_ != filterLine)
@@ -167,16 +165,15 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    val csv = TextFile.withCharset(sqlContext.sparkContext, location, charset)
     if (comment == null) {
-      csv.first()
+      baseRDD().first()
     } else {
-      csv.take(MAX_COMMENT_LINES_IN_HEADER)
+      baseRDD().take(MAX_COMMENT_LINES_IN_HEADER)
         .find(! _.startsWith(comment.toString))
         .getOrElse(sys.error(s"No uncommented header line in " +
           s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
     }
-   }
+  }
 
   private def univocityParseCSV(
      file: RDD[String],
@@ -220,7 +217,13 @@ case class CsvRelation protected[spark] (
 
   // The function below was borrowed from JSONRelation
   override def insert(data: DataFrame, overwrite: Boolean) = {
-    val filesystemPath = new Path(location)
+
+    val filesystemPath = location match {
+      case Some(p) => new Path(p)
+      case None =>
+        throw new IOException(s"Cannot INSERT into table with no path defined")
+    }
+
     val fs = filesystemPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
 
     if (overwrite) {
@@ -233,7 +236,7 @@ case class CsvRelation protected[spark] (
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
-      data.saveAsCsvFile(location, Map("delimiter" -> delimiter.toString))
+      data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString))
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }

@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.types.StructType
 import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
@@ -23,7 +24,7 @@ import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
 /**
  * A collection of static functions for working with CSV files in Spark SQL
  */
-class CsvParser {
+class CsvParser extends Serializable {
 
   private var useHeader: Boolean = false
   private var delimiter: Character = ','
@@ -102,7 +103,8 @@ class CsvParser {
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
     val relation: CsvRelation = CsvRelation(
-      path,
+      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      Some(path),
       useHeader,
       delimiter,
       quote,
@@ -113,10 +115,27 @@ class CsvParser {
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
       schema,
-      charset,
       inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
-}
+  def csvRdd(sqlContext: SQLContext, csvRDD: RDD[String]): DataFrame ={
 
+    val relation: CsvRelation = CsvRelation(
+      () => csvRDD,
+      None,
+      useHeader,
+      delimiter,
+      quote,
+      escape,
+      comment,
+      parseMode,
+      parserLib,
+      ignoreLeadingWhiteSpace,
+      ignoreTrailingWhiteSpace,
+      schema,
+      inferSchema)(sqlContext)
+    sqlContext.baseRelationToDataFrame(relation)
+
+  }
+}

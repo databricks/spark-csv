@@ -456,5 +456,49 @@ class CsvFastSuite extends FunSuite {
     assert(results.toSeq.map(_.toSeq) == expected)
   }
 
+  test("DSL load csv from rdd") {
 
+    val csvRdd = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
+    val df = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib("UNIVOCITY")
+      .csvRdd(TestSQLContext, csvRdd)
+      .collect()
+
+    assert(df(0).toSeq == Seq("20", "1.8"))
+    assert(df(1).toSeq == Seq("16", "1.7"))
+
+  }
+
+  test("Inserting into csvRdd should throw exception"){
+
+    val csvRdd = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
+    val sampleData = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
+
+    val df = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib("UNIVOCITY")
+      .csvRdd(TestSQLContext, csvRdd)
+    val sampleDf = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib("UNIVOCITY")
+      .csvRdd(TestSQLContext, sampleData)
+
+    df.registerTempTable("csvRdd")
+    sampleDf.registerTempTable("sampleDf")
+
+    val exception = intercept[java.io.IOException] {
+      sql("INSERT OVERWRITE TABLE csvRdd select * from sampleDf")
+    }
+    assert(exception.getMessage.contains("Cannot INSERT into table with no path defined"))
+  }
+
+  test("DSL tsv test") {
+    val results = TestSQLContext
+      .tsvFile(carsTsvFile, parserLib = "UNIVOCITY")
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
 }
