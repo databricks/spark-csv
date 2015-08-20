@@ -15,10 +15,12 @@
  */
 package com.databricks.spark.csv.util
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types._
+import java.sql.Timestamp
 
 import scala.util.control.Exception._
+
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types._
 
 private[csv] object InferSchema {
 
@@ -73,27 +75,35 @@ private[csv] object InferSchema {
         case IntegerType => tryParseInteger(field)
         case LongType => tryParseLong(field)
         case DoubleType => tryParseDouble(field)
+        case TimestampType => tryParseTimestamp(field)
         case StringType => StringType
       }
     }
   }
 
-  def tryParseDouble(field: String) = if ((allCatch opt field.toDouble).isDefined){
-    DoubleType
-  } else {
-    StringType
-  }
 
-  def tryParseLong(field: String) = if ((allCatch opt field.toLong).isDefined){
-    LongType
-  }else {
-    tryParseDouble(field)
-  }
-
-  def tryParseInteger(field: String) = if((allCatch opt field.toInt).isDefined){
+  def tryParseInteger(field: String) = if((allCatch opt field.toInt).isDefined) {
     IntegerType
   } else {
     tryParseLong(field)
+  }
+
+  def tryParseLong(field: String) = if ((allCatch opt field.toLong).isDefined) {
+    LongType
+  } else {
+    tryParseDouble(field)
+  }
+
+  def tryParseDouble(field: String) = if ((allCatch opt field.toDouble).isDefined) {
+    DoubleType
+  } else {
+    tryParseTimestamp(field)
+  }
+
+  def tryParseTimestamp(field: String) = if((allCatch opt Timestamp.valueOf(field)).isDefined) {
+    TimestampType
+  } else {
+    StringType
   }
 
   /**
@@ -108,6 +118,7 @@ private[csv] object InferSchema {
       LongType,
       FloatType,
       DoubleType,
+      TimestampType,
       DecimalType.Unlimited)
 
   /**

@@ -17,6 +17,7 @@ package com.databricks.spark.csv
 
 import java.io.File
 import java.nio.charset.UnsupportedCharsetException
+import java.sql.Timestamp
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.Row
@@ -365,7 +366,6 @@ class CsvSuite extends FunSuite {
     ))
 
     assert(results.collect().size === numCars)
-
   }
 
   test("DSL test inferred schema passed through") {
@@ -379,7 +379,6 @@ class CsvSuite extends FunSuite {
 
     assert(results.first.getString(0) === "No comment")
     assert(results.first.getInt(1) === 2012)
-
   }
 
   test("DDL test with inferred schema") {
@@ -394,10 +393,9 @@ class CsvSuite extends FunSuite {
     val results = sql("select year from carsTable where make = 'Ford'")
 
     assert(results.first().getInt(0) === 1997)
-
   }
 
-  test("DSL test nullable fields"){
+  test("DSL test nullable fields") {
 
     val results = new CsvParser()
       .withSchema(StructType(List(StructField("name", StringType, false), StructField("age", IntegerType, true))))
@@ -405,10 +403,9 @@ class CsvSuite extends FunSuite {
       .csvFile(TestSQLContext, nullNumbersFile)
       .collect()
 
-    assert(results.head.toSeq == Seq("alice", 35))
-    assert(results(1).toSeq == Seq("bob", null))
-    assert(results(2).toSeq == Seq("", 24))
-
+    assert(results.head.toSeq === Seq("alice", 35))
+    assert(results(1).toSeq === Seq("bob", null))
+    assert(results(2).toSeq === Seq("", 24))
   }
 
   test("Commented lines in CSV data") {
@@ -419,14 +416,30 @@ class CsvSuite extends FunSuite {
       .collect()
 
     val expected =
-      Seq(Seq("1", "2", "3", "4", "5"),
-          Seq("6", "7", "8", "9", "0"),
-          Seq("1", "2", "3", "4", "5"))
+      Seq(Seq("1", "2", "3", "4", "5.01", "2015-08-20 15:57:00"),
+          Seq("6", "7", "8", "9", "0", "2015-08-21 16:58:01"),
+          Seq("1", "2", "3", "4", "5", "2015-08-23 18:00:42"))
 
-    assert(results.toSeq.map(_.toSeq) == expected)
+    assert(results.toSeq.map(_.toSeq) === expected)
   }
 
-  test("Setting commment to null disables comment support") {
+  test("Inferring schema") {
+    val results: Array[Row] = new CsvParser()
+      .withDelimiter(',')
+      .withComment('~')
+      .withInferSchema(true)
+      .csvFile(TestSQLContext, commentsFile)
+      .collect()
+
+    val expected =
+      Seq(Seq(1, 2, 3, 4, 5.01D, Timestamp.valueOf("2015-08-20 15:57:00")),
+        Seq(6, 7, 8, 9, 0, Timestamp.valueOf("2015-08-21 16:58:01")),
+        Seq(1, 2, 3, 4, 5, Timestamp.valueOf("2015-08-23 18:00:42")))
+
+    assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("Setting comment to null disables comment support") {
     val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment(null)
@@ -438,7 +451,7 @@ class CsvSuite extends FunSuite {
         Seq("#1", "2", "3"),
         Seq("4", "5", "6"))
 
-    assert(results.toSeq.map(_.toSeq) == expected)
+    assert(results.toSeq.map(_.toSeq) === expected)
   }
 
   test("DSL load csv from rdd") {
@@ -446,12 +459,11 @@ class CsvSuite extends FunSuite {
     val csvRdd = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
     val df = new CsvParser().withUseHeader(true).csvRdd(TestSQLContext, csvRdd).collect()
 
-    assert(df(0).toSeq == Seq("20", "1.8"))
-    assert(df(1).toSeq == Seq("16", "1.7"))
-
+    assert(df(0).toSeq === Seq("20", "1.8"))
+    assert(df(1).toSeq === Seq("16", "1.7"))
   }
 
-  test("Inserting into csvRdd should throw exception"){
+  test("Inserting into csvRdd should throw exception") {
 
     val csvRdd = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
     val sampleData = TestSQLContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
