@@ -103,10 +103,10 @@ case class CsvRelation protected[spark] (
     tokenRdd(schemaFields.map(_.name)).flatMap{ tokens =>
 
       if (dropMalformed && schemaFields.length != tokens.size) {
-        logger.warn(s"Dropping malformed line: $tokens")
+        logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
         None
       } else if (failFast && schemaFields.length != tokens.size) {
-        throw new RuntimeException(s"Malformed line in FAILFAST mode: $tokens")
+        throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
       } else {
         var index: Int = 0
         val rowArray = new Array[Any](schemaFields.length)
@@ -179,7 +179,7 @@ case class CsvRelation protected[spark] (
      file: RDD[String],
      header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
-    val filterLine = if (useHeader) firstLine else null
+    val filterLine = if(useHeader) firstLine else null
     val dataLines = if(useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
