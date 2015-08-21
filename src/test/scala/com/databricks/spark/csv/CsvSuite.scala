@@ -177,7 +177,7 @@ abstract class AbstractCsvSuite extends FunSuite {
     assert(results.size === numCars)
   }
 
-  test("Expect parsing error with wrong delimiter settting using sparkContext.csvFile") {
+  test("Expect parsing error with wrong delimiter setting using sparkContext.csvFile") {
     intercept[ org.apache.spark.sql.AnalysisException] {
       TestSQLContext.csvFile(
         carsAltFile,
