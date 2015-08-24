@@ -6,20 +6,38 @@ organization := "com.databricks"
 
 scalaVersion := "2.11.6"
 
-parallelExecution in Test := false
+spName := "databricks/spark-csv"
 
 crossScalaVersions := Seq("2.10.4", "2.11.6")
 
-libraryDependencies += "org.apache.commons" % "commons-csv" % "1.1"
+sparkVersion := "1.4.0"
 
-libraryDependencies += "com.univocity" % "univocity-parsers" % "1.5.1"
+val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
-libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5" % "provided"
+testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
 
 resolvers ++= Seq(
   "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
   "Typesafe" at "http://repo.typesafe.com/typesafe/releases",
   "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+)
+
+// TODO: remove once Spark 1.5.0 is released.
+resolvers += "Spark 1.5.0 RC2 Staging" at "https://repository.apache.org/content/repositories/orgapachespark-1141"
+
+sparkComponents := Seq("core", "sql")
+
+libraryDependencies ++= Seq(
+  "org.apache.commons" % "commons-csv" % "1.1",
+  "com.univocity" % "univocity-parsers" % "1.5.1",
+  "org.slf4j" % "slf4j-api" % "1.7.5" % "provided",
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
+  "com.novocode" % "junit-interface" % "0.9" % "test"
+)
+
+libraryDependencies ++= Seq(
+  "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
+  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force()
 )
 
 publishMavenStyle := true
@@ -57,17 +75,9 @@ pomExtra := (
     </developer>
   </developers>)
 
-spName := "databricks/spark-csv"
-
-sparkVersion := "1.4.0"
-
-sparkComponents += "sql"
-
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
-
-libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test"
+parallelExecution in Test := false
 
 ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
   if (scalaBinaryVersion.value == "2.10") false
-  else false
+  else true
 }

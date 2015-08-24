@@ -2,15 +2,14 @@ package com.databricks.spark.csv;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Random;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.apache.spark.SparkContext;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.test.TestSQLContext$;
 
 public class JavaCsvSuite {
   private transient SQLContext sqlContext;
@@ -22,12 +21,12 @@ public class JavaCsvSuite {
 
   @Before
   public void setUp() {
-    // Trigger static initializer of TestData
-    sqlContext = TestSQLContext$.MODULE$;
+    sqlContext = new SQLContext(new SparkContext("local[2]", "JavaCsvSuite"));
   }
 
   @After
   public void tearDown() {
+    sqlContext.sparkContext().stop();
     sqlContext = null;
   }
 
