@@ -120,6 +120,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("DDL test parsing decimal type") {
+    assume(org.apache.spark.SPARK_VERSION.take(3) > "1.3",
+      "DecimalType is broken on Spark 1.3.x")
     sqlContext.sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
