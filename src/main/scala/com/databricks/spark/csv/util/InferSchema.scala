@@ -32,8 +32,8 @@ private[csv] object InferSchema {
    */
   def apply(tokenRdd: RDD[Array[String]], header: Array[String]): StructType = {
 
-    val startType = Array.fill[DataType](header.length)(NullType)
-    val rootTypes = tokenRdd.aggregate(startType)(inferRowType, mergeRowTypes)
+    val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
+    val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(inferRowType, mergeRowTypes)
 
     val stuctFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       StructField(thisHeader, rootType, nullable = true)
@@ -42,7 +42,7 @@ private[csv] object InferSchema {
     StructType(stuctFields)
   }
 
-  private[csv] def inferRowType(rowSoFar: Array[DataType], next: Array[String]) = {
+  private def inferRowType(rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
     while(i < math.min(rowSoFar.length, next.length)){  // May have columns on right missing.
       rowSoFar(i) = inferField(rowSoFar(i), next(i))
@@ -51,7 +51,9 @@ private[csv] object InferSchema {
     rowSoFar
   }
 
-  private[csv] def mergeRowTypes(first: Array[DataType], second: Array[DataType]) = {
+  private[csv] def mergeRowTypes(
+      first: Array[DataType],
+      second: Array[DataType]): Array[DataType] = {
     first.zipAll(second, NullType, NullType).map { case ((a, b)) =>
       val tpe = findTightestCommonType(a, b).getOrElse(StringType)
       tpe match {
@@ -66,7 +68,6 @@ private[csv] object InferSchema {
    * point checking if it is an Int, as the final type must be Double or higher.
    */
   private[csv] def inferField(typeSoFar: DataType, field: String): DataType = {
-
     if (field == null || field.isEmpty){
       typeSoFar
     } else {
@@ -77,32 +78,45 @@ private[csv] object InferSchema {
         case DoubleType => tryParseDouble(field)
         case TimestampType => tryParseTimestamp(field)
         case StringType => StringType
+        case other: DataType =>
+          throw new UnsupportedOperationException(s"Unexpected data type $other")
       }
     }
   }
 
 
-  def tryParseInteger(field: String) = if((allCatch opt field.toInt).isDefined) {
+  private def tryParseInteger(field: String): DataType = if ((allCatch opt field.toInt).isDefined) {
     IntegerType
   } else {
     tryParseLong(field)
   }
 
-  def tryParseLong(field: String) = if ((allCatch opt field.toLong).isDefined) {
+  private def tryParseLong(field: String): DataType = if ((allCatch opt field.toLong).isDefined) {
     LongType
   } else {
     tryParseDouble(field)
   }
 
-  def tryParseDouble(field: String) = if ((allCatch opt field.toDouble).isDefined) {
-    DoubleType
-  } else {
-    tryParseTimestamp(field)
+  private def tryParseDouble(field: String): DataType = {
+    if ((allCatch opt field.toDouble).isDefined) {
+      DoubleType
+    } else {
+      tryParseTimestamp(field)
+    }
   }
 
-  def tryParseTimestamp(field: String) = if((allCatch opt Timestamp.valueOf(field)).isDefined) {
-    TimestampType
-  } else {
+  def tryParseTimestamp(field: String): DataType = {
+    if ((allCatch opt Timestamp.valueOf(field)).isDefined) {
+      TimestampType
+    } else {
+      stringType()
+    }
+  }
+
+  // Defining a function to return the StringType constant is necessary in order to work around
+  // a Scala compiler issue which leads to runtime incompatibilities with certain Spark versions;
+  // see issue #128 for more details.
+  private def stringType(): DataType = {
     StringType
   }
 
@@ -110,8 +124,8 @@ private[csv] object InferSchema {
    * Copied from internal Spark api
    * [[org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion]]
    */
-  private val numericPrecedence =
-    IndexedSeq(
+  private val numericPrecedence: IndexedSeq[DataType] =
+    IndexedSeq[DataType](
       ByteType,
       ShortType,
       IntegerType,
