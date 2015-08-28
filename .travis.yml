@@ -29,6 +29,7 @@ matrix:
       env: TEST_SPARK_VERSION="1.5.0-rc2"
 script:
   - sbt ++$TRAVIS_SCALA_VERSION -Dspark.testVersion=$TEST_SPARK_VERSION coverage test
-  - sbt ++$TRAVIS_SCALA_VERSION scalastyle
+  # Disable scalastyle for tests until # https://github.com/scalastyle/scalastyle/issues/156 is fixed:
+  # - sbt ++$TRAVIS_SCALA_VERSION scalastyle
 after_success:
   - bash <(curl -s https://codecov.io/bash)
