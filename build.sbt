@@ -22,9 +22,6 @@ resolvers ++= Seq(
   "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 )
 
-// TODO: remove once Spark 1.5.0 is released.
-resolvers += "Spark 1.5.0 RC2 Staging" at "https://repository.apache.org/content/repositories/orgapachespark-1141"
-
 sparkComponents := Seq("core", "sql")
 
 libraryDependencies ++= Seq(
