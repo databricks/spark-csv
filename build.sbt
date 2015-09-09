@@ -16,12 +16,6 @@ val testSparkVersion = settingKey[String]("The version of Spark to test against.
 
 testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
 
-resolvers ++= Seq(
-  "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
-  "Typesafe" at "http://repo.typesafe.com/typesafe/releases",
-  "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
-)
-
 sparkComponents := Seq("core", "sql")
 
 libraryDependencies ++= Seq(
