@@ -43,6 +43,7 @@ case class CsvRelation protected[spark] (
     parserLib: String,
     ignoreLeadingWhiteSpace: Boolean,
     ignoreTrailingWhiteSpace: Boolean,
+    treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
     inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with InsertableRelation {
@@ -114,7 +115,7 @@ case class CsvRelation protected[spark] (
           index = 0
           while (index < schemaFields.length) {
             val field = schemaFields(index)
-            rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable)
+            rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable, treatEmptyValuesAsNulls)
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))

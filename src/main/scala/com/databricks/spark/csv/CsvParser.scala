@@ -35,6 +35,7 @@ class CsvParser extends Serializable {
   private var parseMode: String = ParseModes.DEFAULT
   private var ignoreLeadingWhiteSpace: Boolean = false
   private var ignoreTrailingWhiteSpace: Boolean = false
+  private var treatEmptyValuesAsNulls: Boolean = false
   private var parserLib: String = ParserLibs.DEFAULT
   private var charset: String = TextFile.DEFAULT_CHARSET.name()
   private var inferSchema: Boolean = false
@@ -84,6 +85,11 @@ class CsvParser extends Serializable {
     this
   }
 
+  def withTreatEmptyValuesAsNulls(treatAsNull: Boolean): CsvParser = {
+    this.treatEmptyValuesAsNulls = treatAsNull
+    this
+  }
+
   def withParserLib(parserLib: String): CsvParser = {
     this.parserLib = parserLib
     this
@@ -114,6 +120,7 @@ class CsvParser extends Serializable {
       parserLib,
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
+      treatEmptyValuesAsNulls,
       schema,
       inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
@@ -133,6 +140,7 @@ class CsvParser extends Serializable {
       parserLib,
       ignoreLeadingWhiteSpace,
       ignoreTrailingWhiteSpace,
+      treatEmptyValuesAsNulls,
       schema,
       inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)

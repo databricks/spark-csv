@@ -110,6 +110,14 @@ class DefaultSource
     } else {
       throw new Exception("Ignore white space flag can be true or false")
     }
+    val treatEmptyValuesAsNulls = parameters.getOrElse("treatEmptyValuesAsNulls", "false")
+    val treatEmptyValuesAsNullsFlag = if(treatEmptyValuesAsNulls == "false") {
+      false
+    } else if(treatEmptyValuesAsNulls == "true") {
+      true
+    } else {
+      throw new Exception("Treat empty values as null flag can be true or false")
+    }
 
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
@@ -135,6 +143,7 @@ class DefaultSource
       parserLib,
       ignoreLeadingWhiteSpaceFlag,
       ignoreTrailingWhiteSpaceFlag,
+      treatEmptyValuesAsNullsFlag,
       schema,
       inferSchemaFlag)(sqlContext)
   }

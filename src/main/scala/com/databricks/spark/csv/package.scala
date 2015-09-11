@@ -37,6 +37,7 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
+                treatEmptyValuesAsNulls: Boolean = false,
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
@@ -51,6 +52,7 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        treatEmptyValuesAsNulls = treatEmptyValuesAsNulls,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -60,6 +62,7 @@ package object csv {
                 parserLib: String = "COMMONS",
                 ignoreLeadingWhiteSpace: Boolean = false,
                 ignoreTrailingWhiteSpace: Boolean = false,
+                treatEmptyValuesAsNulls: Boolean = false,
                 charset: String = TextFile.DEFAULT_CHARSET.name(),
                 inferSchema: Boolean = false) = {
       val csvRelation = CsvRelation(
@@ -74,6 +77,7 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        treatEmptyValuesAsNulls = treatEmptyValuesAsNulls,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -114,11 +118,13 @@ package object csv {
         case None => None
       }
 
+      val nullToken = parameters.getOrElse("nullToken", "null")
+
       val csvFormatBase = CSVFormat.DEFAULT
         .withDelimiter(delimiterChar)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
-        .withNullString("null")
+        .withNullString(nullToken)
 
       val csvFormat = quoteChar match {
         case Some(c) => csvFormatBase.withQuote(c)
@@ -137,7 +143,7 @@ package object csv {
           .withDelimiter(delimiterChar)
           .withEscape(escapeChar)
           .withSkipHeaderRecord(false)
-          .withNullString("null")
+          .withNullString(nullToken)
 
         val csvFormat = quoteChar match {
           case Some(c) => csvFormatBase.withQuote(c)
