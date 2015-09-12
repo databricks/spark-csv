@@ -1,14 +1,14 @@
 name := "spark-csv"
 
-version := "1.2.0"
+version := "1.3.0-SNAPSHOT"
 
 organization := "com.databricks"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 spName := "databricks/spark-csv"
 
-crossScalaVersions := Seq("2.10.4", "2.11.6")
+crossScalaVersions := Seq("2.10.5", "2.11.7")
 
 sparkVersion := "1.3.0"
 
