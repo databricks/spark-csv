@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
-  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force()
+  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force(),
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
 )
 
 publishMavenStyle := true
