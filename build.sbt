@@ -10,7 +10,7 @@ spName := "databricks/spark-csv"
 
 crossScalaVersions := Seq("2.10.5", "2.11.7")
 
-sparkVersion := "1.3.0"
+sparkVersion := "1.5.0"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
