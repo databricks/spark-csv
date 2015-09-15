@@ -185,7 +185,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .csvFile(sqlContext, copyFilePath)
 
     assert(agesCopy.count == agesRows.size)
-    assert(agesCopy.collect.toSeq == agesRows)
+    assert(agesCopy.collect.toSet == agesRows.toSet)
   }
 
   test("DSL test with alternative delimiter and quote") {
