@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
  */
 class ReaderSuite extends FunSuite {
 
-  def readAll(iter: Iterator[String]) = {
+  private def readAll(iter: Iterator[String]) = {
     val reader = new StringIteratorReader(iter)
     var c: Int = -1
     val read = new scala.collection.mutable.StringBuilder()
@@ -35,16 +35,16 @@ class ReaderSuite extends FunSuite {
     read.dropRight(1).toString
   }
 
-  def readBufAll(iter: Iterator[String], bufSize: Int) = {
+  private def readBufAll(iter: Iterator[String], bufSize: Int) = {
     val reader = new StringIteratorReader(iter)
     val cbuf = new Array[Char](bufSize)
     val read = new scala.collection.mutable.StringBuilder()
 
     var done = false
-    do {    //read all input one cbuf at a time
+    do { // read all input one cbuf at a time
       var numRead = 0
       var n = 0
-      do {  //try to fill cbuf
+      do { // try to fill cbuf
         var off = 0
         var len = cbuf.length
         n = reader.read(cbuf, off, len)
@@ -63,7 +63,7 @@ class ReaderSuite extends FunSuite {
       } else {
         done = true
       }
-    } while(!done)
+    } while (!done)
 
     read.toString
   }

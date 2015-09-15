@@ -58,23 +58,23 @@ class TypeCastSuite extends FunSuite {
     assert(exception.getMessage.contains("Unsupported special character for delimiter"))
   }
 
-  test("Nullable types are handled"){
+  test("Nullable types are handled") {
     assert(TypeCast.castTo("", IntegerType, nullable = true) == null)
   }
 
-  test("String type should always return the same as the input"){
+  test("String type should always return the same as the input") {
     assert(TypeCast.castTo("", StringType, nullable = true) == "")
     assert(TypeCast.castTo("", StringType, nullable = false) == "")
   }
 
-  test("Throws exception for empty string with non null type"){
+  test("Throws exception for empty string with non null type") {
     val exception = intercept[NumberFormatException]{
       TypeCast.castTo("", IntegerType, nullable = false)
     }
     assert(exception.getMessage.contains("For input string: \"\""))
   }
 
-  test("Types are cast correctly"){
+  test("Types are cast correctly") {
     assert(TypeCast.castTo("10", ByteType) == 10)
     assert(TypeCast.castTo("10", ShortType) == 10)
     assert(TypeCast.castTo("10", IntegerType) == 10)

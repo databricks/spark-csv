@@ -59,7 +59,7 @@ private[readers] abstract class CsvReader(fieldSep: Char = ',',
     settings.setMaxColumns(maxCols)
     settings.setNullValue("")
     settings.setMaxCharsPerColumn(100000)
-    if(headers != null) settings.setHeaders(headers:_*)
+    if (headers != null) settings.setHeaders(headers: _*)
 
     new CsvParser(settings)
   }
@@ -76,7 +76,8 @@ private[readers] abstract class CsvReader(fieldSep: Char = ',',
  * @param inputBufSize size of buffer to use for parsing input, tune for performance
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
-class LineCsvReader(fieldSep: Char = ',',
+private[csv] class LineCsvReader(
+    fieldSep: Char = ',',
     lineSep: String = "\n",
     quote: Char = '"',
     escape: Char = '\\',
@@ -85,7 +86,8 @@ class LineCsvReader(fieldSep: Char = ',',
     ignoreTrailingSpace: Boolean = true,
     inputBufSize: Int = 128,
     maxCols: Int = 20480)
-  extends CsvReader(fieldSep,
+  extends CsvReader(
+    fieldSep,
     lineSep,
     quote,
     escape,
@@ -121,7 +123,8 @@ class LineCsvReader(fieldSep: Char = ',',
  * @param inputBufSize size of buffer to use for parsing input, tune for performance
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
-class BulkCsvReader (iter: Iterator[String],
+private[csv] class BulkCsvReader (
+    iter: Iterator[String],
     split: Int,      // for debugging
     fieldSep: Char = ',',
     lineSep: String = "\n",
@@ -133,7 +136,8 @@ class BulkCsvReader (iter: Iterator[String],
     headers: Seq[String],
     inputBufSize: Int = 128,
     maxCols: Int = 20480)
-  extends CsvReader(fieldSep,
+  extends CsvReader(
+    fieldSep,
     lineSep,
     quote,
     escape,
@@ -147,13 +151,13 @@ class BulkCsvReader (iter: Iterator[String],
 
   private val reader = new StringIteratorReader(iter)
   parser.beginParsing(reader)
-  private var nextRecord =  parser.parseNext()
+  private var nextRecord = parser.parseNext()
 
   /**
    * get the next parsed line.
    * @return array of strings where each string is a field in the CSV record
    */
-  def next = {
+  override def next(): Array[String] = {
     val curRecord = nextRecord
     if(curRecord != null) {
       nextRecord = parser.parseNext()
@@ -163,7 +167,7 @@ class BulkCsvReader (iter: Iterator[String],
     curRecord
   }
 
-  def hasNext = nextRecord != null
+  override def hasNext: Boolean = nextRecord != null
 
 }
 
@@ -185,9 +189,9 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
    * pretend there is a new line at the end of every string we get from from iter
    */
   private def refill(): Unit = {
-    if(length == next) {
-      if(iter.hasNext) {
-        str = iter.next
+    if (length == next) {
+      if (iter.hasNext) {
+        str = iter.next()
         start = length
         length += (str.length + 1) // allowance for newline removed by SparkContext.textFile()
       } else {
@@ -201,7 +205,7 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
    */
   override def read(): Int = {
     refill()
-    if(next >= length) {
+    if (next >= length) {
       -1
     } else {
       val cur = next - start
@@ -213,7 +217,7 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
   /**
    * read from str into cbuf
    */
-  def read(cbuf: Array[Char], off: Int, len: Int): Int = {
+  override def read(cbuf: Array[Char], off: Int, len: Int): Int = {
     refill()
     var n = 0
     if ((off < 0) || (off > cbuf.length) || (len < 0) ||
@@ -247,12 +251,12 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     throw new IllegalArgumentException("Skip not implemented")
   }
 
-  override def ready = {
+  override def ready: Boolean = {
     refill()
     true
   }
 
-  override def markSupported = false
+  override def markSupported: Boolean = false
 
   override def mark(readAheadLimit: Int): Unit = {
     throw new IllegalArgumentException("Mark not implemented")
@@ -262,5 +266,5 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     throw new IllegalArgumentException("Mark and hence reset not implemented")
   }
 
-  def close(): Unit = { }
+  override def close(): Unit = { }
 }

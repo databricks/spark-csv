@@ -36,7 +36,9 @@ class DefaultSource
    * Creates a new relation for data store in CSV given parameters.
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
-  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]) = {
+  override def createRelation(
+      sqlContext: SQLContext,
+      parameters: Map[String, String]): BaseRelation = {
     createRelation(sqlContext, parameters, null)
   }
 
@@ -47,7 +49,7 @@ class DefaultSource
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String],
-      schema: StructType) = {
+      schema: StructType): CsvRelation = {
     val path = checkPath(parameters)
     val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
 
@@ -89,10 +91,10 @@ class DefaultSource
 
     val parserLib = parameters.getOrElse("parserLib", ParserLibs.DEFAULT)
     val ignoreLeadingWhiteSpace = parameters.getOrElse("ignoreLeadingWhiteSpace", "false")
-    val ignoreLeadingWhiteSpaceFlag = if(ignoreLeadingWhiteSpace == "false") {
+    val ignoreLeadingWhiteSpaceFlag = if (ignoreLeadingWhiteSpace == "false") {
       false
-    } else if(ignoreLeadingWhiteSpace == "true") {
-      if(!ParserLibs.isUnivocityLib(parserLib)) {
+    } else if (ignoreLeadingWhiteSpace == "true") {
+      if (!ParserLibs.isUnivocityLib(parserLib)) {
         throw new Exception("Ignore whitesspace supported for Univocity parser only")
       }
       true
@@ -100,10 +102,10 @@ class DefaultSource
       throw new Exception("Ignore white space flag can be true or false")
     }
     val ignoreTrailingWhiteSpace = parameters.getOrElse("ignoreTrailingWhiteSpace", "false")
-    val ignoreTrailingWhiteSpaceFlag = if(ignoreTrailingWhiteSpace == "false") {
+    val ignoreTrailingWhiteSpaceFlag = if (ignoreTrailingWhiteSpace == "false") {
       false
-    } else if(ignoreTrailingWhiteSpace == "true") {
-      if(!ParserLibs.isUnivocityLib(parserLib)) {
+    } else if (ignoreTrailingWhiteSpace == "true") {
+      if (!ParserLibs.isUnivocityLib(parserLib)) {
         throw new Exception("Ignore whitespace supported for the Univocity parser only")
       }
       true
@@ -115,9 +117,9 @@ class DefaultSource
     // TODO validate charset?
 
     val inferSchema = parameters.getOrElse("inferSchema", "false")
-    val inferSchemaFlag = if(inferSchema == "false") {
+    val inferSchemaFlag = if (inferSchema == "false") {
       false
-    } else if(inferSchema == "true") {
+    } else if (inferSchema == "true") {
       true
     } else {
       throw new Exception("Infer schema flag can be true or false")

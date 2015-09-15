@@ -66,13 +66,15 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("DSL test for iso-8859-1 encoded file") {
+    // scalastyle:off
     val dataFrame = sqlContext
-      .csvFile(carsFile8859, parserLib = parserLib, charset  = "iso-8859-1", delimiter = 'þ')
+      .csvFile(carsFile8859, parserLib = parserLib, charset = "iso-8859-1", delimiter = 'þ')
 
     assert(dataFrame.select("year").collect().size === numCars)
 
     val results = dataFrame.select("comment", "year").where(dataFrame("year") === "1997")
     assert(results.first.getString(0) === "Go get one now they are þoing fast")
+    // scalastyle:on
   }
 
   test("DSL test bad charset name") {
@@ -97,6 +99,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("DDL test with charset") {
+    // scalastyle:off
     sqlContext.sql(
       s"""
          |CREATE TEMPORARY TABLE carsTable
@@ -104,6 +107,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
          |OPTIONS (path "$carsFile8859", header "true", parserLib "$parserLib",
          |charset "iso-8859-1", delimiter "þ")
       """.stripMargin.replaceAll("\n", " "))
+    //scalstyle:on
 
     assert(sqlContext.sql("SELECT year FROM carsTable").collect().size === numCars)
   }
@@ -370,7 +374,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     new File(tempEmptyDir).mkdirs()
     val copyFilePath = tempEmptyDir + "escape-copy.csv"
 
-    val escape = sqlContext.csvFile(escapeFile, escape='|', quote='"')
+    val escape = sqlContext.csvFile(escapeFile, escape = '|', quote = '"')
     escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
 
     val escapeCopy = sqlContext.csvFile(copyFilePath + "/", parserLib = parserLib)
@@ -385,11 +389,11 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .csvFile(carsFile, parserLib = parserLib, inferSchema = true)
 
     assert(results.schema == StructType(List(
-      StructField("year",IntegerType,true),
-      StructField("make",StringType,true),
-      StructField("model",StringType,true),
-      StructField("comment",StringType,true),
-      StructField("blank",StringType,true))
+      StructField("year", IntegerType, nullable = true),
+      StructField("make", StringType, nullable = true),
+      StructField("model", StringType ,nullable = true),
+      StructField("comment", StringType, nullable = true),
+      StructField("blank", StringType, nullable = true))
     ))
 
     assert(results.collect().size === numCars)
