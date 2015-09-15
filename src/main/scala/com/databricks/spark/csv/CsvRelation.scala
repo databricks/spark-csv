@@ -28,8 +28,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types._
+import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
 import com.databricks.spark.csv.util._
-import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
     baseRDD: () => RDD[String],
@@ -67,9 +67,9 @@ case class CsvRelation protected[spark] (
   private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
   private val permissive = ParseModes.isPermissiveMode(parseMode)
 
-  val schema = inferSchema()
+  override val schema: StructType = inferSchema()
 
-  def tokenRdd(header: Array[String]): RDD[Array[String]] = {
+  private def tokenRdd(header: Array[String]): RDD[Array[String]] = {
 
     if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD(), header)

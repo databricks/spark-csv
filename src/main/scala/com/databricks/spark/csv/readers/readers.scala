@@ -16,7 +16,7 @@
  */
 // scalastyle:on
 
-package com.databricks.spark.sql.readers
+package com.databricks.spark.csv.readers
 
 import java.io.StringReader
 
@@ -34,7 +34,8 @@ import com.univocity.parsers.csv._
  * @param inputBufSize size of buffer to use for parsing input, tune for performance
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
-private[readers] abstract class CsvReader(fieldSep: Char = ',',
+private[readers] abstract class CsvReader(
+    fieldSep: Char = ',',
     lineSep: String = "\n",
     quote: Char = '"',
     escape: Char = '\\',
@@ -44,7 +45,7 @@ private[readers] abstract class CsvReader(fieldSep: Char = ',',
     headers: Seq[String],
     inputBufSize: Int = 128,
     maxCols: Int = 20480) {
-  lazy val parser = {
+  protected lazy val parser: CsvParser = {
     val settings = new CsvParserSettings()
     val format = settings.getFormat
     format.setDelimiter(fieldSep)
@@ -123,7 +124,7 @@ private[csv] class LineCsvReader(
  * @param inputBufSize size of buffer to use for parsing input, tune for performance
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
-private[csv] class BulkCsvReader (
+private[csv] class BulkCsvReader(
     iter: Iterator[String],
     split: Int,      // for debugging
     fieldSep: Char = ',',
