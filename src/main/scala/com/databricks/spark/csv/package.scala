@@ -118,13 +118,13 @@ package object csv {
         case None => None
       }
 
-      val nullToken = parameters.getOrElse("nullToken", "null")
+      val nullValue = parameters.getOrElse("nullValue", "null")
 
       val csvFormatBase = CSVFormat.DEFAULT
         .withDelimiter(delimiterChar)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
-        .withNullString(nullToken)
+        .withNullString(nullValue)
 
       val csvFormat = quoteChar match {
         case Some(c) => csvFormatBase.withQuote(c)
@@ -143,7 +143,7 @@ package object csv {
           .withDelimiter(delimiterChar)
           .withEscape(escapeChar)
           .withSkipHeaderRecord(false)
-          .withNullString(nullToken)
+          .withNullString(nullValue)
 
         val csvFormat = quoteChar match {
           case Some(c) => csvFormatBase.withQuote(c)

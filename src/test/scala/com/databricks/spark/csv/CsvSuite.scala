@@ -175,7 +175,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val agesRdd = sqlContext.sparkContext.parallelize(agesRows)
     val agesDf = sqlContext.createDataFrame(agesRdd, agesSchema)
 
-    agesDf.saveAsCsvFile(copyFilePath, Map("header" -> "true", "nullToken" -> ""))
+    agesDf.saveAsCsvFile(copyFilePath, Map("header" -> "true", "nullValue" -> ""))
 
     val agesCopy = new CsvParser()
       .withSchema(agesSchema)
