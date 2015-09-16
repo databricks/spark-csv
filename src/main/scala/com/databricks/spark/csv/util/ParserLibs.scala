@@ -25,7 +25,7 @@ private[csv] object ParserLibs {
 
   def isValidLib(lib: String): Boolean = {
     lib.toUpperCase match {
-      case OLD | NEW  => true
+      case OLD | NEW => true
       case _ => false
     }
   }

@@ -25,7 +25,11 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val numLines = 6
   val numColumns = 4
-  val smallThorn = '\u00fe' //non-ascii character
+  val smallThorn = {
+    // scalastyle:off
+    '\u00fe' // non-ascii character
+    // scalastyle:on
+  }
   val utf8 = "utf-8"
   val iso88591 = "iso-8859-1"
 

@@ -73,3 +73,25 @@ ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
   if (scalaBinaryVersion.value == "2.10") false
   else true
 }
+
+// -- MiMa binary compatibility checks ------------------------------------------------------------
+
+import com.typesafe.tools.mima.core._
+import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+
+mimaDefaultSettings ++ Seq(
+  previousArtifact := Some("com.databricks" %% "spark-csv" % "1.2.0"),
+  binaryIssueFilters ++= Seq(
+    // These classes are not intended to be public interfaces:
+    ProblemFilters.excludePackage("com.databricks.spark.csv.CsvRelation"),
+    ProblemFilters.excludePackage("com.databricks.spark.csv.util.InferSchema"),
+    ProblemFilters.excludePackage("com.databricks.spark.sql.readers"),
+    // We allowed the private `CsvRelation` type to leak into the public method signature:
+    ProblemFilters.exclude[IncompatibleResultTypeProblem](
+      "com.databricks.spark.csv.DefaultSource.createRelation")
+  )
+)
+
+// ------------------------------------------------------------------------------------------------

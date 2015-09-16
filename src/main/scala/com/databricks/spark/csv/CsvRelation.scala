@@ -28,8 +28,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types._
+import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
 import com.databricks.spark.csv.util._
-import com.databricks.spark.sql.readers._
 
 case class CsvRelation protected[spark] (
     baseRDD: () => RDD[String],
@@ -59,7 +59,7 @@ case class CsvRelation protected[spark] (
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
 
-  if((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
+  if ((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
     logger.warn(s"Ignore white space options may not work with Commons parserLib option")
   }
 
@@ -67,11 +67,11 @@ case class CsvRelation protected[spark] (
   private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
   private val permissive = ParseModes.isPermissiveMode(parseMode)
 
-  val schema = inferSchema()
+  override val schema: StructType = inferSchema()
 
-  def tokenRdd(header: Array[String]): RDD[Array[String]] = {
+  private def tokenRdd(header: Array[String]): RDD[Array[String]] = {
 
-    if(ParserLibs.isUnivocityLib(parserLib)) {
+    if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD(), header)
     } else {
       val csvFormat = CSVFormat.DEFAULT
@@ -97,10 +97,9 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  // By making this a lazy val we keep the RDD around, amortizing the cost of locating splits.
-  def buildScan = {
+  override def buildScan: RDD[Row] = {
     val schemaFields = schema.fields
-    tokenRdd(schemaFields.map(_.name)).flatMap{ tokens =>
+    tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
       if (dropMalformed && schemaFields.length != tokens.size) {
         logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
@@ -131,8 +130,8 @@ case class CsvRelation protected[spark] (
     if (this.userSchema != null) {
       userSchema
     } else {
-      val firstRow = if(ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
+      val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
+        val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
         new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal,
           commentMarker = commentChar).parseLine(firstLine)
@@ -151,9 +150,9 @@ case class CsvRelation protected[spark] (
       }
       if (this.inferCsvSchema) {
         InferSchema(tokenRdd(header), header)
-      } else{
+      } else {
         // By default fields are assumed to be StringType
-        val schemaFields =  header.map { fieldName =>
+        val schemaFields = header.map { fieldName =>
           StructField(fieldName.toString, StringType, nullable = true)
         }
         StructType(schemaFields)
@@ -179,11 +178,11 @@ case class CsvRelation protected[spark] (
      file: RDD[String],
      header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
-    val filterLine = if(useHeader) firstLine else null
-    val dataLines = if(useHeader) file.filter(_ != filterLine) else file
+    val filterLine = if (useHeader) firstLine else null
+    val dataLines = if (useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
-        val escapeVal = if(escape == null) '\\' else escape.charValue()
+        val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
 
         new BulkCsvReader(iter, split,
@@ -216,7 +215,7 @@ case class CsvRelation protected[spark] (
   }
 
   // The function below was borrowed from JSONRelation
-  override def insert(data: DataFrame, overwrite: Boolean) = {
+  override def insert(data: DataFrame, overwrite: Boolean): Unit = {
 
     val filesystemPath = location match {
       case Some(p) => new Path(p)
