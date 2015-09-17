@@ -100,7 +100,7 @@ class CsvParser extends Serializable {
     this
   }
 
-  def withInferSchema(inferSchema: Boolean) = {
+  def withInferSchema(inferSchema: Boolean): CsvParser = {
     this.inferSchema = inferSchema
     this
   }
@@ -126,8 +126,7 @@ class CsvParser extends Serializable {
     sqlContext.baseRelationToDataFrame(relation)
   }
 
-  def csvRdd(sqlContext: SQLContext, csvRDD: RDD[String]): DataFrame ={
-
+  def csvRdd(sqlContext: SQLContext, csvRDD: RDD[String]): DataFrame = {
     val relation: CsvRelation = CsvRelation(
       () => csvRDD,
       None,
@@ -144,6 +143,5 @@ class CsvParser extends Serializable {
       schema,
       inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
-
   }
 }

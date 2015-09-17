@@ -1,29 +1,20 @@
 name := "spark-csv"
 
-version := "1.2.0"
+version := "1.3.0-SNAPSHOT"
 
 organization := "com.databricks"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 spName := "databricks/spark-csv"
 
-crossScalaVersions := Seq("2.10.4", "2.11.6")
+crossScalaVersions := Seq("2.10.5", "2.11.7")
 
-sparkVersion := "1.3.0"
+sparkVersion := "1.5.0"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
 testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
-
-resolvers ++= Seq(
-  "Apache Staging" at "https://repository.apache.org/content/repositories/staging/",
-  "Typesafe" at "http://repo.typesafe.com/typesafe/releases",
-  "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
-)
-
-// TODO: remove once Spark 1.5.0 is released.
-resolvers += "Spark 1.5.0 RC2 Staging" at "https://repository.apache.org/content/repositories/orgapachespark-1141"
 
 sparkComponents := Seq("core", "sql")
 
@@ -37,7 +28,8 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
-  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force()
+  "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force(),
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
 )
 
 publishMavenStyle := true
@@ -81,3 +73,25 @@ ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
   if (scalaBinaryVersion.value == "2.10") false
   else true
 }
+
+// -- MiMa binary compatibility checks ------------------------------------------------------------
+
+import com.typesafe.tools.mima.core._
+import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+
+mimaDefaultSettings ++ Seq(
+  previousArtifact := Some("com.databricks" %% "spark-csv" % "1.2.0"),
+  binaryIssueFilters ++= Seq(
+    // These classes are not intended to be public interfaces:
+    ProblemFilters.excludePackage("com.databricks.spark.csv.CsvRelation"),
+    ProblemFilters.excludePackage("com.databricks.spark.csv.util.InferSchema"),
+    ProblemFilters.excludePackage("com.databricks.spark.sql.readers"),
+    // We allowed the private `CsvRelation` type to leak into the public method signature:
+    ProblemFilters.exclude[IncompatibleResultTypeProblem](
+      "com.databricks.spark.csv.DefaultSource.createRelation")
+  )
+)
+
+// ------------------------------------------------------------------------------------------------

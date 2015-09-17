@@ -27,19 +27,20 @@ package object csv {
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
   implicit class CsvContext(sqlContext: SQLContext) extends Serializable{
-    def csvFile(filePath: String,
-                useHeader: Boolean = true,
-                delimiter: Char = ',',
-                quote: Char = '"',
-                escape: Character = null,
-                comment: Character = null,
-                mode: String = "PERMISSIVE",
-                parserLib: String = "COMMONS",
-                ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false,
-                treatEmptyValuesAsNulls: Boolean = false,
-                charset: String = TextFile.DEFAULT_CHARSET.name(),
-                inferSchema: Boolean = false) = {
+    def csvFile(
+        filePath: String,
+        useHeader: Boolean = true,
+        delimiter: Char = ',',
+        quote: Char = '"',
+        escape: Character = null,
+        comment: Character = null,
+        mode: String = "PERMISSIVE",
+        parserLib: String = "COMMONS",
+        ignoreLeadingWhiteSpace: Boolean = false,
+        ignoreTrailingWhiteSpace: Boolean = false,
+        treatEmptyValuesAsNulls: Boolean = false,
+        charset: String = TextFile.DEFAULT_CHARSET.name(),
+        inferSchema: Boolean = false): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),
@@ -57,14 +58,15 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def tsvFile(filePath: String,
-                useHeader: Boolean = true,
-                parserLib: String = "COMMONS",
-                ignoreLeadingWhiteSpace: Boolean = false,
-                ignoreTrailingWhiteSpace: Boolean = false,
-                treatEmptyValuesAsNulls: Boolean = false,
-                charset: String = TextFile.DEFAULT_CHARSET.name(),
-                inferSchema: Boolean = false) = {
+    def tsvFile(
+        filePath: String,
+        useHeader: Boolean = true,
+        parserLib: String = "COMMONS",
+        ignoreLeadingWhiteSpace: Boolean = false,
+        ignoreTrailingWhiteSpace: Boolean = false,
+        treatEmptyValuesAsNulls: Boolean = false,
+        charset: String = TextFile.DEFAULT_CHARSET.name(),
+        inferSchema: Boolean = false): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),
@@ -82,7 +84,7 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
-  
+
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
 
     /**
@@ -133,7 +135,7 @@ package object csv {
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
-        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]):_*)
+        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
       } else {
         "" // There is no need to generate header in this case
       }
@@ -156,8 +158,8 @@ package object csv {
           override def hasNext = iter.hasNext || firstRow
 
           override def next: String = {
-            if(!iter.isEmpty) {
-              val row = csvFormat.format(iter.next.toSeq.map(_.asInstanceOf[AnyRef]):_*)
+            if (iter.nonEmpty) {
+              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
               if (firstRow) {
                 firstRow = false
                 header + csvFormat.getRecordSeparator() + row
@@ -166,7 +168,7 @@ package object csv {
               }
             } else {
               firstRow = false
-              header 
+              header
             }
           }
         }

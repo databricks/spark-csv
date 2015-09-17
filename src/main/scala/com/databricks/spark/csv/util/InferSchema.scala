@@ -44,7 +44,7 @@ private[csv] object InferSchema {
 
   private def inferRowType(rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
-    while(i < math.min(rowSoFar.length, next.length)){  // May have columns on right missing.
+    while (i < math.min(rowSoFar.length, next.length)) {  // May have columns on right missing.
       rowSoFar(i) = inferField(rowSoFar(i), next(i))
       i+=1
     }
@@ -68,7 +68,7 @@ private[csv] object InferSchema {
    * point checking if it is an Int, as the final type must be Double or higher.
    */
   private[csv] def inferField(typeSoFar: DataType, field: String): DataType = {
-    if (field == null || field.isEmpty){
+    if (field == null || field.isEmpty) {
       typeSoFar
     } else {
       typeSoFar match {
