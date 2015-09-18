@@ -32,6 +32,10 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
 )
 
+// This is necessary because of how we explicitly specify Spark dependencies
+// for tests rather than using the sbt-spark-package plugin to provide them.
+spIgnoreProvided := true
+
 publishMavenStyle := true
 
 spAppendScalaVersion := true
@@ -68,6 +72,9 @@ pomExtra := (
   </developers>)
 
 parallelExecution in Test := false
+
+// Skip tests during assembly
+test in assembly := {}
 
 ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := {
   if (scalaBinaryVersion.value == "2.10") false

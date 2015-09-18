@@ -28,6 +28,7 @@ matrix:
       env: TEST_SPARK_VERSION="1.5.0"
 script:
   - sbt -Dspark.testVersion=$TEST_SPARK_VERSION ++$TRAVIS_SCALA_VERSION coverage test
+  - sbt ++$TRAVIS_SCALA_VERSION assembly
   - sbt ++$TRAVIS_SCALA_VERSION scalastyle
   - sbt ++$TRAVIS_SCALA_VERSION "test:scalastyle"
   - sbt ++$TRAVIS_SCALA_VERSION mima-report-binary-issues
