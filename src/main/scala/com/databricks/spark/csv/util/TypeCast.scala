@@ -35,8 +35,11 @@ object TypeCast {
    * @param datum string value
    * @param castType SparkSQL type
    */
-  private[csv] def castTo(datum: String, castType: DataType, nullable: Boolean = true,
-    treatEmptyValuesAsNulls: Boolean = false): Any = {
+  private[csv] def castTo(
+      datum: String,
+      castType: DataType,
+      nullable: Boolean = true,
+      treatEmptyValuesAsNulls: Boolean = false): Any = {
     if (datum == "" && nullable && (!castType.isInstanceOf[StringType] || treatEmptyValuesAsNulls)){
       null
     } else {
