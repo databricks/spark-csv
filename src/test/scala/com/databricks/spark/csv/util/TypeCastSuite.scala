@@ -81,7 +81,7 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.castTo("10", IntegerType) == 10)
     assert(TypeCast.castTo("10", LongType) == 10)
     assert(TypeCast.castTo("1.00", FloatType) == 1.0)
-    assert(TypeCast.castTo("1,00", DoubleType, locale = Locale.FRANCE) == 1.0)
+    assert(TypeCast.castTo("1,00", FloatType, locale = Locale.FRANCE) == 1.0)
     assert(TypeCast.castTo("1.00", DoubleType) == 1.0)
     assert(TypeCast.castTo("1,00", DoubleType, locale = Locale.FRANCE) == 1.0)
     assert(TypeCast.castTo("true", BooleanType) == true)
