@@ -52,9 +52,9 @@ object TypeCast {
         case _: IntegerType => datum.toInt
         case _: LongType => datum.toLong
         case _: FloatType => Try(datum.toFloat)
-          .getOrElse(java.text.NumberFormat.getInstance(Locale.getDefault).parse(datum).floatValue())
+          .getOrElse(java.text.NumberFormat.getInstance(locale).parse(datum).floatValue())
         case _: DoubleType => Try(datum.toDouble)
-          .getOrElse(java.text.NumberFormat.getInstance(Locale.getDefault).parse(datum).doubleValue())
+          .getOrElse(java.text.NumberFormat.getInstance(locale).parse(datum).doubleValue())
         case _: BooleanType => datum.toBoolean
         case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
         // TODO(hossein): would be good to support other common timestamp formats
