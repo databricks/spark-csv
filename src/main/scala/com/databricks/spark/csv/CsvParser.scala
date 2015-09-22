@@ -45,7 +45,7 @@ class CsvParser extends Serializable {
   }
 
   def withDelimiter(delimiter: Character): CsvParser = {
-    this.delimiter = delimiter
+    this.delimiter = if (delimiter == '|') '\u0003' else delimiter
     this
   }
 

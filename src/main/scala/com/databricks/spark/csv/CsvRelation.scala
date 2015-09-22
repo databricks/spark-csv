@@ -126,6 +126,37 @@ case class CsvRelation protected[spark] (
     }
   }
 
+  private def normalizeHeader(header : String, csvFormat : CSVFormat) = {
+    val newHeader = new StringBuilder
+    val builder   = new StringBuilder
+
+    header.toLowerCase.split(csvFormat.getDelimiter.toString, -1).foreach { head => 
+      var lastChar = ' '      
+      builder.clear
+      
+      val head_ = head.trim
+    
+      for(i <- 0 until head_.length) {
+        if (('a' to 'z' contains head_(i)) ||
+            ('0' to '9' contains head_(i)) ||
+            head_(i) == '_') {
+          builder append head_(i)
+          lastChar = head_(i)
+        }
+        
+        else if (lastChar != '_' && i > 0 && i != (head_.length - 1)) {
+          builder append "_"
+          lastChar = '_'
+        }
+      }
+      
+      newHeader.append(builder.toString).append(csvFormat.getDelimiter.toString)
+    }
+    
+    newHeader.setLength(newHeader.length - 1) 
+    newHeader.toString
+  }
+
   private def inferSchema(): StructType = {
     if (this.userSchema != null) {
       userSchema
@@ -141,7 +172,12 @@ case class CsvRelation protected[spark] (
           .withQuote(quote)
           .withEscape(escape)
           .withSkipHeaderRecord(false)
-        CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
+        
+        CSVParser.parse(
+            normalizeHeader(if (delimiter == '\u0003') 
+                              firstLine.replaceAll("\\|", "\u0003") 
+                            else firstLine, csvFormat), 
+            csvFormat).getRecords.head.toArray
       }
       val header = if (useHeader) {
         firstRow
@@ -199,7 +235,9 @@ case class CsvRelation protected[spark] (
       csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
       try {
-        val records = CSVParser.parse(line, csvFormat).getRecords
+        val records = CSVParser.parse(if (delimiter == '\u0003') 
+                                        line.replaceAll("\\|", "\u0003") 
+                                      else line, csvFormat).getRecords
         if (records.isEmpty) {
           logger.warn(s"Ignoring empty line: $line")
           None

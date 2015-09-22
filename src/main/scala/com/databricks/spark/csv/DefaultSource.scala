@@ -51,7 +51,8 @@ class DefaultSource
       parameters: Map[String, String],
       schema: StructType): CsvRelation = {
     val path = checkPath(parameters)
-    val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
+    val delimiter_ = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
+    val delimiter  = if (delimiter_ == '|') '\u0003' else delimiter_
 
     val quote = parameters.getOrElse("quote", "\"")
     val quoteChar = if (quote.length == 1) {
