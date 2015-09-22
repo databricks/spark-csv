@@ -17,6 +17,7 @@ package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
 import java.sql.{Date, Timestamp}
+import java.util.Locale
 
 import org.scalatest.FunSuite
 
@@ -80,9 +81,9 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.castTo("10", IntegerType) == 10)
     assert(TypeCast.castTo("10", LongType) == 10)
     assert(TypeCast.castTo("1.00", FloatType) == 1.0)
-    assert(TypeCast.castTo("1,00", DoubleType) == 1.0)
+    assert(TypeCast.castTo("1,00", DoubleType, locale = Locale.FRANCE) == 1.0)
     assert(TypeCast.castTo("1.00", DoubleType) == 1.0)
-    assert(TypeCast.castTo("1,00", DoubleType) == 1.0)
+    assert(TypeCast.castTo("1,00", DoubleType, locale = Locale.FRANCE) == 1.0)
     assert(TypeCast.castTo("true", BooleanType) == true)
     val timestamp = "2015-01-01 00:00:00"
     assert(TypeCast.castTo(timestamp, TimestampType) == Timestamp.valueOf(timestamp))
