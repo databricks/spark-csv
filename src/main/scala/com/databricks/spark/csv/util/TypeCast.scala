@@ -16,7 +16,8 @@
 package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
-import java.sql.{Timestamp, Date}
+import java.sql.{Date, Timestamp}
+import java.text.NumberFormat
 import java.util.Locale
 
 import org.apache.spark.sql.types._
@@ -52,9 +53,9 @@ object TypeCast {
         case _: IntegerType => datum.toInt
         case _: LongType => datum.toLong
         case _: FloatType => Try(datum.toFloat)
-          .getOrElse(java.text.NumberFormat.getInstance(Locale.getDefault).parse(datum).floatValue())
+          .getOrElse(NumberFormat.getInstance(Locale.getDefault).parse(datum).floatValue())
         case _: DoubleType => Try(datum.toDouble)
-          .getOrElse(java.text.NumberFormat.getInstance(Locale.getDefault).parse(datum).doubleValue())
+          .getOrElse(NumberFormat.getInstance(Locale.getDefault).parse(datum).doubleValue())
         case _: BooleanType => datum.toBoolean
         case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
         // TODO(hossein): would be good to support other common timestamp formats
@@ -77,7 +78,7 @@ object TypeCast {
   private[csv] def toChar(str: String): Char = {
     if (str.charAt(0) == '\\') {
       str.charAt(1)
-       match {
+      match {
         case 't' => '\t'
         case 'r' => '\r'
         case 'b' => '\b'
