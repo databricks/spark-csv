@@ -26,11 +26,19 @@ import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
  * JDBC server).
  */
 class DefaultSource
-  extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
+  extends RelationProvider
+  with SchemaRelationProvider
+  with CreatableRelationProvider
+  with DataSourceRegister {
 
   private def checkPath(parameters: Map[String, String]): String = {
     parameters.getOrElse("path", sys.error("'path' must be specified for CSV data."))
   }
+
+  /**
+   * Short alias for spark-csv data source.
+   */
+  override def shortName(): String = "csv"
 
   /**
    * Creates a new relation for data store in CSV given parameters.
