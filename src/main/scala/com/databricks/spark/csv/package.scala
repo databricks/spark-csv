@@ -52,6 +52,7 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        treatEmptyValuesAsNulls = false,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -76,6 +77,7 @@ package object csv {
         parserLib = parserLib,
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        treatEmptyValuesAsNulls = false,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
@@ -116,11 +118,13 @@ package object csv {
         case None => None
       }
 
+      val nullValue = parameters.getOrElse("nullValue", "null")
+
       val csvFormatBase = CSVFormat.DEFAULT
         .withDelimiter(delimiterChar)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
-        .withNullString("null")
+        .withNullString(nullValue)
 
       val csvFormat = quoteChar match {
         case Some(c) => csvFormatBase.withQuote(c)
@@ -139,7 +143,7 @@ package object csv {
           .withDelimiter(delimiterChar)
           .withEscape(escapeChar)
           .withSkipHeaderRecord(false)
-          .withNullString("null")
+          .withNullString(nullValue)
 
         val csvFormat = quoteChar match {
           case Some(c) => csvFormatBase.withQuote(c)

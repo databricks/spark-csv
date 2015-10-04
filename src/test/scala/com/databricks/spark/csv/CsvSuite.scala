@@ -167,6 +167,30 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("Malformed line in FAILFAST mode: 2015,Chevy,Volt"))
   }
 
+  test("DSL test roundtrip nulls") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "null-numbers.csv"
+    val agesSchema = StructType(List(StructField("name", StringType, true),
+                                     StructField("age", IntegerType, true)))
+
+    val agesRows = Seq(Row("alice", 35), Row("bob", null), Row(null, 24))
+    val agesRdd = sqlContext.sparkContext.parallelize(agesRows)
+    val agesDf = sqlContext.createDataFrame(agesRdd, agesSchema)
+
+    agesDf.saveAsCsvFile(copyFilePath, Map("header" -> "true", "nullValue" -> ""))
+
+    val agesCopy = new CsvParser()
+      .withSchema(agesSchema)
+      .withUseHeader(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, copyFilePath)
+
+    assert(agesCopy.count == agesRows.size)
+    assert(agesCopy.collect.toSet == agesRows.toSet)
+  }
 
   test("DSL test with alternative delimiter and quote") {
     val results = new CsvParser()

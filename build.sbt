@@ -95,6 +95,7 @@ mimaDefaultSettings ++ Seq(
     ProblemFilters.excludePackage("com.databricks.spark.csv.CsvRelation"),
     ProblemFilters.excludePackage("com.databricks.spark.csv.util.InferSchema"),
     ProblemFilters.excludePackage("com.databricks.spark.sql.readers"),
+    ProblemFilters.excludePackage("com.databricks.spark.csv.util.TypeCast"),
     // We allowed the private `CsvRelation` type to leak into the public method signature:
     ProblemFilters.exclude[IncompatibleResultTypeProblem](
       "com.databricks.spark.csv.DefaultSource.createRelation")
