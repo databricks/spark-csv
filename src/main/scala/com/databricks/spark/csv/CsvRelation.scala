@@ -124,8 +124,12 @@ case class CsvRelation protected[spark] (
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
           case nfe: java.lang.NumberFormatException if dropMalformed =>
+            logger.warn("Number format exception. "+
+              s"Dropping malformed line: ${tokens.mkString(",")}")
             None
           case pe: java.text.ParseException if dropMalformed =>
+            logger.warn("Parse Exception. "+
+              s"Dropping malformed line: ${tokens.mkString(",")}")
             None
         }
       }
