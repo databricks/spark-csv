@@ -99,7 +99,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("DDL test with alias name") {
-    assume(org.apache.spark.SPARK_VERSION.take(3) > "1.4",
+    assume(org.apache.spark.SPARK_VERSION.take(3) >= "1.5",
       "Datasource alias feature was added in Spark 1.5")
 
     sqlContext.sql(
