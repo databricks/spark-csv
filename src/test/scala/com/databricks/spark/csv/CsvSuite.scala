@@ -19,6 +19,7 @@ import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 import java.sql.Timestamp
 
+import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.{SQLContext, Row}
 import org.apache.spark.{SparkContext, SparkException}
@@ -143,7 +144,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   test("DSL test for DROPMALFORMED parsing mode") {
     val results = new CsvParser()
-      .withParseMode("DROPMALFORMED")
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
       .withUseHeader(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, carsFile)
@@ -155,7 +156,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   test("DSL test for FAILFAST parsing mode") {
     val parser = new CsvParser()
-      .withParseMode("FAILFAST")
+      .withParseMode(ParseModes.FAIL_FAST_MODE)
       .withUseHeader(true)
       .withParserLib(parserLib)
 
@@ -275,9 +276,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   test("DSL test with poorly formatted file and string schema") {
     val stringSchema = new StructType(
       Array(
-        StructField("Name",StringType,true),
-        StructField("Age",StringType,true),
-        StructField("Height",StringType,true)
+        StructField("Name", StringType, true),
+        StructField("Age", StringType, true),
+        StructField("Height", StringType, true)
       )
     )
 
@@ -285,7 +286,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withSchema(stringSchema)
       .withUseHeader(true)
       .withParserLib(parserLib)
-      .withParseMode("DROPMALFORMED")
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
       .csvFile(sqlContext, ageFile)
       .count()
 
@@ -294,9 +295,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   test("DSL test with poorly formatted file and known schema") {
     val strictSchema = new StructType(
       Array(
-        StructField("Name",StringType,true),
-        StructField("Age",IntegerType,true),
-        StructField("Height",DoubleType,true)
+        StructField("Name", StringType, true),
+        StructField("Age", IntegerType, true),
+        StructField("Height", DoubleType, true)
       )
     )
 
@@ -304,7 +305,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withSchema(strictSchema)
       .withUseHeader(true)
       .withParserLib(parserLib)
-      .withParseMode("DROPMALFORMED")
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
       .csvFile(sqlContext, ageFile)
       .count()
 
