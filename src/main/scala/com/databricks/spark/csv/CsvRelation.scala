@@ -123,6 +123,10 @@ case class CsvRelation protected[spark] (
           case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
+          case nfe: java.lang.NumberFormatException if dropMalformed =>
+            None
+          case pe: java.text.ParseException if dropMalformed =>
+            None
         }
       }
     }
