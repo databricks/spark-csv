@@ -153,7 +153,7 @@ package object csv {
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
-          override def hasNext = iter.hasNext || firstRow
+          override def hasNext: Boolean = iter.hasNext || firstRow
 
           override def next: String = {
             if (iter.nonEmpty) {
