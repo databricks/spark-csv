@@ -19,6 +19,7 @@ import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 import java.sql.Timestamp
 
+import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.{SQLContext, Row}
 import org.apache.spark.{SparkContext, SparkException}
@@ -32,6 +33,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
+  val ageFile = "src/test/resources/ages.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
   val commentsFile = "src/test/resources/comments.csv"
@@ -142,7 +144,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   test("DSL test for DROPMALFORMED parsing mode") {
     val results = new CsvParser()
-      .withParseMode("DROPMALFORMED")
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
       .withUseHeader(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, carsFile)
@@ -154,7 +156,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   test("DSL test for FAILFAST parsing mode") {
     val parser = new CsvParser()
-      .withParseMode("FAILFAST")
+      .withParseMode(ParseModes.FAIL_FAST_MODE)
       .withUseHeader(true)
       .withParserLib(parserLib)
 
@@ -269,6 +271,45 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .count()
 
     assert(results === 0)
+  }
+
+  test("DSL test with poorly formatted file and string schema") {
+    val stringSchema = new StructType(
+      Array(
+        StructField("Name", StringType, true),
+        StructField("Age", StringType, true),
+        StructField("Height", StringType, true)
+      )
+    )
+
+    val results = new CsvParser()
+      .withSchema(stringSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+      .csvFile(sqlContext, ageFile)
+      .count()
+
+    assert(results === 3)
+  }
+  test("DSL test with poorly formatted file and known schema") {
+    val strictSchema = new StructType(
+      Array(
+        StructField("Name", StringType, true),
+        StructField("Age", IntegerType, true),
+        StructField("Height", DoubleType, true)
+      )
+    )
+
+    val results = new CsvParser()
+      .withSchema(strictSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+      .csvFile(sqlContext, ageFile)
+      .count()
+
+    assert(results === 1)
   }
 
   test("DDL test with empty file") {

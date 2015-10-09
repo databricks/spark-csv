@@ -49,7 +49,8 @@ When reading files the API accepts several options:
 * `parserLib`: by default it is "commons" can be set to "univocity" to use that library for CSV parsing.
 * `mode`: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
   * `PERMISSIVE`: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
-  * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected
+  * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected or tokens which do
+   not match the schema
   * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
