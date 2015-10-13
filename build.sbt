@@ -59,7 +59,7 @@ pomExtra := (
 
 spName := "databricks/spark-csv"
 
-sparkVersion := "1.4.0"
+sparkVersion := "1.4.1"
 
 sparkComponents += "sql"
 
