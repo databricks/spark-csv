@@ -31,6 +31,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
+  val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val ageFile = "src/test/resources/ages.csv"
@@ -201,6 +202,19 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withUseHeader(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, carsAltFile)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
+  }
+
+  test("DSL test with null quote character") {
+    val results = new CsvParser()
+      .withDelimiter(',')
+      .withQuoteChar(null)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, carsUnbalancedQuotesFile)
       .select("year")
       .collect()
 

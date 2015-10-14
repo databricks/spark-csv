@@ -36,7 +36,7 @@ case class CsvRelation protected[spark] (
     location: Option[String],
     useHeader: Boolean,
     delimiter: Char,
-    quote: Char,
+    quote: Character,
     escape: Character,
     comment: Character,
     parseMode: String,
@@ -143,7 +143,8 @@ case class CsvRelation protected[spark] (
       val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
-        new LineCsvReader(fieldSep = delimiter, quote = quote, escape = escapeVal,
+        val quoteChar: Char = if (quote == null) '\0' else quote
+        new LineCsvReader(fieldSep = delimiter, quote = quoteChar, escape = escapeVal,
           commentMarker = commentChar).parseLine(firstLine)
       } else {
         val csvFormat = CSVFormat.DEFAULT
@@ -194,10 +195,11 @@ case class CsvRelation protected[spark] (
       case (split, iter) => {
         val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
+        val quoteChar: Char = if (quote == null) '\0' else quote
 
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quote, escape = escapeVal, commentMarker = commentChar)
+          quote = quoteChar, escape = escapeVal, commentMarker = commentChar)
       }
     }, true)
 
