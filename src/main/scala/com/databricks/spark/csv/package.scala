@@ -31,7 +31,7 @@ package object csv {
         filePath: String,
         useHeader: Boolean = true,
         delimiter: Char = ',',
-        quote: Character = '"',
+        quote: Char = '"',
         escape: Character = null,
         comment: Character = null,
         mode: String = "PERMISSIVE",
