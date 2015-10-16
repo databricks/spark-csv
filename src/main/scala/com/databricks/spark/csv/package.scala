@@ -23,6 +23,9 @@ import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
+  val defaultCsvFormat =
+    CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
+
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
@@ -118,7 +121,7 @@ package object csv {
 
       val nullValue = parameters.getOrElse("nullValue", "null")
 
-      val csvFormat = CSVFormat.DEFAULT
+      val csvFormat = defaultCsvFormat
         .withDelimiter(delimiterChar)
         .withQuote(quoteChar)
         .withEscape(escapeChar)
@@ -133,7 +136,7 @@ package object csv {
       }
 
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
-        val csvFormat = CSVFormat.DEFAULT
+        val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
           .withQuote(quoteChar)
           .withEscape(escapeChar)
