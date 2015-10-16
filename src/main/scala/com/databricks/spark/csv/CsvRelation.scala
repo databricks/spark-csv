@@ -75,7 +75,7 @@ case class CsvRelation protected[spark] (
     if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD(), header)
     } else {
-      val csvFormat = CSVFormat.DEFAULT
+      val csvFormat = defaultCsvFormat
         .withDelimiter(delimiter)
         .withQuote(quote)
         .withEscape(escape)
@@ -150,7 +150,7 @@ case class CsvRelation protected[spark] (
           escape = escapeVal,
           commentMarker = commentChar).parseLine(firstLine)
       } else {
-        val csvFormat = CSVFormat.DEFAULT
+        val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
           .withQuote(quote)
           .withEscape(escape)
