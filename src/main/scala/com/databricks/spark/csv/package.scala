@@ -23,7 +23,7 @@ import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
-  val defaultCsvFormat = CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator"))
+  val defaultCsvFormat = CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
 
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
