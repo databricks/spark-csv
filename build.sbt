@@ -54,7 +54,7 @@ pomExtra := (
   <url>https://github.com/databricks/spark-csv</url>
   <licenses>
     <license>
-      <name>Apache License, Verision 2.0</name>
+      <name>Apache License, Version 2.0</name>
       <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
       <distribution>repo</distribution>
     </license>
