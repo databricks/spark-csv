@@ -147,6 +147,7 @@ case class CsvRelation protected[spark] (
       schemaFields.zipWithIndex.filter(pair => requiredFields.contains(pair._1))
         .foreach(pair => requiredIndices.update(requiredFields.indexOf(pair._1), pair._2))
 
+      val rowArray = new Array[Any](requiredIndices.length)
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
           logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
@@ -159,12 +160,9 @@ case class CsvRelation protected[spark] (
           } else {
             tokens
           }
-          var index: Int = 0
-          var subIndex: Int = 0
-          val rowArray = new Array[Any](requiredIndices.length)
           try {
-            index = 0
-            subIndex = 0
+            var index: Int = 0
+            var subIndex: Int = 0
             while (subIndex < requiredIndices.length) {
               index = requiredIndices(subIndex)
               val field = schemaFields(index)
