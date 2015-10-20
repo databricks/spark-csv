@@ -141,7 +141,7 @@ case class CsvRelation protected[spark] (
     val isTableScan = requiredColumns.isEmpty || requiredColumns.sameElements(schemaFields)
     if (isTableScan) {
       buildScan
-    } else{
+    } else {
       val requiredFields = StructType(requiredColumns.map(schema(_))).fields
       val requiredIndices = new Array[Int](requiredFields.length)
       schemaFields.zipWithIndex.filter(pair => requiredFields.contains(pair._1))
@@ -168,8 +168,8 @@ case class CsvRelation protected[spark] (
             while (subIndex < requiredIndices.length) {
               index = requiredIndices(subIndex)
               val field = schemaFields(index)
-              rowArray(subIndex) = TypeCast.castTo(indexSafeTokens(index), field.dataType, field.nullable,
-                treatEmptyValuesAsNulls)
+              rowArray(subIndex) = TypeCast.castTo(indexSafeTokens(index), field.dataType,
+                field.nullable, treatEmptyValuesAsNulls)
               subIndex = subIndex + 1
             }
             Some(Row.fromSeq(rowArray))
