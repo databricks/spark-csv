@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan}
+import org.apache.spark.sql.sources.{PrunedScan, BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types._
 import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
 import com.databricks.spark.csv.util._
@@ -46,7 +46,7 @@ case class CsvRelation protected[spark] (
     treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
     inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
-  extends BaseRelation with TableScan with InsertableRelation {
+  extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
    * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
@@ -131,6 +131,58 @@ case class CsvRelation protected[spark] (
             logger.warn("Parse Exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
+        }
+      }
+    }
+  }
+
+  override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
+    val schemaFields = schema.fields
+    val isTableScan = requiredColumns.isEmpty || requiredColumns.sameElements(schemaFields)
+    if (isTableScan) {
+      buildScan
+    } else{
+      val requiredFields = StructType(requiredColumns.map(schema(_))).fields
+      val requiredIndices = new Array[Int](requiredFields.length)
+      schemaFields.zipWithIndex.filter(pair => requiredFields.contains(pair._1))
+        .foreach(pair => requiredIndices.update(requiredFields.indexOf(pair._1), pair._2))
+
+      tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
+        if (dropMalformed && schemaFields.length != tokens.size) {
+          logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
+          None
+        } else if (failFast && schemaFields.length != tokens.size) {
+          throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
+        } else {
+          val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
+            tokens ++ new Array[String](schemaFields.length - tokens.length)
+          } else {
+            tokens
+          }
+          var index: Int = 0
+          var subIndex: Int = 0
+          val rowArray = new Array[Any](requiredIndices.length)
+          try {
+            index = 0
+            subIndex = 0
+            while (subIndex < requiredIndices.length) {
+              index = requiredIndices(subIndex)
+              val field = schemaFields(index)
+              rowArray(subIndex) = TypeCast.castTo(indexSafeTokens(index), field.dataType, field.nullable,
+                treatEmptyValuesAsNulls)
+              subIndex = subIndex + 1
+            }
+            Some(Row.fromSeq(rowArray))
+          } catch {
+            case nfe: java.lang.NumberFormatException if dropMalformed =>
+              logger.warn("Number format exception. " +
+                s"Dropping malformed line: ${tokens.mkString(",")}")
+              None
+            case pe: java.text.ParseException =>
+              logger.warn("Parse Exception. " +
+                s"Dropping malformed line: ${tokens.mkString(",")}")
+              None
+          }
         }
       }
     }
