@@ -138,11 +138,11 @@ case class CsvRelation protected[spark] (
 
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val schemaFields = schema.fields
-    val isTableScan = requiredColumns.isEmpty || requiredColumns.sameElements(schemaFields)
+    val requiredFields = StructType(requiredColumns.map(schema(_))).fields
+    val isTableScan = requiredColumns.isEmpty || schemaFields.deep == requiredFields.deep
     if (isTableScan) {
       buildScan
     } else {
-      val requiredFields = StructType(requiredColumns.map(schema(_))).fields
       val requiredIndices = new Array[Int](requiredFields.length)
       schemaFields.zipWithIndex.filter(pair => requiredFields.contains(pair._1))
         .foreach(pair => requiredIndices.update(requiredFields.indexOf(pair._1), pair._2))
