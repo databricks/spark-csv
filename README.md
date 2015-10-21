@@ -338,10 +338,10 @@ Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2
 sqlContext <- sparkRSQL.init(sc)
 customSchema <- structType(
     structField("year", "integer"), 
-    StructField("make", "string"),
-    StructField("model", "string"),
-    StructField("comment", "string"),
-    StructField("blank", "string"))
+    structField("make", "string"),
+    structField("model", "string"),
+    structField("comment", "string"),
+    structField("blank", "string"))
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema)
 
