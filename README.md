@@ -65,12 +65,12 @@ $ wget https://github.com/databricks/spark-csv/raw/master/src/test/resources/car
 ```
 
 ### SQL API
-CSV data can be queried in pure SQL by registering the data as a (temporary) table.
 
+Spark-csv can infer data types:
 ```sql
 CREATE TABLE cars
 USING com.databricks.spark.csv
-OPTIONS (path "cars.csv", header "true")
+OPTIONS (path "cars.csv", header "true", inferSchema = "true")
 ```
 
 You can also specify column names and types in DDL.
