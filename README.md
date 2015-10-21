@@ -81,36 +81,137 @@ OPTIONS (path "cars.csv", header "true")
 ```
 
 ### Scala API
-Spark 1.4+:
+__Spark 1.4+:__
+
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```scala
 import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
-val df = sqlContext.read.format("com.databricks.spark.csv").option("header", "true").load("cars.csv")
-df.select("year", "model").write.format("com.databricks.spark.csv").save("newcars.csv")
+val df = sqlContext.read
+    .format("com.databricks.spark.csv")
+    .option("header", "true") // Use first line of all files as header
+    .option("inferSchema", "true") // Automatically infer data types
+    .load("cars.csv")
+
+val selectedData = df.select("year", "model")
+selectedData.write
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .save("newcars.csv")
 ```
 
-Spark 1.3:
+You can manually specify the schema when reading data:
+```scala
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+
+val sqlContext = new SQLContext(sc)
+val customSchema = StructType(
+    StructField("year", IntegerType, true), 
+    StructField("make", StringType, true),
+    StructField("model", StringType, true),
+    StructField("comment", StringType, true),
+    StructField("blank", StringType, true))
+
+val df = sqlContext.read
+    .format("com.databricks.spark.csv")
+    .option("header", "true") // Use first line of all files as header
+    .schema(customSchema)
+    .load("cars.csv")
+
+val selectedData = df.select("year", "model")
+selectedData.write
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .save("newcars.csv")
+```
+
+
+__Spark 1.3:__
+
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```scala
 import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
-val df = sqlContext.load("com.databricks.spark.csv", Map("path" -> "cars.csv", "header" -> "true"))
-df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
+val df = sqlContext.load(
+    "com.databricks.spark.csv", 
+    Map("path" -> "cars.csv", "header" -> "true"))
+val selectedData = df.select("year", "model")
+selectedData.save("newcars.csv", "com.databricks.spark.csv")
 ```
 
+You can manually specify the schema when reading data:
+```scala
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+
+val sqlContext = new SQLContext(sc)
+val customSchema = StructType(
+    StructField("year", IntegerType, true), 
+    StructField("make", StringType, true),
+    StructField("model", StringType, true),
+    StructField("comment", StringType, true),
+    StructField("blank", StringType, true))
+
+val df = sqlContext.load(
+    "com.databricks.spark.csv", 
+    schema = customSchema,
+    Map("path" -> "cars.csv", "header" -> "true"))
+
+val selectedData = df.select("year", "model")
+selectedData.save("newcars.csv", "com.databricks.spark.csv")
+```
 
 ### Java API
-Spark 1.4+:
+Automatically infer schema (data types), otherwise everything is assumed string:
+__Spark 1.4+:__
 ```java
 import org.apache.spark.sql.SQLContext
 
 SQLContext sqlContext = new SQLContext(sc);
-DataFrame df = sqlContext.read().format("com.databricks.spark.csv").option("header", "true").load("cars.csv");
-df.select("year", "model").write().format("com.databricks.spark.csv").save("newcars.csv");
+DataFrame df = sqlContext.read()
+    .format("com.databricks.spark.csv")
+    .option("inferSchema", "true")
+    .option("header", "true")
+    .load("cars.csv");
+
+df.select("year", "model").write()
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .save("newcars.csv");
 ```
 
-Spark 1.3:
+You can manually specify schema:
+```java
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+
+SQLContext sqlContext = new SQLContext(sc);
+StructType customSchema = new StructType(
+    new StructField("year", IntegerType, true), 
+    new StructField("make", StringType, true),
+    new StructField("model", StringType, true),
+    new StructField("comment", StringType, true),
+    new StructField("blank", StringType, true));
+
+DataFrame df = sqlContext.read()
+    .format("com.databricks.spark.csv")
+    .option("inferSchema", "true")
+    .option("header", "true")
+    .load("cars.csv");
+
+df.select("year", "model").write()
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .save("newcars.csv");
+```
+
+
+
+__Spark 1.3:__
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```java
 import org.apache.spark.sql.SQLContext
 
@@ -119,38 +220,119 @@ SQLContext sqlContext = new SQLContext(sc);
 HashMap<String, String> options = new HashMap<String, String>();
 options.put("header", "true");
 options.put("path", "cars.csv");
+optins.put("inferSchema", "true");
 
 DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
 ```
 
+You can manually specify schema:
+```java
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+
+SQLContext sqlContext = new SQLContext(sc);
+StructType customSchema = new StructType(
+    new StructField("year", IntegerType, true), 
+    new StructField("make", StringType, true),
+    new StructField("model", StringType, true),
+    new StructField("comment", StringType, true),
+    new StructField("blank", StringType, true));
+
+
+HashMap<String, String> options = new HashMap<String, String>();
+options.put("header", "true");
+options.put("path", "cars.csv");
+
+DataFrame df = sqlContext.load("com.databricks.spark.csv", customSchema, options);
+df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
+```
+
 ### Python API
-Spark 1.4+:
+
+__Spark 1.4+:__
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```python
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
-df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load('cars.csv')
+df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('cars.csv')
 df.select('year', 'model').write.format('com.databricks.spark.csv').save('newcars.csv')
 ```
 
-Spark 1.3:
+You can manually specify schema:
+```python
+from pyspark.sql import SQLContext
+from pyspark.sql.types import *
+
+sqlContext = SQLContext(sc)
+customSchema = StructType(
+    StructField("year", IntegerType, true), 
+    StructField("make", StringType, true),
+    StructField("model", StringType, true),
+    StructField("comment", StringType, true),
+    StructField("blank", StringType, true))
+
+df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load('cars.csv', schema = customSchema)
+df.select('year', 'model').write.format('com.databricks.spark.csv').save('newcars.csv')
+```
+
+
+__Spark 1.3:__
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```python
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
-df = sqlContext.load(source="com.databricks.spark.csv", header="true", path = "cars.csv")
-df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv")
+df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', inferSchema = 'true', path = 'cars.csv')
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
+```
+
+You can manually specify schema:
+```python
+from pyspark.sql import SQLContext
+from pyspark.sql.types import *
+
+sqlContext = SQLContext(sc)
+customSchema = StructType(
+    StructField("year", IntegerType, true), 
+    StructField("make", StringType, true),
+    StructField("model", StringType, true),
+    StructField("comment", StringType, true),
+    StructField("blank", StringType, true))
+
+df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', schema = customSchema, path = 'cars.csv')
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
 ```
 
 ### R API
-Spark 1.4+:
+__Spark 1.4+:__
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```R
 library(SparkR)
 
 Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
-df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv")
+
+df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema, inferSchema = "true")
+
+write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
+```
+
+You can manually specify schema:
+```R
+library(SparkR)
+
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+sqlContext <- sparkRSQL.init(sc)
+customSchema <- structType(
+    structField("year", "integer"), 
+    StructField("make", "string"),
+    StructField("model", "string"),
+    StructField("comment", "string"),
+    StructField("blank", "string"))
+
+df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema)
 
 write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
 ```
