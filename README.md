@@ -137,7 +137,7 @@ import org.apache.spark.sql.SQLContext
 val sqlContext = new SQLContext(sc)
 val df = sqlContext.load(
     "com.databricks.spark.csv", 
-    Map("path" -> "cars.csv", "header" -> "true"))
+    Map("path" -> "cars.csv", "header" -> "true", "inferSchema" -> "true"))
 val selectedData = df.select("year", "model")
 selectedData.save("newcars.csv", "com.databricks.spark.csv")
 ```
@@ -165,8 +165,9 @@ selectedData.save("newcars.csv", "com.databricks.spark.csv")
 ```
 
 ### Java API
-Automatically infer schema (data types), otherwise everything is assumed string:
 __Spark 1.4+:__
+
+Automatically infer schema (data types), otherwise everything is assumed string:
 ```java
 import org.apache.spark.sql.SQLContext
 
@@ -211,6 +212,7 @@ df.select("year", "model").write()
 
 
 __Spark 1.3:__
+
 Automatically infer schema (data types), otherwise everything is assumed string:
 ```java
 import org.apache.spark.sql.SQLContext
@@ -251,6 +253,7 @@ df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
 ### Python API
 
 __Spark 1.4+:__
+
 Automatically infer schema (data types), otherwise everything is assumed string:
 ```python
 from pyspark.sql import SQLContext
@@ -279,6 +282,7 @@ df.select('year', 'model').write.format('com.databricks.spark.csv').save('newcar
 
 
 __Spark 1.3:__
+
 Automatically infer schema (data types), otherwise everything is assumed string:
 ```python
 from pyspark.sql import SQLContext
@@ -307,6 +311,7 @@ df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
 
 ### R API
 __Spark 1.4+:__
+
 Automatically infer schema (data types), otherwise everything is assumed string:
 ```R
 library(SparkR)
