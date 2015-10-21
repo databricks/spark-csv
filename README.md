@@ -186,8 +186,8 @@ df.select("year", "model").write()
 
 You can manually specify schema:
 ```java
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.*;
 
 SQLContext sqlContext = new SQLContext(sc);
 StructType customSchema = new StructType(
@@ -230,8 +230,8 @@ df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
 
 You can manually specify schema:
 ```java
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.*;
 
 SQLContext sqlContext = new SQLContext(sc);
 StructType customSchema = new StructType(
@@ -269,15 +269,21 @@ from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 
 sqlContext = SQLContext(sc)
-customSchema = StructType(
-    StructField("year", IntegerType, true), 
-    StructField("make", StringType, true),
-    StructField("model", StringType, true),
-    StructField("comment", StringType, true),
+customSchema = StructType( \
+    StructField("year", IntegerType, true), \
+    StructField("make", StringType, true), \
+    StructField("model", StringType, true), \
+    StructField("comment", StringType, true), \
     StructField("blank", StringType, true))
 
-df = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load('cars.csv', schema = customSchema)
-df.select('year', 'model').write.format('com.databricks.spark.csv').save('newcars.csv')
+df = sqlContext.read \
+    .format('com.databricks.spark.csv') \
+    .options(header='true') \
+    .load('cars.csv', schema = customSchema)
+
+df.select('year', 'model').write \
+    .format('com.databricks.spark.csv') \
+    .save('newcars.csv')
 ```
 
 
@@ -298,11 +304,11 @@ from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 
 sqlContext = SQLContext(sc)
-customSchema = StructType(
-    StructField("year", IntegerType, true), 
-    StructField("make", StringType, true),
-    StructField("model", StringType, true),
-    StructField("comment", StringType, true),
+customSchema = StructType( \
+    StructField("year", IntegerType, true), \
+    StructField("make", StringType, true), \
+    StructField("model", StringType, true), \
+    StructField("comment", StringType, true), \
     StructField("blank", StringType, true))
 
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', schema = customSchema, path = 'cars.csv')
