@@ -136,6 +136,13 @@ case class CsvRelation protected[spark] (
     }
   }
 
+
+  /**
+   * This supports to eliminate unneeded columns before producing an RDD
+   * containing all of its tuples as Row objects. This reads all the tokens of each line
+   * and then drop unneeded tokens without casting and type-checking by mapping
+   * both the indices produced by `requiredColumns` and the ones of tokens.
+   */
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val schemaFields = schema.fields
     val requiredFields = StructType(requiredColumns.map(schema(_))).fields
@@ -144,16 +151,20 @@ case class CsvRelation protected[spark] (
       buildScan
     } else {
       val requiredIndices = new Array[Int](requiredFields.length)
-      schemaFields.zipWithIndex.filter(pair => requiredFields.contains(pair._1))
-        .foreach(pair => requiredIndices.update(requiredFields.indexOf(pair._1), pair._2))
+      schemaFields.zipWithIndex.filter {
+        case (field, _) => requiredFields.contains(field)
+      }.foreach {
+        case(field, index) => requiredIndices(requiredFields.indexOf(field)) = index
+      }
 
       val rowArray = new Array[Any](requiredIndices.length)
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
-          logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
+          logger.warn(s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
           None
         } else if (failFast && schemaFields.length != tokens.size) {
-          throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
+          throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
+            s"${tokens.mkString(delimiter.toString)}")
         } else {
           val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
             tokens ++ new Array[String](schemaFields.length - tokens.length)
@@ -166,19 +177,22 @@ case class CsvRelation protected[spark] (
             while (subIndex < requiredIndices.length) {
               index = requiredIndices(subIndex)
               val field = schemaFields(index)
-              rowArray(subIndex) = TypeCast.castTo(indexSafeTokens(index), field.dataType,
-                field.nullable, treatEmptyValuesAsNulls)
+              rowArray(subIndex) = TypeCast.castTo(
+                indexSafeTokens(index),
+                field.dataType,
+                field.nullable,
+                treatEmptyValuesAsNulls)
               subIndex = subIndex + 1
             }
             Some(Row.fromSeq(rowArray))
           } catch {
             case nfe: java.lang.NumberFormatException if dropMalformed =>
               logger.warn("Number format exception. " +
-                s"Dropping malformed line: ${tokens.mkString(",")}")
+                s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
-            case pe: java.text.ParseException =>
+            case pe: java.text.ParseException if dropMalformed =>
               logger.warn("Parse Exception. " +
-                s"Dropping malformed line: ${tokens.mkString(",")}")
+                s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
           }
         }
