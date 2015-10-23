@@ -409,7 +409,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "compressionCodec" -> classOf[GzipCodec].getName))
 
     val carsCopy = sqlContext.csvFile(copyFilePath + "/")
 

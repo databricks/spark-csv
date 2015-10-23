@@ -91,9 +91,14 @@ package object csv {
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
      */
-    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
-                      compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
+    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
+      val codecStr =  parameters.getOrElse("compressionCodec", null)
+      val compressionCodec = if (codecStr == null) {
+        null
+      } else{
+        Class.forName(codecStr).asInstanceOf[Class[CompressionCodec]]
+      }
       val delimiter = parameters.getOrElse("delimiter", ",")
       val delimiterChar = if (delimiter.length == 1) {
         delimiter.charAt(0)
