@@ -90,15 +90,40 @@ package object csv {
 
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     * The resulting output will not be compressed.
      */
-    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map()): Unit = {
-      // TODO(hossein): For nested types, we may want to perform special work
-      val codecStr =  parameters.getOrElse("compressionCodec", null)
-      val compressionCodec = if (codecStr == null) {
-        null
-      } else{
-        Class.forName(codecStr).asInstanceOf[Class[CompressionCodec]]
+    def saveAsCsvFile(path: String) : Unit = {
+        saveAsCsvFile(path, Map(), null)
+    }
+
+    /**
+     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     * If the parameters Map contains the key "compressionCodec" with a value
+     * corresponding to the name of a class implementing
+     * org.apache.hadoop.io.compress.CompressionCodec then the output will be
+     * compressed.
+     */
+    def saveAsCsvFile(path: String, parameters: Map[String, String]): Unit = {
+      val codecStr = parameters.getOrElse("compressionCodec", null)
+      if (codecStr == null) {
+        saveAsCsvFile(path, parameters, null)
+      } else {
+        saveAsCsvFile(path, parameters,
+          // scalastyle:off classforname
+          Class.forName(codecStr).asInstanceOf[Class[CompressionCodec]])
+          // scalastyle:on classforname
       }
+    }
+
+
+    /**
+     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     * If compressionCodec is not null the resulting output will be compressed.
+     * Note that a compressionCodec entry in the parameters map will be ignored.
+     */
+    def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
+                      compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
+      // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
       val delimiterChar = if (delimiter.length == 1) {
         delimiter.charAt(0)
