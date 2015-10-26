@@ -135,6 +135,8 @@ class DefaultSource
       throw new Exception("Infer schema flag can be true or false")
     }
 
+    val codec = parameters.getOrElse("codec", null)
+
     CsvRelation(
       () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
       Some(path),
@@ -149,7 +151,8 @@ class DefaultSource
       ignoreTrailingWhiteSpaceFlag,
       treatEmptyValuesAsNullsFlag,
       schema,
-      inferSchemaFlag)(sqlContext)
+      inferSchemaFlag,
+      codec)(sqlContext)
   }
 
   override def createRelation(
@@ -176,7 +179,8 @@ class DefaultSource
     }
     if (doSave) {
       // Only save data when the save mode is not ignore.
-      data.saveAsCsvFile(path, parameters)
+      val codecClass = compresionCodecClass(parameters.getOrElse("codec", null))
+      data.saveAsCsvFile(path, parameters, codecClass)
     }
 
     createRelation(sqlContext, parameters, data.schema)

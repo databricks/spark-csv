@@ -21,7 +21,7 @@ import java.sql.Timestamp
 
 import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.{SQLContext, Row}
+import org.apache.spark.sql.{SQLContext, Row, SaveMode}
 import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.sql.types._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
@@ -409,13 +409,33 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "cars-copy.csv"
 
     val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
-    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "compressionCodec" -> classOf[GzipCodec].getName))
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"), classOf[GzipCodec])
 
     val carsCopy = sqlContext.csvFile(copyFilePath + "/")
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
+
+  test("Scala API save with gzip compression codec") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
+      Map("path" -> copyFilePath, "header" -> "true", "codec" -> classOf[GzipCodec].getName))
+    val carsCopyPartFile = new File(copyFilePath, "part-00000.gz")
+    // Check that the part file has a .gz extension
+    assert(carsCopyPartFile.exists())
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
 
   test("DSL save with quoting") {
     // Create temp directory

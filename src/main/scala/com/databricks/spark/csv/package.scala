@@ -26,6 +26,16 @@ package object csv {
   val defaultCsvFormat =
     CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
 
+  private[csv] def compresionCodecClass(className: String): Class[_ <: CompressionCodec] = {
+    className match {
+    case null => null
+    case codec =>
+      // scalastyle:off classforname
+      Class.forName(codec).asInstanceOf[Class[CompressionCodec]]
+      // scalastyle:on classforname
+    }
+  }
+
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
@@ -87,34 +97,6 @@ package object csv {
   }
 
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
-
-    /**
-     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
-     * The resulting output will not be compressed.
-     */
-    def saveAsCsvFile(path: String) : Unit = {
-        saveAsCsvFile(path, Map(), null)
-    }
-
-    /**
-     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
-     * If the parameters Map contains the key "compressionCodec" with a value
-     * corresponding to the name of a class implementing
-     * org.apache.hadoop.io.compress.CompressionCodec then the output will be
-     * compressed.
-     */
-    def saveAsCsvFile(path: String, parameters: Map[String, String]): Unit = {
-      val codecStr = parameters.getOrElse("compressionCodec", null)
-      if (codecStr == null) {
-        saveAsCsvFile(path, parameters, null)
-      } else {
-        saveAsCsvFile(path, parameters,
-          // scalastyle:off classforname
-          Class.forName(codecStr).asInstanceOf[Class[CompressionCodec]])
-          // scalastyle:on classforname
-      }
-    }
-
 
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
