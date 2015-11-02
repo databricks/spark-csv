@@ -70,7 +70,7 @@ Spark-csv can infer data types:
 ```sql
 CREATE TABLE cars
 USING com.databricks.spark.csv
-OPTIONS (path "cars.csv", header "true", inferSchema = "true")
+OPTIONS (path "cars.csv", header "true", inferSchema "true")
 ```
 
 You can also specify column names and types in DDL.
