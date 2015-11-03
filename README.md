@@ -269,12 +269,12 @@ from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 
 sqlContext = SQLContext(sc)
-customSchema = StructType( \
-    StructField("year", IntegerType, true), \
-    StructField("make", StringType, true), \
-    StructField("model", StringType, true), \
-    StructField("comment", StringType, true), \
-    StructField("blank", StringType, true))
+customSchema = StructType([ \
+    StructField("year", IntegerType(), True), \
+    StructField("make", StringType(), True), \
+    StructField("model", StringType(), True), \
+    StructField("comment", StringType(), True), \
+    StructField("blank", StringType(), True)])
 
 df = sqlContext.read \
     .format('com.databricks.spark.csv') \
@@ -304,12 +304,12 @@ from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 
 sqlContext = SQLContext(sc)
-customSchema = StructType( \
-    StructField("year", IntegerType, true), \
-    StructField("make", StringType, true), \
-    StructField("model", StringType, true), \
-    StructField("comment", StringType, true), \
-    StructField("blank", StringType, true))
+customSchema = StructType([ \
+    StructField("year", IntegerType(), True), \
+    StructField("make", StringType(), True), \
+    StructField("model", StringType(), True), \
+    StructField("comment", StringType(), True), \
+    StructField("blank", StringType(), True)])
 
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', schema = customSchema, path = 'cars.csv')
 df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
