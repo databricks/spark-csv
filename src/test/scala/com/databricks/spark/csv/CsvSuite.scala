@@ -37,6 +37,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val ageFile = "src/test/resources/ages.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
+  val tempEmptyDir2 = "target/test/empty2/"
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
 
@@ -454,6 +455,22 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "escape-copy.csv"
 
     val escape = sqlContext.csvFile(escapeFile, escape = '|', quote = '"')
+    escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
+
+    val escapeCopy = sqlContext.csvFile(copyFilePath + "/", parserLib = parserLib)
+
+    assert(escapeCopy.count == escape.count)
+    assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
+    assert(escapeCopy.head().getString(0) == "\"thing")
+  }
+  
+  test("DSL Save Load Partitions") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir2))
+    new File(tempEmptyDir2).mkdirs()
+    val copyFilePath = tempEmptyDir2 + "escape-copy.csv"
+
+    val escape = sqlContext.csvFile(escapeFile, escape = '|', quote = '"', minPartitions = 5)
     escape.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> "\""))
 
     val escapeCopy = sqlContext.csvFile(copyFilePath + "/", parserLib = parserLib)

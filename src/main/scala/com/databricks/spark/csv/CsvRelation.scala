@@ -45,7 +45,8 @@ case class CsvRelation protected[spark] (
     ignoreTrailingWhiteSpace: Boolean,
     treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
-    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+    inferCsvSchema: Boolean,
+    minPartitions: Int)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
