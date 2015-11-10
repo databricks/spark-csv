@@ -43,16 +43,16 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   val numCars = 3
 
-  protected def parserLib : String
+  protected def parserLib: String
 
-  private var sqlContext : SQLContext = _
+  private var sqlContext: SQLContext = _
 
-  override protected def beforeAll() : Unit = {
+  override protected def beforeAll(): Unit = {
     super.beforeAll()
     sqlContext = new SQLContext(new SparkContext("local[2]", "AvroSuite"))
   }
 
-  override protected def afterAll() : Unit = {
+  override protected def afterAll(): Unit = {
     try {
       sqlContext.sparkContext.stop()
     } finally {
@@ -529,7 +529,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Commented lines in CSV data") {
-    val results : Array[Row] = new CsvParser()
+    val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment('~')
       .withParserLib(parserLib)
@@ -545,7 +545,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Inferring schema") {
-    val results : Array[Row] = new CsvParser()
+    val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment('~')
       .withParserLib(parserLib)
@@ -562,7 +562,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Setting comment to null disables comment support") {
-    val results : Array[Row] = new CsvParser()
+    val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment(null)
       .withParserLib(parserLib)
@@ -622,9 +622,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 }
 
 class CsvSuite extends AbstractCsvSuite {
-  override def parserLib : String = "COMMONS"
+  override def parserLib: String = "COMMONS"
 }
 
 class CsvFastSuite extends AbstractCsvSuite {
-  override def parserLib : String = "UNIVOCITY"
+  override def parserLib: String = "UNIVOCITY"
 }

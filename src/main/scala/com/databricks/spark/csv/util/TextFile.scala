@@ -25,8 +25,8 @@ import org.apache.spark.rdd.RDD
 private[csv] object TextFile {
   val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
-  def withCharset(context : SparkContext, location : String, charset : String,
-                  partitions : Int = 0) : RDD[String] = {
+  def withCharset(context: SparkContext, location: String, charset: String,
+                  partitions: Int = 0): RDD[String] = {
     if (Charset.forName(charset) == DEFAULT_CHARSET) {
       if (partitions > 0) {
         context.textFile(location, partitions)

@@ -25,95 +25,95 @@ import com.databricks.spark.csv.util.{ ParserLibs, ParseModes, TextFile }
  */
 class CsvParser extends Serializable {
 
-  private var useHeader : Boolean = false
-  private var delimiter : Character = ','
-  private var quote : Character = '"'
-  private var escape : Character = null
-  private var comment : Character = '#'
-  private var schema : StructType = null
-  private var parseMode : String = ParseModes.DEFAULT
-  private var ignoreLeadingWhiteSpace : Boolean = false
-  private var ignoreTrailingWhiteSpace : Boolean = false
-  private var treatEmptyValuesAsNulls : Boolean = false
-  private var parserLib : String = ParserLibs.DEFAULT
-  private var charset : String = TextFile.DEFAULT_CHARSET.name()
-  private var inferSchema : Boolean = false
-  private var minPartitions : Int = 1
+  private var useHeader: Boolean = false
+  private var delimiter: Character = ','
+  private var quote: Character = '"'
+  private var escape: Character = null
+  private var comment: Character = '#'
+  private var schema: StructType = null
+  private var parseMode: String = ParseModes.DEFAULT
+  private var ignoreLeadingWhiteSpace: Boolean = false
+  private var ignoreTrailingWhiteSpace: Boolean = false
+  private var treatEmptyValuesAsNulls: Boolean = false
+  private var parserLib: String = ParserLibs.DEFAULT
+  private var charset: String = TextFile.DEFAULT_CHARSET.name()
+  private var inferSchema: Boolean = false
+  private var minPartitions: Int = 1
 
-  def withUseHeader(flag : Boolean) : CsvParser = {
+  def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
     this
   }
 
-  def withDelimiter(delimiter : Character) : CsvParser = {
+  def withDelimiter(delimiter: Character): CsvParser = {
     this.delimiter = delimiter
     this
   }
 
-  def withQuoteChar(quote : Character) : CsvParser = {
+  def withQuoteChar(quote: Character): CsvParser = {
     this.quote = quote
     this
   }
 
-  def withSchema(schema : StructType) : CsvParser = {
+  def withSchema(schema: StructType): CsvParser = {
     this.schema = schema
     this
   }
 
-  def withParseMode(mode : String) : CsvParser = {
+  def withParseMode(mode: String): CsvParser = {
     this.parseMode = mode
     this
   }
 
-  def withEscape(escapeChar : Character) : CsvParser = {
+  def withEscape(escapeChar: Character): CsvParser = {
     this.escape = escapeChar
     this
   }
 
-  def withComment(commentChar : Character) : CsvParser = {
+  def withComment(commentChar: Character): CsvParser = {
     this.comment = commentChar
     this
   }
 
-  def withIgnoreLeadingWhiteSpace(ignore : Boolean) : CsvParser = {
+  def withIgnoreLeadingWhiteSpace(ignore: Boolean): CsvParser = {
     this.ignoreLeadingWhiteSpace = ignore
     this
   }
 
-  def withIgnoreTrailingWhiteSpace(ignore : Boolean) : CsvParser = {
+  def withIgnoreTrailingWhiteSpace(ignore: Boolean): CsvParser = {
     this.ignoreTrailingWhiteSpace = ignore
     this
   }
 
-  def withTreatEmptyValuesAsNulls(treatAsNull : Boolean) : CsvParser = {
+  def withTreatEmptyValuesAsNulls(treatAsNull: Boolean): CsvParser = {
     this.treatEmptyValuesAsNulls = treatAsNull
     this
   }
 
-  def withParserLib(parserLib : String) : CsvParser = {
+  def withParserLib(parserLib: String): CsvParser = {
     this.parserLib = parserLib
     this
   }
 
-  def withCharset(charset : String) : CsvParser = {
+  def withCharset(charset: String): CsvParser = {
     this.charset = charset
     this
   }
 
-  def withInferSchema(inferSchema : Boolean) : CsvParser = {
+  def withInferSchema(inferSchema: Boolean): CsvParser = {
     this.inferSchema = inferSchema
     this
   }
 
-  def withMinPartitions(partitions : Int) : CsvParser = {
+  def withMinPartitions(partitions: Int): CsvParser = {
     this.minPartitions = partitions
     this
   }
 
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
-  def csvFile(sqlContext : SQLContext, path : String) : DataFrame = {
-    val relation : CsvRelation = CsvRelation(
+  def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
+    val relation: CsvRelation = CsvRelation(
       () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
       Some(path),
       useHeader,
@@ -132,8 +132,8 @@ class CsvParser extends Serializable {
     sqlContext.baseRelationToDataFrame(relation)
   }
 
-  def csvRdd(sqlContext : SQLContext, csvRDD : RDD[String]) : DataFrame = {
-    val relation : CsvRelation = CsvRelation(
+  def csvRdd(sqlContext: SQLContext, csvRDD: RDD[String]): DataFrame = {
+    val relation: CsvRelation = CsvRelation(
       () => csvRDD,
       None,
       useHeader,

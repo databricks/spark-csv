@@ -32,21 +32,21 @@ import com.databricks.spark.csv.readers.{ BulkCsvReader, LineCsvReader }
 import com.databricks.spark.csv.util._
 
 case class CsvRelation protected[spark] (
-  baseRDD : () => RDD[String],
-  location : Option[String],
-  useHeader : Boolean,
-  delimiter : Char,
-  quote : Character,
-  escape : Character,
-  comment : Character,
-  parseMode : String,
-  parserLib : String,
-  ignoreLeadingWhiteSpace : Boolean,
-  ignoreTrailingWhiteSpace : Boolean,
-  treatEmptyValuesAsNulls : Boolean,
-  userSchema : StructType = null,
-  inferCsvSchema : Boolean,
-  minPartitions : Int)(@transient val sqlContext : SQLContext)
+  baseRDD: () => RDD[String],
+  location: Option[String],
+  useHeader: Boolean,
+  delimiter: Char,
+  quote: Character,
+  escape: Character,
+  comment: Character,
+  parseMode: String,
+  parserLib: String,
+  ignoreLeadingWhiteSpace: Boolean,
+  ignoreTrailingWhiteSpace: Boolean,
+  treatEmptyValuesAsNulls: Boolean,
+  userSchema: StructType = null,
+  inferCsvSchema: Boolean,
+  minPartitions: Int)(@transient val sqlContext: SQLContext)
     extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
@@ -69,9 +69,9 @@ case class CsvRelation protected[spark] (
   private val dropMalformed = ParseModes.isDropMalformedMode(parseMode)
   private val permissive = ParseModes.isPermissiveMode(parseMode)
 
-  override val schema : StructType = inferSchema()
+  override val schema: StructType = inferSchema()
 
-  private def tokenRdd(header : Array[String]) : RDD[Array[String]] = {
+  private def tokenRdd(header: Array[String]): RDD[Array[String]] = {
 
     if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD(), header)
@@ -81,7 +81,7 @@ case class CsvRelation protected[spark] (
         .withQuote(quote)
         .withEscape(escape)
         .withSkipHeaderRecord(false)
-        .withHeader(header : _*)
+        .withHeader(header: _*)
         .withCommentMarker(comment)
 
       // If header is set, make sure firstLine is materialized before sending to executors.
@@ -99,7 +99,7 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  override def buildScan : RDD[Row] = {
+  override def buildScan: RDD[Row] = {
     val schemaFields = schema.fields
     tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
@@ -109,7 +109,7 @@ case class CsvRelation protected[spark] (
       } else if (failFast && schemaFields.length != tokens.size) {
         throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
       } else {
-        var index : Int = 0
+        var index: Int = 0
         val rowArray = new Array[Any](schemaFields.length)
         try {
           index = 0
@@ -121,14 +121,14 @@ case class CsvRelation protected[spark] (
           }
           Some(Row.fromSeq(rowArray))
         } catch {
-          case aiob : ArrayIndexOutOfBoundsException if permissive =>
+          case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
-          case nfe : java.lang.NumberFormatException if dropMalformed =>
+          case nfe: java.lang.NumberFormatException if dropMalformed =>
             logger.warn("Number format exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
-          case pe : java.text.ParseException if dropMalformed =>
+          case pe: java.text.ParseException if dropMalformed =>
             logger.warn("Parse Exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
@@ -143,7 +143,7 @@ case class CsvRelation protected[spark] (
    * and then drop unneeded tokens without casting and type-checking by mapping
    * both the indices produced by `requiredColumns` and the ones of tokens.
    */
-  override def buildScan(requiredColumns : Array[String]) : RDD[Row] = {
+  override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val schemaFields = schema.fields
     val requiredFields = StructType(requiredColumns.map(schema(_))).fields
     val isTableScan = requiredColumns.isEmpty || schemaFields.deep == requiredFields.deep
@@ -172,8 +172,8 @@ case class CsvRelation protected[spark] (
             tokens
           }
           try {
-            var index : Int = 0
-            var subIndex : Int = 0
+            var index: Int = 0
+            var subIndex: Int = 0
             while (subIndex < requiredIndices.length) {
               index = requiredIndices(subIndex)
               val field = schemaFields(index)
@@ -186,11 +186,11 @@ case class CsvRelation protected[spark] (
             }
             Some(Row.fromSeq(rowArray))
           } catch {
-            case nfe : java.lang.NumberFormatException if dropMalformed =>
+            case nfe: java.lang.NumberFormatException if dropMalformed =>
               logger.warn("Number format exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
-            case pe : java.text.ParseException if dropMalformed =>
+            case pe: java.text.ParseException if dropMalformed =>
               logger.warn("Parse Exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
@@ -200,14 +200,14 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  private def inferSchema() : StructType = {
+  private def inferSchema(): StructType = {
     if (this.userSchema != null) {
       userSchema
     } else {
       val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
         val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar : Char = if (comment == null) '\0' else comment
-        val quoteChar : Char = if (quote == null) '\0' else quote
+        val commentChar: Char = if (comment == null) '\0' else comment
+        val quoteChar: Char = if (quote == null) '\0' else quote
         new LineCsvReader(
           fieldSep = delimiter,
           quote = quoteChar,
@@ -253,16 +253,16 @@ case class CsvRelation protected[spark] (
   }
 
   private def univocityParseCSV(
-    file : RDD[String],
-    header : Seq[String]) : RDD[Array[String]] = {
+    file: RDD[String],
+    header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if (useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
         val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar : Char = if (comment == null) '\0' else comment
-        val quoteChar : Char = if (quote == null) '\0' else quote
+        val commentChar: Char = if (comment == null) '\0' else comment
+        val quoteChar: Char = if (quote == null) '\0' else quote
 
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
@@ -274,8 +274,8 @@ case class CsvRelation protected[spark] (
   }
 
   private def parseCSV(
-    iter : Iterator[String],
-    csvFormat : CSVFormat) : Iterator[Array[String]] = {
+    iter: Iterator[String],
+    csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
@@ -294,7 +294,7 @@ case class CsvRelation protected[spark] (
   }
 
   // The function below was borrowed from JSONRelation
-  override def insert(data : DataFrame, overwrite : Boolean) : Unit = {
+  override def insert(data: DataFrame, overwrite: Boolean): Unit = {
 
     val filesystemPath = location match {
       case Some(p) => new Path(p)
@@ -308,7 +308,7 @@ case class CsvRelation protected[spark] (
       try {
         fs.delete(filesystemPath, true)
       } catch {
-        case e : IOException =>
+        case e: IOException =>
           throw new IOException(
             s"Unable to clear output directory ${filesystemPath.toString} prior"
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")

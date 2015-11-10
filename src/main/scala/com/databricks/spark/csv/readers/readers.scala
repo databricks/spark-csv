@@ -35,17 +35,17 @@ import com.univocity.parsers.csv._
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 private[readers] abstract class CsvReader(
-    fieldSep : Char = ',',
-    lineSep : String = "\n",
-    quote : Char = '"',
-    escape : Char = '\\',
-    commentMarker : Char = '#',
-    ignoreLeadingSpace : Boolean = true,
-    ignoreTrailingSpace : Boolean = true,
-    headers : Seq[String],
-    inputBufSize : Int = 128,
-    maxCols : Int = 20480) {
-  protected lazy val parser : CsvParser = {
+    fieldSep: Char = ',',
+    lineSep: String = "\n",
+    quote: Char = '"',
+    escape: Char = '\\',
+    commentMarker: Char = '#',
+    ignoreLeadingSpace: Boolean = true,
+    ignoreTrailingSpace: Boolean = true,
+    headers: Seq[String],
+    inputBufSize: Int = 128,
+    maxCols: Int = 20480) {
+  protected lazy val parser: CsvParser = {
     val settings = new CsvParserSettings()
     val format = settings.getFormat
     format.setDelimiter(fieldSep)
@@ -60,7 +60,7 @@ private[readers] abstract class CsvReader(
     settings.setMaxColumns(maxCols)
     settings.setNullValue("")
     settings.setMaxCharsPerColumn(100000)
-    if (headers != null) settings.setHeaders(headers : _*)
+    if (headers != null) settings.setHeaders(headers: _*)
 
     new CsvParser(settings)
   }
@@ -78,15 +78,15 @@ private[readers] abstract class CsvReader(
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 private[csv] class LineCsvReader(
-  fieldSep : Char = ',',
-  lineSep : String = "\n",
-  quote : Char = '"',
-  escape : Char = '\\',
-  commentMarker : Char = '#',
-  ignoreLeadingSpace : Boolean = true,
-  ignoreTrailingSpace : Boolean = true,
-  inputBufSize : Int = 128,
-  maxCols : Int = 20480)
+  fieldSep: Char = ',',
+  lineSep: String = "\n",
+  quote: Char = '"',
+  escape: Char = '\\',
+  commentMarker: Char = '#',
+  ignoreLeadingSpace: Boolean = true,
+  ignoreTrailingSpace: Boolean = true,
+  inputBufSize: Int = 128,
+  maxCols: Int = 20480)
     extends CsvReader(
       fieldSep,
       lineSep,
@@ -103,7 +103,7 @@ private[csv] class LineCsvReader(
    * @param line a String with no newline at the end
    * @return array of strings where each string is a field in the CSV record
    */
-  def parseLine(line : String) : Array[String] = {
+  def parseLine(line: String): Array[String] = {
     parser.beginParsing(new StringReader(line))
     val parsed = parser.parseNext()
     parser.stopParsing()
@@ -125,18 +125,18 @@ private[csv] class LineCsvReader(
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 private[csv] class BulkCsvReader(
-  iter : Iterator[String],
-  split : Int, // for debugging
-  fieldSep : Char = ',',
-  lineSep : String = "\n",
-  quote : Char = '"',
-  escape : Char = '\\',
-  commentMarker : Char = '#',
-  ignoreLeadingSpace : Boolean = true,
-  ignoreTrailingSpace : Boolean = true,
-  headers : Seq[String],
-  inputBufSize : Int = 128,
-  maxCols : Int = 20480)
+  iter: Iterator[String],
+  split: Int, // for debugging
+  fieldSep: Char = ',',
+  lineSep: String = "\n",
+  quote: Char = '"',
+  escape: Char = '\\',
+  commentMarker: Char = '#',
+  ignoreLeadingSpace: Boolean = true,
+  ignoreTrailingSpace: Boolean = true,
+  headers: Seq[String],
+  inputBufSize: Int = 128,
+  maxCols: Int = 20480)
     extends CsvReader(
       fieldSep,
       lineSep,
@@ -158,7 +158,7 @@ private[csv] class BulkCsvReader(
    * get the next parsed line.
    * @return array of strings where each string is a field in the CSV record
    */
-  override def next() : Array[String] = {
+  override def next(): Array[String] = {
     val curRecord = nextRecord
     if (curRecord != null) {
       nextRecord = parser.parseNext()
@@ -168,7 +168,7 @@ private[csv] class BulkCsvReader(
     curRecord
   }
 
-  override def hasNext : Boolean = nextRecord != null
+  override def hasNext: Boolean = nextRecord != null
 
 }
 
@@ -178,18 +178,18 @@ private[csv] class BulkCsvReader(
  * parsed and needs the newlines to be present
  * @param iter iterator over RDD[String]
  */
-private class StringIteratorReader(val iter : Iterator[String]) extends java.io.Reader {
+private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
-  private var next : Long = 0
-  private var length : Long = 0 // length of input so far
-  private var start : Long = 0
-  private var str : String = null // current string from iter
+  private var next: Long = 0
+  private var length: Long = 0 // length of input so far
+  private var start: Long = 0
+  private var str: String = null // current string from iter
 
   /**
    * fetch next string from iter, if done with current one
    * pretend there is a new line at the end of every string we get from from iter
    */
-  private def refill() : Unit = {
+  private def refill(): Unit = {
     if (length == next) {
       if (iter.hasNext) {
         str = iter.next()
@@ -204,7 +204,7 @@ private class StringIteratorReader(val iter : Iterator[String]) extends java.io.
   /**
    * read the next character, if at end of string pretend there is a new line
    */
-  override def read() : Int = {
+  override def read(): Int = {
     refill()
     if (next >= length) {
       -1
@@ -218,7 +218,7 @@ private class StringIteratorReader(val iter : Iterator[String]) extends java.io.
   /**
    * read from str into cbuf
    */
-  override def read(cbuf : Array[Char], off : Int, len : Int) : Int = {
+  override def read(cbuf: Array[Char], off: Int, len: Int): Int = {
     refill()
     var n = 0
     if ((off < 0) || (off > cbuf.length) || (len < 0) ||
@@ -248,24 +248,24 @@ private class StringIteratorReader(val iter : Iterator[String]) extends java.io.
     n
   }
 
-  override def skip(ns : Long) : Long = {
+  override def skip(ns: Long): Long = {
     throw new IllegalArgumentException("Skip not implemented")
   }
 
-  override def ready : Boolean = {
+  override def ready: Boolean = {
     refill()
     true
   }
 
-  override def markSupported : Boolean = false
+  override def markSupported: Boolean = false
 
-  override def mark(readAheadLimit : Int) : Unit = {
+  override def mark(readAheadLimit: Int): Unit = {
     throw new IllegalArgumentException("Mark not implemented")
   }
 
-  override def reset() : Unit = {
+  override def reset(): Unit = {
     throw new IllegalArgumentException("Mark and hence reset not implemented")
   }
 
-  override def close() : Unit = {}
+  override def close(): Unit = {}
 }
