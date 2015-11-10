@@ -21,10 +21,10 @@ import java.sql.Timestamp
 
 import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.{SQLContext, Row}
-import org.apache.spark.{SparkContext, SparkException}
+import org.apache.spark.sql.{ SQLContext, Row }
+import org.apache.spark.{ SparkContext, SparkException }
 import org.apache.spark.sql.types._
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.{ BeforeAndAfterAll, FunSuite }
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
@@ -43,16 +43,16 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   val numCars = 3
 
-  protected def parserLib: String
+  protected def parserLib : String
 
-  private var sqlContext: SQLContext = _
+  private var sqlContext : SQLContext = _
 
-  override protected def beforeAll(): Unit = {
+  override protected def beforeAll() : Unit = {
     super.beforeAll()
     sqlContext = new SQLContext(new SparkContext("local[2]", "AvroSuite"))
   }
 
-  override protected def afterAll(): Unit = {
+  override protected def afterAll() : Unit = {
     try {
       sqlContext.sparkContext.stop()
     } finally {
@@ -162,7 +162,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withUseHeader(true)
       .withParserLib(parserLib)
 
-    val exception = intercept[SparkException]{
+    val exception = intercept[SparkException] {
       parser.csvFile(sqlContext, carsFile)
         .select("year")
         .collect()
@@ -177,7 +177,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     new File(tempEmptyDir).mkdirs()
     val copyFilePath = tempEmptyDir + "null-numbers.csv"
     val agesSchema = StructType(List(StructField("name", StringType, true),
-                                     StructField("age", IntegerType, true)))
+      StructField("age", IntegerType, true)))
 
     val agesRows = Seq(Row("alice", 35), Row("bob", null), Row(null, 24))
     val agesRdd = sqlContext.sparkContext.parallelize(agesRows)
@@ -237,7 +237,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Expect parsing error with wrong delimiter setting using sparkContext.csvFile") {
-    intercept[ org.apache.spark.sql.AnalysisException] {
+    intercept[org.apache.spark.sql.AnalysisException] {
       sqlContext.csvFile(
         carsAltFile,
         useHeader = true,
@@ -276,7 +276,6 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
-
   test("DSL test with empty file and known schema") {
     val results = new CsvParser()
       .withSchema(StructType(List(StructField("column", StringType, false))))
@@ -293,9 +292,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", StringType, true),
-        StructField("Height", StringType, true)
-      )
-    )
+        StructField("Height", StringType, true)))
 
     val results = new CsvParser()
       .withSchema(stringSchema)
@@ -312,9 +309,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", IntegerType, true),
-        StructField("Height", DoubleType, true)
-      )
-    )
+        StructField("Height", DoubleType, true)))
 
     val results = new CsvParser()
       .withSchema(strictSchema)
@@ -463,7 +458,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(escapeCopy.collect.map(_.toString).toSet == escape.collect.map(_.toString).toSet)
     assert(escapeCopy.head().getString(0) == "\"thing")
   }
-  
+
   test("DSL Save Load Partitions") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir2))
@@ -487,10 +482,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.schema == StructType(List(
       StructField("year", IntegerType, nullable = true),
       StructField("make", StringType, nullable = true),
-      StructField("model", StringType ,nullable = true),
+      StructField("model", StringType, nullable = true),
       StructField("comment", StringType, nullable = true),
-      StructField("blank", StringType, nullable = true))
-    ))
+      StructField("blank", StringType, nullable = true))))
 
     assert(results.collect().size === numCars)
   }
@@ -523,7 +517,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   test("DSL test nullable fields") {
     val results = new CsvParser()
       .withSchema(StructType(List(StructField("name", StringType, false),
-                                  StructField("age", IntegerType, true))))
+        StructField("age", IntegerType, true))))
       .withUseHeader(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, nullNumbersFile)
@@ -535,7 +529,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Commented lines in CSV data") {
-    val results: Array[Row] = new CsvParser()
+    val results : Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment('~')
       .withParserLib(parserLib)
@@ -544,14 +538,14 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     val expected =
       Seq(Seq("1", "2", "3", "4", "5.01", "2015-08-20 15:57:00"),
-          Seq("6", "7", "8", "9", "0", "2015-08-21 16:58:01"),
-          Seq("1", "2", "3", "4", "5", "2015-08-23 18:00:42"))
+        Seq("6", "7", "8", "9", "0", "2015-08-21 16:58:01"),
+        Seq("1", "2", "3", "4", "5", "2015-08-23 18:00:42"))
 
     assert(results.toSeq.map(_.toSeq) === expected)
   }
 
   test("Inferring schema") {
-    val results: Array[Row] = new CsvParser()
+    val results : Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment('~')
       .withParserLib(parserLib)
@@ -561,15 +555,14 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     val expected =
       Seq(Seq(1, 2, 3, 4, 5.01D, Timestamp.valueOf("2015-08-20 15:57:00")),
-          Seq(6, 7, 8, 9, 0, Timestamp.valueOf("2015-08-21 16:58:01")),
-          Seq(1, 2, 3, 4, 5, Timestamp.valueOf("2015-08-23 18:00:42")))
+        Seq(6, 7, 8, 9, 0, Timestamp.valueOf("2015-08-21 16:58:01")),
+        Seq(1, 2, 3, 4, 5, Timestamp.valueOf("2015-08-23 18:00:42")))
 
     assert(results.toSeq.map(_.toSeq) === expected)
   }
 
-
   test("Setting comment to null disables comment support") {
-    val results: Array[Row] = new CsvParser()
+    val results : Array[Row] = new CsvParser()
       .withDelimiter(',')
       .withComment(null)
       .withParserLib(parserLib)
@@ -596,7 +589,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(df(1).toSeq === Seq("16", "1.7"))
   }
 
-  test("Inserting into csvRdd should throw exception"){
+  test("Inserting into csvRdd should throw exception") {
     val csvRdd = sqlContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
     val sampleData = sqlContext.sparkContext.parallelize(Seq("age,height", "20,1.8", "16,1.7"))
 
@@ -629,9 +622,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 }
 
 class CsvSuite extends AbstractCsvSuite {
-  override def parserLib: String = "COMMONS"
+  override def parserLib : String = "COMMONS"
 }
 
 class CsvFastSuite extends AbstractCsvSuite {
-  override def parserLib: String = "UNIVOCITY"
+  override def parserLib : String = "UNIVOCITY"
 }
