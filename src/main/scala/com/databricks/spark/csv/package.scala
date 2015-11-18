@@ -61,8 +61,30 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def csvFile(filePath: String, useHeader: Boolean, delimiter: Char, quote: Char, escape: Character, comment: Character, mode: String, parserLib: String, ignoreLeadingWhiteSpace: Boolean, ignoreTrailingWhiteSpace: Boolean, charset: String, inferSchema: Boolean): DataFrame = {
-      csvFile(filePath, useHeader, delimiter, quote, escape, comment, mode, parserLib, ignoreLeadingWhiteSpace, ignoreTrailingWhiteSpace, charset, inferSchema, 0)
+    def csvFile(filePath: String,
+        useHeader: Boolean,
+        delimiter: Char,
+        quote: Char,
+        escape: Character,
+        comment: Character,
+        mode: String,
+        parserLib: String,
+        ignoreLeadingWhiteSpace: Boolean,
+        ignoreTrailingWhiteSpace: Boolean,
+        charset: String,
+        inferSchema: Boolean): DataFrame = {
+      csvFile(filePath,
+          useHeader,
+          delimiter,
+          quote,
+          escape,
+          comment,
+          mode,
+          parserLib,
+          ignoreLeadingWhiteSpace,
+          ignoreTrailingWhiteSpace,
+          charset,
+          inferSchema, 0)
     }
 
     def tsvFile(
@@ -91,8 +113,20 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
-    def tsvFile(filePath: String, useHeader: Boolean, parserLib: String, ignoreLeadingWhiteSpace: Boolean, ignoreTrailingWhiteSpace: Boolean, charset: String, inferSchema: Boolean): DataFrame = {
-      tsvFile(filePath, useHeader, parserLib, ignoreLeadingWhiteSpace, ignoreTrailingWhiteSpace, charset, inferSchema, 0)
+    def tsvFile(filePath: String,
+        useHeader: Boolean,
+        parserLib: String,
+        ignoreLeadingWhiteSpace: Boolean,
+        ignoreTrailingWhiteSpace: Boolean,
+        charset: String,
+        inferSchema: Boolean): DataFrame = {
+      tsvFile(filePath,
+          useHeader,
+          parserLib,
+          ignoreLeadingWhiteSpace,
+          ignoreTrailingWhiteSpace,
+          charset,
+          inferSchema, 0)
     }
   }
 
@@ -176,7 +210,7 @@ package object csv {
           }
       }
       compressionCodec match {
-        case null  => strRDD.saveAsTextFile(path)
+        case null => strRDD.saveAsTextFile(path)
         case codec => strRDD.saveAsTextFile(path, codec)
       }
     }
