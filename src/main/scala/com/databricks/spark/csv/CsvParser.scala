@@ -127,8 +127,7 @@ class CsvParser extends Serializable {
       ignoreTrailingWhiteSpace,
       treatEmptyValuesAsNulls,
       schema,
-      inferSchema,
-      minPartitions)(sqlContext)
+      inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
@@ -147,8 +146,7 @@ class CsvParser extends Serializable {
       ignoreTrailingWhiteSpace,
       treatEmptyValuesAsNulls,
       schema,
-      inferSchema,
-      minPartitions)(sqlContext)
+      inferSchema)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 }

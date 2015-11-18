@@ -160,7 +160,7 @@ class DefaultSource
       ignoreTrailingWhiteSpaceFlag,
       treatEmptyValuesAsNullsFlag,
       schema,
-      inferSchemaFlag, partitions)(sqlContext)
+      inferSchemaFlag)(sqlContext)
   }
 
   override def createRelation(

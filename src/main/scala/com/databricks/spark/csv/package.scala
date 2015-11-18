@@ -57,8 +57,7 @@ package object csv {
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         treatEmptyValuesAsNulls = false,
-        inferCsvSchema = inferSchema,
-        minPartitions = minPartitions)(sqlContext)
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -72,7 +71,7 @@ package object csv {
       inferSchema: Boolean = false,
       minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
-        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
         useHeader = useHeader,
         delimiter = '\t',
@@ -84,8 +83,7 @@ package object csv {
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         treatEmptyValuesAsNulls = false,
-        inferCsvSchema = inferSchema,
-        minPartitions = minPartitions)(sqlContext)
+        inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
