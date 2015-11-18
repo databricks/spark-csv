@@ -31,7 +31,7 @@ package object csv {
    */
   implicit class CsvContext(sqlContext: SQLContext) extends Serializable {
     def csvFile(
-      filePath: String,
+      filePath: String = "",
       useHeader: Boolean = true,
       delimiter: Char = ',',
       quote: Char = '"',
@@ -43,7 +43,7 @@ package object csv {
       ignoreTrailingWhiteSpace: Boolean = false,
       charset: String = TextFile.DEFAULT_CHARSET.name(),
       inferSchema: Boolean = false,
-      minPartitions: Int = 1): DataFrame = {
+      minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
@@ -61,8 +61,12 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
+    def csvFile(filePath: String, useHeader: Boolean, delimiter: Char, quote: Char, escape: Character, comment: Character, mode: String, parserLib: String, ignoreLeadingWhiteSpace: Boolean, ignoreTrailingWhiteSpace: Boolean, charset: String, inferSchema: Boolean): DataFrame = {
+      csvFile(filePath, useHeader, delimiter, quote, escape, comment, mode, parserLib, ignoreLeadingWhiteSpace, ignoreTrailingWhiteSpace, charset, inferSchema, 0)
+    }
+
     def tsvFile(
-      filePath: String,
+      filePath: String = "",
       useHeader: Boolean = true,
       parserLib: String = "COMMONS",
       ignoreLeadingWhiteSpace: Boolean = false,
@@ -85,6 +89,10 @@ package object csv {
         treatEmptyValuesAsNulls = false,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
+    }
+
+    def tsvFile(filePath: String, useHeader: Boolean, parserLib: String, ignoreLeadingWhiteSpace: Boolean, ignoreTrailingWhiteSpace: Boolean, charset: String, inferSchema: Boolean): DataFrame = {
+      tsvFile(filePath, useHeader, parserLib, ignoreLeadingWhiteSpace, ignoreTrailingWhiteSpace, charset, inferSchema, 0)
     }
   }
 
@@ -168,7 +176,7 @@ package object csv {
           }
       }
       compressionCodec match {
-        case null => strRDD.saveAsTextFile(path)
+        case null  => strRDD.saveAsTextFile(path)
         case codec => strRDD.saveAsTextFile(path, codec)
       }
     }
