@@ -23,6 +23,9 @@ import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
+  val defaultCsvFormat =
+    CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
+
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
@@ -107,29 +110,23 @@ package object csv {
         throw new Exception("Escape character cannot be more than one character.")
       }
 
-      val quoteChar = parameters.get("quote") match {
-        case Some(s) => {
-          if (s.length == 1) {
-            Some(s.charAt(0))
-          } else {
-            throw new Exception("Quotation cannot be more than one character.")
-          }
-        }
-        case None => None
+      val quote = parameters.getOrElse("quote", "\"")
+      val quoteChar: Character = if (quote == null) {
+        null
+      } else if (quote.length == 1) {
+        quote.charAt(0)
+      } else {
+        throw new Exception("Quotation cannot be more than one character.")
       }
 
       val nullValue = parameters.getOrElse("nullValue", "null")
 
-      val csvFormatBase = CSVFormat.DEFAULT
+      val csvFormat = defaultCsvFormat
         .withDelimiter(delimiterChar)
+        .withQuote(quoteChar)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
         .withNullString(nullValue)
-
-      val csvFormat = quoteChar match {
-        case Some(c) => csvFormatBase.withQuote(c)
-        case _ => csvFormatBase
-      }
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
@@ -139,21 +136,17 @@ package object csv {
       }
 
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
-        val csvFormatBase = CSVFormat.DEFAULT
+        val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
+          .withQuote(quoteChar)
           .withEscape(escapeChar)
           .withSkipHeaderRecord(false)
           .withNullString(nullValue)
 
-        val csvFormat = quoteChar match {
-          case Some(c) => csvFormatBase.withQuote(c)
-          case _ => csvFormatBase
-        }
-
         new Iterator[String] {
           var firstRow: Boolean = generateHeader
 
-          override def hasNext = iter.hasNext || firstRow
+          override def hasNext: Boolean = iter.hasNext || firstRow
 
           override def next: String = {
             if (iter.nonEmpty) {

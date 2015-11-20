@@ -57,7 +57,9 @@ class DefaultSource
     val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
 
     val quote = parameters.getOrElse("quote", "\"")
-    val quoteChar = if (quote.length == 1) {
+    val quoteChar: Character = if (quote == null) {
+      null
+    } else if (quote.length == 1) {
       quote.charAt(0)
     } else {
       throw new Exception("Quotation cannot be more than one character.")
