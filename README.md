@@ -56,7 +56,7 @@ When reading files the API accepts several options:
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
-* `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`.
+* `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`. Defaults to no compression when a codec is not specified.
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
@@ -147,9 +147,6 @@ selectedData.write
     .option("codec", "org.apache.hadoop.io.compress.GzipCodec")
     .save("newcars.csv.gz")
 ```
-
-
-
 
 __Spark 1.3:__
 
@@ -250,9 +247,6 @@ df.select("year", "model").write()
     .save("newcars.csv");
 ```
 
-
-
-
 __Spark 1.3:__
 
 Automatically infer schema (data types), otherwise everything is assumed string:
@@ -315,8 +309,6 @@ df.select("year", "model").save("com.databricks.spark.csv", SaveMode.Overwrite,
                                 saveOptions);
 ```
 
-
-
 ### Python API
 
 __Spark 1.4+:__
@@ -362,8 +354,6 @@ df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', i
 df.select('year', 'model').write.format('com.databricks.spark.csv').options(codec="org.apache.hadoop.io.compress.GzipCodec").save('newcars.csv')
 ```
 
-
-
 __Spark 1.3:__
 
 Automatically infer schema (data types), otherwise everything is assumed string:
@@ -400,8 +390,6 @@ sqlContext = SQLContext(sc)
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', inferSchema = 'true', path = 'cars.csv')
 df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv', codec="org.apache.hadoop.io.compress.GzipCodec")
 ```
-
-
 
 ### R API
 __Spark 1.4+:__

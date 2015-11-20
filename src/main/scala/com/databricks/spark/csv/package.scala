@@ -28,11 +28,11 @@ package object csv {
 
   private[csv] def compresionCodecClass(className: String): Class[_ <: CompressionCodec] = {
     className match {
-    case null => null
-    case codec =>
-      // scalastyle:off classforname
-      Class.forName(codec).asInstanceOf[Class[CompressionCodec]]
-      // scalastyle:on classforname
+      case null => null
+      case codec =>
+        // scalastyle:off classforname
+        Class.forName(codec).asInstanceOf[Class[CompressionCodec]]
+        // scalastyle:on classforname
     }
   }
 
@@ -101,7 +101,7 @@ package object csv {
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
      * If compressionCodec is not null the resulting output will be compressed.
-     * Note that a compressionCodec entry in the parameters map will be ignored.
+     * Note that a codec entry in the parameters map will be ignored.
      */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {

@@ -318,7 +318,7 @@ case class CsvRelation protected[spark] (
 
       val codecClass = compresionCodecClass(codec)
       data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
-                         codecClass)
+        codecClass)
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
