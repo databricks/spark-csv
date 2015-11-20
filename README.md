@@ -16,27 +16,26 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 1.2.0
+version: 1.3.0
 ```
 ### Scala 2.11
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.2.0
+version: 1.3.0
 ```
-
 
 ## Using with Spark shell
 This package can be added to  Spark using the `--packages` command line option.  For example, to include it when starting the spark shell:
 
 ### Spark compiled with Scala 2.11
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.2.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.3.0
 ```
 
 ### Spark compiled with Scala 2.10
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.2.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.3.0
 ```
 
 ## Features
@@ -323,7 +322,7 @@ Automatically infer schema (data types), otherwise everything is assumed string:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema, inferSchema = "true")
@@ -335,7 +334,7 @@ You can manually specify schema:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 customSchema <- structType(
     structField("year", "integer"), 
