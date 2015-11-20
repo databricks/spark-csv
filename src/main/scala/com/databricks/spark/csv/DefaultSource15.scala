@@ -21,7 +21,7 @@ package com.databricks.spark.csv
  * This trick is adapted from spark elasticsearch-hadoop data source:
  * <https://github.com/elastic/elasticsearch-hadoop>
  */
-+class DefaultSource15 extends DefaultSource with DataSourceRegister {
+class DefaultSource15 extends DefaultSource with DataSourceRegister {
 
   /**
    * Short alias for spark-csv data source.
