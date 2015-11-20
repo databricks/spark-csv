@@ -36,11 +36,6 @@ class DefaultSource
   }
 
   /**
-   * Short alias for spark-csv data source.
-   */
-  override def shortName(): String = "csv"
-
-  /**
    * Creates a new relation for data store in CSV given parameters.
    * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
