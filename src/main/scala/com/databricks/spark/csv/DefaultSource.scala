@@ -28,8 +28,7 @@ import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 class DefaultSource
   extends RelationProvider
   with SchemaRelationProvider
-  with CreatableRelationProvider
-  with DataSourceRegister {
+  with CreatableRelationProvider {
 
   private def checkPath(parameters: Map[String, String]): String = {
     parameters.getOrElse("path", sys.error("'path' must be specified for CSV data."))
