@@ -26,27 +26,27 @@ import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.sources.{PrunedScan, BaseRelation, InsertableRelation, TableScan}
+import org.apache.spark.sql.sources.{ PrunedScan, BaseRelation, InsertableRelation, TableScan }
 import org.apache.spark.sql.types._
-import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
+import com.databricks.spark.csv.readers.{ BulkCsvReader, LineCsvReader }
 import com.databricks.spark.csv.util._
 
 case class CsvRelation protected[spark] (
-    baseRDD: () => RDD[String],
-    location: Option[String],
-    useHeader: Boolean,
-    delimiter: Char,
-    quote: Character,
-    escape: Character,
-    comment: Character,
-    parseMode: String,
-    parserLib: String,
-    ignoreLeadingWhiteSpace: Boolean,
-    ignoreTrailingWhiteSpace: Boolean,
-    treatEmptyValuesAsNulls: Boolean,
-    userSchema: StructType = null,
-    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
-  extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
+  baseRDD: () => RDD[String],
+  location: Option[String],
+  useHeader: Boolean,
+  delimiter: Char,
+  quote: Character,
+  escape: Character,
+  comment: Character,
+  parseMode: String,
+  parserLib: String,
+  ignoreLeadingWhiteSpace: Boolean,
+  ignoreTrailingWhiteSpace: Boolean,
+  treatEmptyValuesAsNulls: Boolean,
+  userSchema: StructType = null,
+  inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+    extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
    * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
@@ -136,7 +136,6 @@ case class CsvRelation protected[spark] (
     }
   }
 
-
   /**
    * This supports to eliminate unneeded columns before producing an RDD
    * containing all of its tuples as Row objects. This reads all the tokens of each line
@@ -154,7 +153,7 @@ case class CsvRelation protected[spark] (
       schemaFields.zipWithIndex.filter {
         case (field, _) => requiredFields.contains(field)
       }.foreach {
-        case(field, index) => requiredIndices(requiredFields.indexOf(field)) = index
+        case (field, index) => requiredIndices(requiredFields.indexOf(field)) = index
       }
 
       val rowArray = new Array[Any](requiredIndices.length)
@@ -224,7 +223,7 @@ case class CsvRelation protected[spark] (
       val header = if (useHeader) {
         firstRow
       } else {
-        firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
+        firstRow.zipWithIndex.map { case (value, index) => s"C$index" }
       }
       if (this.inferCsvSchema) {
         InferSchema(tokenRdd(header), header)
@@ -246,15 +245,15 @@ case class CsvRelation protected[spark] (
       baseRDD().first()
     } else {
       baseRDD().take(MAX_COMMENT_LINES_IN_HEADER)
-        .find(! _.startsWith(comment.toString))
+        .find(!_.startsWith(comment.toString))
         .getOrElse(sys.error(s"No uncommented header line in " +
           s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
     }
   }
 
   private def univocityParseCSV(
-     file: RDD[String],
-     header: Seq[String]): RDD[Array[String]] = {
+    file: RDD[String],
+    header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if (useHeader) file.filter(_ != filterLine) else file
@@ -274,8 +273,8 @@ case class CsvRelation protected[spark] (
   }
 
   private def parseCSV(
-      iter: Iterator[String],
-      csvFormat: CSVFormat): Iterator[Array[String]] = {
+    iter: Iterator[String],
+    csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords

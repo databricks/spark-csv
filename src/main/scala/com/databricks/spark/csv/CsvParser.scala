@@ -15,11 +15,10 @@
  */
 package com.databricks.spark.csv
 
-
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{ DataFrame, SQLContext }
 import org.apache.spark.sql.types.StructType
-import com.databricks.spark.csv.util.{ParserLibs, ParseModes, TextFile}
+import com.databricks.spark.csv.util.{ ParserLibs, ParseModes, TextFile }
 
 /**
  * A collection of static functions for working with CSV files in Spark SQL
@@ -39,6 +38,7 @@ class CsvParser extends Serializable {
   private var parserLib: String = ParserLibs.DEFAULT
   private var charset: String = TextFile.DEFAULT_CHARSET.name()
   private var inferSchema: Boolean = false
+  private var minPartitions: Int = 1
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -70,7 +70,7 @@ class CsvParser extends Serializable {
     this
   }
 
-  def withComment(commentChar: Character) : CsvParser = {
+  def withComment(commentChar: Character): CsvParser = {
     this.comment = commentChar
     this
   }
@@ -102,6 +102,11 @@ class CsvParser extends Serializable {
 
   def withInferSchema(inferSchema: Boolean): CsvParser = {
     this.inferSchema = inferSchema
+    this
+  }
+
+  def withMinPartitions(partitions: Int): CsvParser = {
+    this.minPartitions = partitions
     this
   }
 

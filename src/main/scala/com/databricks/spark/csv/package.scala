@@ -18,7 +18,7 @@ package com.databricks.spark
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{ DataFrame, SQLContext }
 import com.databricks.spark.csv.util.TextFile
 
 package object csv {
@@ -29,22 +29,23 @@ package object csv {
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
-  implicit class CsvContext(sqlContext: SQLContext) extends Serializable{
+  implicit class CsvContext(sqlContext: SQLContext) extends Serializable {
     def csvFile(
-        filePath: String,
-        useHeader: Boolean = true,
-        delimiter: Char = ',',
-        quote: Char = '"',
-        escape: Character = null,
-        comment: Character = null,
-        mode: String = "PERMISSIVE",
-        parserLib: String = "COMMONS",
-        ignoreLeadingWhiteSpace: Boolean = false,
-        ignoreTrailingWhiteSpace: Boolean = false,
-        charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+      filePath: String = "",
+      useHeader: Boolean = true,
+      delimiter: Char = ',',
+      quote: Char = '"',
+      escape: Character = null,
+      comment: Character = null,
+      mode: String = "PERMISSIVE",
+      parserLib: String = "COMMONS",
+      ignoreLeadingWhiteSpace: Boolean = false,
+      ignoreTrailingWhiteSpace: Boolean = false,
+      charset: String = TextFile.DEFAULT_CHARSET.name(),
+      inferSchema: Boolean = false,
+      minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
-        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
         useHeader = useHeader,
         delimiter = delimiter,
@@ -60,16 +61,43 @@ package object csv {
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
+    def csvFile(filePath: String,
+        useHeader: Boolean,
+        delimiter: Char,
+        quote: Char,
+        escape: Character,
+        comment: Character,
+        mode: String,
+        parserLib: String,
+        ignoreLeadingWhiteSpace: Boolean,
+        ignoreTrailingWhiteSpace: Boolean,
+        charset: String,
+        inferSchema: Boolean): DataFrame = {
+      csvFile(filePath,
+          useHeader,
+          delimiter,
+          quote,
+          escape,
+          comment,
+          mode,
+          parserLib,
+          ignoreLeadingWhiteSpace,
+          ignoreTrailingWhiteSpace,
+          charset,
+          inferSchema, 0)
+    }
+
     def tsvFile(
-        filePath: String,
-        useHeader: Boolean = true,
-        parserLib: String = "COMMONS",
-        ignoreLeadingWhiteSpace: Boolean = false,
-        ignoreTrailingWhiteSpace: Boolean = false,
-        charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+      filePath: String = "",
+      useHeader: Boolean = true,
+      parserLib: String = "COMMONS",
+      ignoreLeadingWhiteSpace: Boolean = false,
+      ignoreTrailingWhiteSpace: Boolean = false,
+      charset: String = TextFile.DEFAULT_CHARSET.name(),
+      inferSchema: Boolean = false,
+      minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
-        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
         useHeader = useHeader,
         delimiter = '\t',
@@ -83,6 +111,22 @@ package object csv {
         treatEmptyValuesAsNulls = false,
         inferCsvSchema = inferSchema)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
+    }
+
+    def tsvFile(filePath: String,
+        useHeader: Boolean,
+        parserLib: String,
+        ignoreLeadingWhiteSpace: Boolean,
+        ignoreTrailingWhiteSpace: Boolean,
+        charset: String,
+        inferSchema: Boolean): DataFrame = {
+      tsvFile(filePath,
+          useHeader,
+          parserLib,
+          ignoreLeadingWhiteSpace,
+          ignoreTrailingWhiteSpace,
+          charset,
+          inferSchema, 0)
     }
   }
 
@@ -135,34 +179,35 @@ package object csv {
         "" // There is no need to generate header in this case
       }
 
-      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
-        val csvFormat = defaultCsvFormat
-          .withDelimiter(delimiterChar)
-          .withQuote(quoteChar)
-          .withEscape(escapeChar)
-          .withSkipHeaderRecord(false)
-          .withNullString(nullValue)
+      val strRDD = dataFrame.rdd.mapPartitionsWithIndex {
+        case (index, iter) =>
+          val csvFormat = defaultCsvFormat
+            .withDelimiter(delimiterChar)
+            .withQuote(quoteChar)
+            .withEscape(escapeChar)
+            .withSkipHeaderRecord(false)
+            .withNullString(nullValue)
 
-        new Iterator[String] {
-          var firstRow: Boolean = generateHeader
+          new Iterator[String] {
+            var firstRow: Boolean = generateHeader
 
-          override def hasNext: Boolean = iter.hasNext || firstRow
+            override def hasNext: Boolean = iter.hasNext || firstRow
 
-          override def next: String = {
-            if (iter.nonEmpty) {
-              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
-              if (firstRow) {
-                firstRow = false
-                header + csvFormat.getRecordSeparator() + row
+            override def next: String = {
+              if (iter.nonEmpty) {
+                val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+                if (firstRow) {
+                  firstRow = false
+                  header + csvFormat.getRecordSeparator() + row
+                } else {
+                  row
+                }
               } else {
-                row
+                firstRow = false
+                header
               }
-            } else {
-              firstRow = false
-              header
             }
           }
-        }
       }
       compressionCodec match {
         case null => strRDD.saveAsTextFile(path)

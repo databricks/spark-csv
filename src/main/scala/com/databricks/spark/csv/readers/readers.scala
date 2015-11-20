@@ -78,26 +78,26 @@ private[readers] abstract class CsvReader(
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 private[csv] class LineCsvReader(
-    fieldSep: Char = ',',
-    lineSep: String = "\n",
-    quote: Char = '"',
-    escape: Char = '\\',
-    commentMarker: Char = '#',
-    ignoreLeadingSpace: Boolean = true,
-    ignoreTrailingSpace: Boolean = true,
-    inputBufSize: Int = 128,
-    maxCols: Int = 20480)
-  extends CsvReader(
-    fieldSep,
-    lineSep,
-    quote,
-    escape,
-    commentMarker,
-    ignoreLeadingSpace,
-    ignoreTrailingSpace,
-    null,
-    inputBufSize,
-    maxCols) {
+  fieldSep: Char = ',',
+  lineSep: String = "\n",
+  quote: Char = '"',
+  escape: Char = '\\',
+  commentMarker: Char = '#',
+  ignoreLeadingSpace: Boolean = true,
+  ignoreTrailingSpace: Boolean = true,
+  inputBufSize: Int = 128,
+  maxCols: Int = 20480)
+    extends CsvReader(
+      fieldSep,
+      lineSep,
+      quote,
+      escape,
+      commentMarker,
+      ignoreLeadingSpace,
+      ignoreTrailingSpace,
+      null,
+      inputBufSize,
+      maxCols) {
   /**
    * parse a line
    * @param line a String with no newline at the end
@@ -125,30 +125,30 @@ private[csv] class LineCsvReader(
  * @param maxCols maximum number of columns allowed, for safety against bad inputs
  */
 private[csv] class BulkCsvReader(
-    iter: Iterator[String],
-    split: Int,      // for debugging
-    fieldSep: Char = ',',
-    lineSep: String = "\n",
-    quote: Char = '"',
-    escape: Char = '\\',
-    commentMarker: Char = '#',
-    ignoreLeadingSpace: Boolean = true,
-    ignoreTrailingSpace: Boolean = true,
-    headers: Seq[String],
-    inputBufSize: Int = 128,
-    maxCols: Int = 20480)
-  extends CsvReader(
-    fieldSep,
-    lineSep,
-    quote,
-    escape,
-    commentMarker,
-    ignoreLeadingSpace,
-    ignoreTrailingSpace,
-    headers,
-    inputBufSize,
-    maxCols)
-  with Iterator[Array[String]] {
+  iter: Iterator[String],
+  split: Int, // for debugging
+  fieldSep: Char = ',',
+  lineSep: String = "\n",
+  quote: Char = '"',
+  escape: Char = '\\',
+  commentMarker: Char = '#',
+  ignoreLeadingSpace: Boolean = true,
+  ignoreTrailingSpace: Boolean = true,
+  headers: Seq[String],
+  inputBufSize: Int = 128,
+  maxCols: Int = 20480)
+    extends CsvReader(
+      fieldSep,
+      lineSep,
+      quote,
+      escape,
+      commentMarker,
+      ignoreLeadingSpace,
+      ignoreTrailingSpace,
+      headers,
+      inputBufSize,
+      maxCols)
+    with Iterator[Array[String]] {
 
   private val reader = new StringIteratorReader(iter)
   parser.beginParsing(reader)
@@ -160,7 +160,7 @@ private[csv] class BulkCsvReader(
    */
   override def next(): Array[String] = {
     val curRecord = nextRecord
-    if(curRecord != null) {
+    if (curRecord != null) {
       nextRecord = parser.parseNext()
     } else {
       throw new NoSuchElementException("next record is null")
@@ -181,9 +181,9 @@ private[csv] class BulkCsvReader(
 private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
   private var next: Long = 0
-  private var length: Long = 0  // length of input so far
+  private var length: Long = 0 // length of input so far
   private var start: Long = 0
-  private var str: String = null   // current string from iter
+  private var str: String = null // current string from iter
 
   /**
    * fetch next string from iter, if done with current one
@@ -227,7 +227,7 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     } else if (len == 0) {
       n = 0
     } else {
-      if (next >= length) {   // end of input
+      if (next >= length) { // end of input
         n = -1
       } else {
         n = Math.min(length - next, len).toInt // lesser of amount of input available or buf size
@@ -239,8 +239,8 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
         }
         next += n
         if (n < len) {
-          val m = read(cbuf, off + n, len - n)  // have more space, fetch more input from iter
-          if(m != -1) n += m
+          val m = read(cbuf, off + n, len - n) // have more space, fetch more input from iter
+          if (m != -1) n += m
         }
       }
     }
@@ -267,5 +267,5 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
     throw new IllegalArgumentException("Mark and hence reset not implemented")
   }
 
-  override def close(): Unit = { }
+  override def close(): Unit = {}
 }

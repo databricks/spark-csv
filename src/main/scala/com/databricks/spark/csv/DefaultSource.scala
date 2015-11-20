@@ -16,17 +16,17 @@
 package com.databricks.spark.csv
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+import org.apache.spark.sql.{ DataFrame, SaveMode, SQLContext }
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
-import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
+import com.databricks.spark.csv.util.{ ParserLibs, TextFile, TypeCast }
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
- * JDBC server).
+ *  JDBC server).
  */
 class DefaultSource
-  extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
+    extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
 
   private def checkPath(parameters: Map[String, String]): String = {
     parameters.getOrElse("path", sys.error("'path' must be specified for CSV data."))
@@ -34,24 +34,35 @@ class DefaultSource
 
   /**
    * Creates a new relation for data store in CSV given parameters.
-   * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
+   *  Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
   override def createRelation(
-      sqlContext: SQLContext,
-      parameters: Map[String, String]): BaseRelation = {
+    sqlContext: SQLContext,
+    parameters: Map[String, String]): BaseRelation = {
     createRelation(sqlContext, parameters, null)
   }
 
   /**
    * Creates a new relation for data store in CSV given parameters and user supported schema.
-   * Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
+   *  Parameters have to include 'path' and optionally 'delimiter', 'quote', and 'header'
    */
   override def createRelation(
-      sqlContext: SQLContext,
-      parameters: Map[String, String],
-      schema: StructType): CsvRelation = {
+    sqlContext: SQLContext,
+    parameters: Map[String, String],
+    schema: StructType): CsvRelation = {
     val path = checkPath(parameters)
     val delimiter = TypeCast.toChar(parameters.getOrElse("delimiter", ","))
+
+    val partition = parameters.getOrElse("partitions", "1")
+
+    val partitions: Int = {
+      val numPartitions = partition.toInt
+      if (numPartitions > 0) {
+        numPartitions
+      } else {
+        throw new Exception("Min partitions must be a positive integer.")
+      }
+    }
 
     val quote = parameters.getOrElse("quote", "\"")
     val quoteChar: Character = if (quote == null) {
@@ -136,7 +147,7 @@ class DefaultSource
     }
 
     CsvRelation(
-      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      () => TextFile.withCharset(sqlContext.sparkContext, path, charset, partitions),
       Some(path),
       headerFlag,
       delimiter,
@@ -153,10 +164,10 @@ class DefaultSource
   }
 
   override def createRelation(
-      sqlContext: SQLContext,
-      mode: SaveMode,
-      parameters: Map[String, String],
-      data: DataFrame): BaseRelation = {
+    sqlContext: SQLContext,
+    mode: SaveMode,
+    parameters: Map[String, String],
+    data: DataFrame): BaseRelation = {
     val path = checkPath(parameters)
     val filesystemPath = new Path(path)
     val fs = filesystemPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
