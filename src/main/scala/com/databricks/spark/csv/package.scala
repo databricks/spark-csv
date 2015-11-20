@@ -26,6 +26,16 @@ package object csv {
   val defaultCsvFormat =
     CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
 
+  private[csv] def compresionCodecClass(className: String): Class[_ <: CompressionCodec] = {
+    className match {
+      case null => null
+      case codec =>
+        // scalastyle:off classforname
+        Class.forName(codec).asInstanceOf[Class[CompressionCodec]]
+        // scalastyle:on classforname
+    }
+  }
+
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */
@@ -90,6 +100,8 @@ package object csv {
 
     /**
      * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     * If compressionCodec is not null the resulting output will be compressed.
+     * Note that a codec entry in the parameters map will be ignored.
      */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {

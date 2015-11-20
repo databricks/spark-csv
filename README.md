@@ -55,6 +55,7 @@ When reading files the API accepts several options:
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
+* `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`. Defaults to no compression when a codec is not specified.
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
@@ -127,6 +128,24 @@ selectedData.write
     .save("newcars.csv")
 ```
 
+You can save with compressed output:
+```scala
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
+val df = sqlContext.read
+    .format("com.databricks.spark.csv")
+    .option("header", "true") // Use first line of all files as header
+    .option("inferSchema", "true") // Automatically infer data types
+    .load("cars.csv")
+
+val selectedData = df.select("year", "model")
+selectedData.write
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .option("codec", "org.apache.hadoop.io.compress.GzipCodec")
+    .save("newcars.csv.gz")
+```
 
 __Spark 1.3:__
 
@@ -209,7 +228,23 @@ df.select("year", "model").write()
     .save("newcars.csv");
 ```
 
+You can save with compressed output:
+```java
+import org.apache.spark.sql.SQLContext
 
+SQLContext sqlContext = new SQLContext(sc);
+DataFrame df = sqlContext.read()
+    .format("com.databricks.spark.csv")
+    .option("inferSchema", "true")
+    .option("header", "true")
+    .load("cars.csv");
+
+df.select("year", "model").write()
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .option("codec", "org.apache.hadoop.io.compress.GzipCodec")
+    .save("newcars.csv");
+```
 
 __Spark 1.3:__
 
@@ -235,7 +270,7 @@ import org.apache.spark.sql.types.*;
 
 SQLContext sqlContext = new SQLContext(sc);
 StructType customSchema = new StructType(
-    new StructField("year", IntegerType, true), 
+    new StructField("year", IntegerType, true),
     new StructField("make", StringType, true),
     new StructField("model", StringType, true),
     new StructField("comment", StringType, true),
@@ -248,6 +283,29 @@ options.put("path", "cars.csv");
 
 DataFrame df = sqlContext.load("com.databricks.spark.csv", customSchema, options);
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
+```
+
+You can save with compressed output:
+```java
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SaveMode;
+
+SQLContext sqlContext = new SQLContext(sc);
+
+HashMap<String, String> options = new HashMap<String, String>();
+options.put("header", "true");
+options.put("path", "cars.csv");
+options.put("inferSchema", "true");
+
+DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
+
+HashMap<String, String> saveOptions = new HashMap<String, String>();
+saveOptions.put("header", "true");
+saveOptions.put("path", "newcars.csv");
+saveOptions.put("codec", "org.apache.hadoop.io.compress.GzipCodec");
+
+df.select("year", "model").save("com.databricks.spark.csv", SaveMode.Overwrite,
+                                saveOptions);
 ```
 
 ### Python API
@@ -286,6 +344,14 @@ df.select('year', 'model').write \
     .save('newcars.csv')
 ```
 
+You can save with compressed output:
+```python
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+
+df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('cars.csv')
+df.select('year', 'model').write.format('com.databricks.spark.csv').options(codec="org.apache.hadoop.io.compress.GzipCodec").save('newcars.csv')
+```
 
 __Spark 1.3:__
 
@@ -315,6 +381,15 @@ df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', schema 
 df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
 ```
 
+You can save with compressed output:
+```python
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+
+df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', inferSchema = 'true', path = 'cars.csv')
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv', codec="org.apache.hadoop.io.compress.GzipCodec")
+```
+
 ### R API
 __Spark 1.4+:__
 
@@ -337,7 +412,7 @@ library(SparkR)
 Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 customSchema <- structType(
-    structField("year", "integer"), 
+    structField("year", "integer"),
     structField("make", "string"),
     structField("model", "string"),
     structField("comment", "string"),
@@ -346,6 +421,18 @@ customSchema <- structType(
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema)
 
 write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
+```
+
+You can save with compressed output:
+```R
+library(SparkR)
+
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+sqlContext <- sparkRSQL.init(sc)
+
+df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema, inferSchema = "true")
+
+write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite", codec="org.apache.hadoop.io.compress.GzipCodec")
 ```
 
 ## Building From Source

@@ -45,7 +45,8 @@ case class CsvRelation protected[spark] (
     ignoreTrailingWhiteSpace: Boolean,
     treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
-    inferCsvSchema: Boolean)(@transient val sqlContext: SQLContext)
+    inferCsvSchema: Boolean,
+    codec: String = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
@@ -314,7 +315,10 @@ case class CsvRelation protected[spark] (
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
-      data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString))
+
+      val codecClass = compresionCodecClass(codec)
+      data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
+        codecClass)
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
