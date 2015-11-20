@@ -101,6 +101,20 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
+  test("DDL test with alias name") {
+    assume(org.apache.spark.SPARK_VERSION.take(3) >= "1.5",
+      "Datasource alias feature was added in Spark 1.5")
+
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTsvTable
+         |USING csv
+         |OPTIONS (path "$carsTsvFile", header "true", delimiter "\t", parserLib "$parserLib")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT year FROM carsTable").collect().size === numCars)
+  }
+
   test("DDL test with charset") {
     // scalastyle:off
     sqlContext.sql(
