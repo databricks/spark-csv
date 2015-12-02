@@ -1,6 +1,6 @@
 name := "spark-csv"
 
-version := "1.3.0"
+version := "1.4.0-SNAPSHOT"
 
 organization := "com.databricks"
 
@@ -50,6 +50,7 @@ publishTo := {
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
+
 pomExtra := (
   <url>https://github.com/databricks/spark-csv</url>
   <licenses>
@@ -89,7 +90,7 @@ import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 
 mimaDefaultSettings ++ Seq(
-  previousArtifact := Some("com.databricks" %% "spark-csv" % "1.2.0"),
+  previousArtifact := Some("com.databricks" %% "spark-csv" % "1.3.0"),
   binaryIssueFilters ++= Seq(
     // These classes are not intended to be public interfaces:
     ProblemFilters.excludePackage("com.databricks.spark.csv.CsvRelation"),

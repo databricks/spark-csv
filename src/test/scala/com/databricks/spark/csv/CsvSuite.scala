@@ -20,6 +20,7 @@ import java.nio.charset.UnsupportedCharsetException
 import java.sql.Timestamp
 
 import com.databricks.spark.csv.util.ParseModes
+import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.{SQLContext, Row, SaveMode}
 import org.apache.spark.{SparkContext, SparkException}
@@ -44,7 +45,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   protected def parserLib: String
 
-  private var sqlContext: SQLContext = _
+  protected var sqlContext: SQLContext = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -647,8 +648,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
 class CsvSuite extends AbstractCsvSuite {
   override def parserLib: String = "COMMONS"
+
+  test("Specifying a column length is ignored with COMMONS parser library") {
+    val results = sqlContext
+      .csvFile(carsFile, parserLib = parserLib, maxCharsPerColumn = 2)
+      .select("year")
+      .collect()
+    assert(results.size === numCars)
+  }
 }
 
 class CsvFastSuite extends AbstractCsvSuite {
   override def parserLib: String = "UNIVOCITY"
+
+  test("Expect parsing error when specifying a column length that is exceeded") {
+    intercept[TextParsingException] {
+      val results = sqlContext
+        .csvFile(carsFile, parserLib = parserLib, maxCharsPerColumn = 2)
+        .select("year")
+        .collect()
+    }
+  }
 }

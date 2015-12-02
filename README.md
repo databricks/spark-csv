@@ -56,6 +56,7 @@ When reading files the API accepts several options:
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`. Defaults to no compression when a codec is not specified.
+* `maxCharsPerColumn`: (note for **univocity** parser only). Controls the maximum number of characters allowed in each column. It's set to 100000 by default.
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 

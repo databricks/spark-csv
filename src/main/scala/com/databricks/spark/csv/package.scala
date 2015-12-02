@@ -52,7 +52,8 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+        inferSchema: Boolean = false,
+        maxCharsPerColumn: Int = 100000): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),
@@ -66,7 +67,8 @@ package object csv {
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         treatEmptyValuesAsNulls = false,
-        inferCsvSchema = inferSchema)(sqlContext)
+        inferCsvSchema = inferSchema,
+        maxCharsPerColumn = maxCharsPerColumn)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
 
@@ -77,7 +79,8 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+        inferSchema: Boolean = false,
+        maxCharsPerColumn: Int = 100000): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),
@@ -91,7 +94,8 @@ package object csv {
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         treatEmptyValuesAsNulls = false,
-        inferCsvSchema = inferSchema)(sqlContext)
+        inferCsvSchema = inferSchema,
+        maxCharsPerColumn = maxCharsPerColumn)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
