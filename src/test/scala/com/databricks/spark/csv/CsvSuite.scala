@@ -48,7 +48,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    sqlContext = new SQLContext(new SparkContext("local[2]", "AvroSuite"))
+    sqlContext = new SQLContext(new SparkContext("local[2]", "CsvSuite"))
   }
 
   override protected def afterAll(): Unit = {

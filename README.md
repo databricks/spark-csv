@@ -400,7 +400,7 @@ library(SparkR)
 Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
-df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema, inferSchema = "true")
+df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
 
 write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
 ```
@@ -430,7 +430,7 @@ library(SparkR)
 Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
-df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema, inferSchema = "true")
+df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
 
 write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite", codec="org.apache.hadoop.io.compress.GzipCodec")
 ```
