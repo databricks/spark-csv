@@ -47,7 +47,7 @@ case class CsvRelation protected[spark] (
     userSchema: StructType = null,
     inferCsvSchema: Boolean,
     codec: String = null,
-    maxCharsPerColumn: Int)(@transient val sqlContext: SQLContext)
+    maxCharsPerColumn: Int = 100000)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
