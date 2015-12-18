@@ -257,7 +257,7 @@ SQLContext sqlContext = new SQLContext(sc);
 HashMap<String, String> options = new HashMap<String, String>();
 options.put("header", "true");
 options.put("path", "cars.csv");
-optins.put("inferSchema", "true");
+options.put("inferSchema", "true");
 
 DataFrame df = sqlContext.load("com.databricks.spark.csv", options);
 df.select("year", "model").save("newcars.csv", "com.databricks.spark.csv");
