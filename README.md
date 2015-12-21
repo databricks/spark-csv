@@ -209,12 +209,13 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.*;
 
 SQLContext sqlContext = new SQLContext(sc);
-StructType customSchema = new StructType(
-    new StructField("year", IntegerType, true), 
-    new StructField("make", StringType, true),
-    new StructField("model", StringType, true),
-    new StructField("comment", StringType, true),
-    new StructField("blank", StringType, true));
+StructType customSchema = new StructType(new StructField[] {
+    new StructField("year", DataTypes.IntegerType, true, Metadata.empty()), 
+    new StructField("make", DataTypes.StringType, true, Metadata.empty()),
+    new StructField("model", DataTypes.StringType, true, Metadata.empty()),
+    new StructField("comment", DataTypes.StringType, true, Metadata.empty()),
+    new StructField("blank", DataTypes.StringType, true, Metadata.empty())
+});
 
 DataFrame df = sqlContext.read()
     .format("com.databricks.spark.csv")
