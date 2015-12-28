@@ -129,7 +129,13 @@ case class CsvRelation protected[spark] (
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
           case pe: java.text.ParseException if dropMalformed =>
-            logger.warn("Parse Exception. " +
+            logger.warn("Parse exception. " +
+              s"Dropping malformed line: ${tokens.mkString(",")}")
+            None
+          // When the function `valueOf` in Timestamp or Date fails,
+          // this emits IllegalArgumentException.
+          case iae: IllegalArgumentException if dropMalformed =>
+            logger.warn("Illegal argument exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
         }

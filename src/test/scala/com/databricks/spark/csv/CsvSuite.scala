@@ -306,7 +306,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", StringType, true),
-        StructField("Height", StringType, true)
+        StructField("Height", StringType, true),
+        StructField("Born", StringType, true)
       )
     )
 
@@ -318,14 +319,16 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .csvFile(sqlContext, ageFile)
       .count()
 
-    assert(results === 3)
+    assert(results === 4)
   }
+
   test("DSL test with poorly formatted file and known schema") {
     val strictSchema = new StructType(
       Array(
         StructField("Name", StringType, true),
         StructField("Age", IntegerType, true),
-        StructField("Height", DoubleType, true)
+        StructField("Height", DoubleType, true),
+        StructField("Born", TimestampType, true)
       )
     )
 
