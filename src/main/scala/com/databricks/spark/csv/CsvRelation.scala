@@ -147,18 +147,22 @@ case class CsvRelation protected[spark] (
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val schemaFields = schema.fields
     val requiredFields = StructType(requiredColumns.map(schema(_))).fields
-    val isTableScan = requiredColumns.isEmpty || schemaFields.deep == requiredFields.deep
-    if (isTableScan) {
+    val shouldTableScan = {
+      val shouldCheckAllTokens = dropMalformed && requiredColumns.isEmpty
+      val isSameSchemaRequired = schemaFields.deep == requiredFields.deep
+      shouldCheckAllTokens || isSameSchemaRequired
+    }
+    if (shouldTableScan) {
       buildScan
     } else {
       val requiredIndices = new Array[Int](requiredFields.length)
       schemaFields.zipWithIndex.filter {
         case (field, _) => requiredFields.contains(field)
       }.foreach {
-        case(field, index) => requiredIndices(requiredFields.indexOf(field)) = index
+        case (field, index) => requiredIndices(requiredFields.indexOf(field)) = index
       }
 
-      val rowArray = new Array[Any](requiredIndices.length)
+      val row = new Array[Any](requiredIndices.length)
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
           logger.warn(s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
@@ -178,14 +182,14 @@ case class CsvRelation protected[spark] (
             while (subIndex < requiredIndices.length) {
               index = requiredIndices(subIndex)
               val field = schemaFields(index)
-              rowArray(subIndex) = TypeCast.castTo(
+              row(subIndex) = TypeCast.castTo(
                 indexSafeTokens(index),
                 field.dataType,
                 field.nullable,
                 treatEmptyValuesAsNulls)
               subIndex = subIndex + 1
             }
-            Some(Row.fromSeq(rowArray))
+            Some(Row.fromSeq(row))
           } catch {
             case nfe: java.lang.NumberFormatException if dropMalformed =>
               logger.warn("Number format exception. " +

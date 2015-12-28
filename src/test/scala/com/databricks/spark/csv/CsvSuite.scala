@@ -320,6 +320,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(results === 3)
   }
+
   test("DSL test with poorly formatted file and known schema") {
     val strictSchema = new StructType(
       Array(
