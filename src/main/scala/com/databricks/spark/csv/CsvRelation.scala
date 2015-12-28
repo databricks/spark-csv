@@ -147,22 +147,25 @@ case class CsvRelation protected[spark] (
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val schemaFields = schema.fields
     val requiredFields = StructType(requiredColumns.map(schema(_))).fields
-    val shouldTableScan = {
-      val shouldCheckAllTokens = dropMalformed && requiredColumns.isEmpty
-      val isSameSchemaRequired = schemaFields.deep == requiredFields.deep
-      shouldCheckAllTokens || isSameSchemaRequired
+    val shouldTableScan = schemaFields.deep == requiredFields.deep
+    val safeRequiredFields = if (dropMalformed) {
+      // If `dropMalformed` is enabled, then it needs to parse all the values
+      // so that we can decide which row is malformed.
+      requiredFields ++ schemaFields.filterNot(requiredFields.contains(_))
+    } else {
+      requiredFields
     }
     if (shouldTableScan) {
       buildScan
     } else {
-      val requiredIndices = new Array[Int](requiredFields.length)
+      val safeRequiredIndices = new Array[Int](safeRequiredFields.length)
       schemaFields.zipWithIndex.filter {
-        case (field, _) => requiredFields.contains(field)
+        case (field, _) => safeRequiredFields.contains(field)
       }.foreach {
-        case (field, index) => requiredIndices(requiredFields.indexOf(field)) = index
+        case (field, index) => safeRequiredIndices(safeRequiredFields.indexOf(field)) = index
       }
-
-      val row = new Array[Any](requiredIndices.length)
+      val rowArray = new Array[Any](safeRequiredIndices.length)
+      val requiredSize = requiredFields.length
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
           logger.warn(s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
@@ -172,24 +175,24 @@ case class CsvRelation protected[spark] (
             s"${tokens.mkString(delimiter.toString)}")
         } else {
           val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
-            tokens ++ new Array[String](schemaFields.length - tokens.length)
+            tokens ++ new Array[String](schemaFields.length - tokens.size)
           } else {
             tokens
           }
           try {
             var index: Int = 0
             var subIndex: Int = 0
-            while (subIndex < requiredIndices.length) {
-              index = requiredIndices(subIndex)
+            while (subIndex < safeRequiredIndices.length) {
+              index = safeRequiredIndices(subIndex)
               val field = schemaFields(index)
-              row(subIndex) = TypeCast.castTo(
+              rowArray(subIndex) = TypeCast.castTo(
                 indexSafeTokens(index),
                 field.dataType,
                 field.nullable,
                 treatEmptyValuesAsNulls)
               subIndex = subIndex + 1
             }
-            Some(Row.fromSeq(row))
+            Some(Row.fromSeq(rowArray.take(requiredSize)))
           } catch {
             case nfe: java.lang.NumberFormatException if dropMalformed =>
               logger.warn("Number format exception. " +
