@@ -169,6 +169,27 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.size === numCars - 1)
   }
 
+  test("DSL test for DROPMALFORMED parsing mode with pruned scan") {
+    val strictSchema = new StructType(
+      Array(
+        StructField("Name", StringType, true),
+        StructField("Age", IntegerType, true),
+        StructField("Height", DoubleType, true)
+      )
+    )
+
+    val results = new CsvParser()
+      .withSchema(strictSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+      .csvFile(sqlContext, ageFile)
+      .select("Name")
+      .collect().size
+
+    assert(results === 1)
+  }
+
   test("DSL test for FAILFAST parsing mode") {
     val parser = new CsvParser()
       .withParseMode(ParseModes.FAIL_FAST_MODE)
@@ -289,7 +310,6 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT year FROM carsTable").collect().size === numCars)
   }
 
-
   test("DSL test with empty file and known schema") {
     val results = new CsvParser()
       .withSchema(StructType(List(StructField("column", StringType, false))))
@@ -320,6 +340,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(results === 3)
   }
+
   test("DSL test with poorly formatted file and known schema") {
     val strictSchema = new StructType(
       Array(
