@@ -174,7 +174,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", IntegerType, true),
-        StructField("Height", DoubleType, true)
+        StructField("Height", DoubleType, true),
+        StructField("Born", TimestampType, true)
       )
     )
 
