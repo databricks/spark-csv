@@ -127,11 +127,11 @@ case class CsvRelation protected[spark] (
           case _: java.lang.NumberFormatException |
                _: IllegalArgumentException if dropMalformed =>
             logger.warn("Number format exception. " +
-              s"Dropping malformed line: ${tokens.mkString(",")}")
+              s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
           case pe: java.text.ParseException if dropMalformed =>
             logger.warn("Parse exception. " +
-              s"Dropping malformed line: ${tokens.mkString(",")}")
+              s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
         }
       }
@@ -188,12 +188,12 @@ case class CsvRelation protected[spark] (
             }
             Some(Row.fromSeq(rowArray))
           } catch {
-            case nfe: java.lang.NumberFormatException if dropMalformed =>
+            case _: java.lang.NumberFormatException |
+                 _: IllegalArgumentException if dropMalformed =>
               logger.warn("Number format exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
-            case _: java.lang.NumberFormatException |
-                 _: IllegalArgumentException if dropMalformed =>
+            case pe: java.text.ParseException if dropMalformed =>
               logger.warn("Parse exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
