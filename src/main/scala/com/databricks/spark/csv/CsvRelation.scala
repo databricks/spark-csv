@@ -124,18 +124,13 @@ case class CsvRelation protected[spark] (
           case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
-          case nfe: java.lang.NumberFormatException if dropMalformed =>
+          case _: java.lang.NumberFormatException |
+               _: IllegalArgumentException if dropMalformed =>
             logger.warn("Number format exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
           case pe: java.text.ParseException if dropMalformed =>
             logger.warn("Parse exception. " +
-              s"Dropping malformed line: ${tokens.mkString(",")}")
-            None
-          // When the function `valueOf` in Timestamp or Date fails,
-          // this emits IllegalArgumentException.
-          case iae: IllegalArgumentException if dropMalformed =>
-            logger.warn("Illegal argument exception. " +
               s"Dropping malformed line: ${tokens.mkString(",")}")
             None
         }
@@ -197,8 +192,9 @@ case class CsvRelation protected[spark] (
               logger.warn("Number format exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
-            case pe: java.text.ParseException if dropMalformed =>
-              logger.warn("Parse Exception. " +
+            case _: java.lang.NumberFormatException |
+                 _: IllegalArgumentException if dropMalformed =>
+              logger.warn("Parse exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
           }
