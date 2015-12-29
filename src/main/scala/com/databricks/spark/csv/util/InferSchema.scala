@@ -30,10 +30,15 @@ private[csv] object InferSchema {
    *     2. Merge row types to find common type
    *     3. Replace any null types with string type
    */
-  def apply(tokenRdd: RDD[Array[String]], header: Array[String], nullValue: String = ""): StructType = {
+  def apply(
+    tokenRdd: RDD[Array[String]],
+    header: Array[String],
+    nullValue: String = ""): StructType = {
 
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
-    val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(inferRowType(nullValue), mergeRowTypes)
+    val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(
+      inferRowType(nullValue),
+      mergeRowTypes)
 
     val stuctFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       StructField(thisHeader, rootType, nullable = true)
@@ -42,7 +47,8 @@ private[csv] object InferSchema {
     StructType(stuctFields)
   }
 
-  private def inferRowType(nullValue: String)(rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
+  private def inferRowType(nullValue: String)
+  (rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
     while (i < math.min(rowSoFar.length, next.length)) {  // May have columns on right missing.
       rowSoFar(i) = inferField(rowSoFar(i), next(i), nullValue)
@@ -67,7 +73,9 @@ private[csv] object InferSchema {
    * Infer type of string field. Given known type Double, and a string "1", there is no
    * point checking if it is an Int, as the final type must be Double or higher.
    */
-  private[csv] def inferField(typeSoFar: DataType, field: String, nullValue: String = ""): DataType = {
+  private[csv] def inferField(typeSoFar: DataType,
+    field: String,
+    nullValue: String = ""): DataType = {
     if (field == null || field.isEmpty || field == nullValue) {
       typeSoFar
     } else {
