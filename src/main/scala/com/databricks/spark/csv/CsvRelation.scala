@@ -46,7 +46,8 @@ case class CsvRelation protected[spark] (
     treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
     inferCsvSchema: Boolean,
-    codec: String = null)(@transient val sqlContext: SQLContext)
+    codec: String = null,
+    nullValue: String = "")(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
@@ -116,7 +117,7 @@ case class CsvRelation protected[spark] (
           while (index < schemaFields.length) {
             val field = schemaFields(index)
             rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable,
-              treatEmptyValuesAsNulls)
+              treatEmptyValuesAsNulls, nullValue)
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))
@@ -189,7 +190,9 @@ case class CsvRelation protected[spark] (
                 indexSafeTokens(index),
                 field.dataType,
                 field.nullable,
-                treatEmptyValuesAsNulls)
+                treatEmptyValuesAsNulls,
+                nullValue
+              )
               subIndex = subIndex + 1
             }
             Some(Row.fromSeq(rowArray.take(requiredSize)))
@@ -235,7 +238,7 @@ case class CsvRelation protected[spark] (
         firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
       if (this.inferCsvSchema) {
-        InferSchema(tokenRdd(header), header)
+        InferSchema(tokenRdd(header), header, nullValue)
       } else {
         // By default fields are assumed to be StringType
         val schemaFields = header.map { fieldName =>

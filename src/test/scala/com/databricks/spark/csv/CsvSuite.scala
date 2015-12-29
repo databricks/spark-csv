@@ -33,6 +33,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
+  val nullNullNumbersFile = "src/test/resources/null_null_numbers.csv"
+  val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val ageFile = "src/test/resources/ages.csv"
   val escapeFile = "src/test/resources/escape.csv"
@@ -570,6 +572,36 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.head.toSeq === Seq("alice", 35))
     assert(results(1).toSeq === Seq("bob", null))
     assert(results(2).toSeq === Seq("", 24))
+  }
+
+  test("DSL test nullable fields with user defined null value of \"null\"") {
+    val results = new CsvParser()
+      .withSchema(StructType(List(StructField("name", StringType, false),
+                                  StructField("age", IntegerType, true))))
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withNullValue("null")
+      .csvFile(sqlContext, nullNullNumbersFile)
+      .collect()
+
+    assert(results.head.toSeq === Seq("alice", 35))
+    assert(results(1).toSeq === Seq("bob", null))
+    assert(results(2).toSeq === Seq("null", 24))
+  }
+
+  test("DSL test nullable fields with user defined null value of \"\\N\"") {
+    val results = new CsvParser()
+      .withSchema(StructType(List(StructField("name", StringType, false),
+                                  StructField("age", IntegerType, true))))
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withNullValue("\\N")
+      .csvFile(sqlContext, nullSlashNNumbersFile)
+      .collect()
+
+    assert(results.head.toSeq === Seq("alice", 35))
+    assert(results(1).toSeq === Seq("bob", null))
+    assert(results(2).toSeq === Seq("\\N", 24))
   }
 
   test("Commented lines in CSV data") {

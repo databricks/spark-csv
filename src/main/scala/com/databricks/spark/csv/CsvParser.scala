@@ -40,6 +40,7 @@ class CsvParser extends Serializable {
   private var charset: String = TextFile.DEFAULT_CHARSET.name()
   private var inferSchema: Boolean = false
   private var codec: String = null
+  private var nullValue: String = ""
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -111,6 +112,11 @@ class CsvParser extends Serializable {
     this
   }
 
+  def withNullValue(nullValue: String): CsvParser = {
+    this.nullValue = nullValue
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -129,7 +135,8 @@ class CsvParser extends Serializable {
       treatEmptyValuesAsNulls,
       schema,
       inferSchema,
-      codec)(sqlContext)
+      codec,
+      nullValue)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
@@ -149,7 +156,8 @@ class CsvParser extends Serializable {
       treatEmptyValuesAsNulls,
       schema,
       inferSchema,
-      codec)(sqlContext)
+      codec,
+      nullValue)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 }
