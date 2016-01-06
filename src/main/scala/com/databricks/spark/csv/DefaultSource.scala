@@ -139,6 +139,8 @@ class DefaultSource
 
     val codec = parameters.getOrElse("codec", null)
 
+    val maxCharsPerColumn = parameters.get("maxCharsPerColumn").map(_.toInt).getOrElse(100000)
+
     CsvRelation(
       () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
       Some(path),
@@ -154,7 +156,8 @@ class DefaultSource
       treatEmptyValuesAsNullsFlag,
       schema,
       inferSchemaFlag,
-      codec)(sqlContext)
+      codec,
+      maxCharsPerColumn)(sqlContext)
   }
 
   override def createRelation(

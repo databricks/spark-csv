@@ -46,7 +46,8 @@ case class CsvRelation protected[spark] (
     treatEmptyValuesAsNulls: Boolean,
     userSchema: StructType = null,
     inferCsvSchema: Boolean,
-    codec: String = null)(@transient val sqlContext: SQLContext)
+    codec: String = null,
+    maxCharsPerColumn: Int = 100000)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   /**
@@ -220,7 +221,8 @@ case class CsvRelation protected[spark] (
           fieldSep = delimiter,
           quote = quoteChar,
           escape = escapeVal,
-          commentMarker = commentChar).parseLine(firstLine)
+          commentMarker = commentChar,
+          maxCharsPerColumn = maxCharsPerColumn).parseLine(firstLine)
       } else {
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
@@ -274,7 +276,8 @@ case class CsvRelation protected[spark] (
 
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quoteChar, escape = escapeVal, commentMarker = commentChar)
+          quote = quoteChar, escape = escapeVal, commentMarker = commentChar,
+          maxCharsPerColumn = maxCharsPerColumn)
       }
     }, true)
 
