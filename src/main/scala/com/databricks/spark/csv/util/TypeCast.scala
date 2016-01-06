@@ -43,8 +43,15 @@ object TypeCast {
       datum: String,
       castType: DataType,
       nullable: Boolean = true,
-      treatEmptyValuesAsNulls: Boolean = false): Any = {
-    if (datum == "" && nullable && (!castType.isInstanceOf[StringType] || treatEmptyValuesAsNulls)){
+      treatEmptyValuesAsNulls: Boolean = false,
+      nullValue: String = ""): Any = {
+    // if nullValue is not an empty string, don't require treatEmptyValuesAsNulls
+    // to be set to true
+    val nullValueIsNotEmpty = nullValue != ""
+    if (datum == nullValue &&
+      nullable &&
+      (!castType.isInstanceOf[StringType] || treatEmptyValuesAsNulls || nullValueIsNotEmpty)
+      ){
       null
     } else {
       castType match {

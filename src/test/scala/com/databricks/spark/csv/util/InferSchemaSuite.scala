@@ -15,6 +15,15 @@ class InferSchemaSuite extends FunSuite {
     assert(InferSchema.inferField(NullType, "2015-08-20 15:57:00") == TimestampType)
   }
 
+  test("Null fields are handled properly when a nullValue is specified") {
+    assert(InferSchema.inferField(NullType, "null", "null") == NullType)
+    assert(InferSchema.inferField(StringType, "null", "null") == StringType)
+    assert(InferSchema.inferField(LongType, "null", "null") == LongType)
+    assert(InferSchema.inferField(IntegerType, "\\N", "\\N") == IntegerType)
+    assert(InferSchema.inferField(DoubleType, "\\N", "\\N") == DoubleType)
+    assert(InferSchema.inferField(TimestampType, "\\N", "\\N") == TimestampType)
+  }
+
   test("String fields types are inferred correctly from other types") {
     assert(InferSchema.inferField(LongType, "1.0") == DoubleType)
     assert(InferSchema.inferField(LongType, "test") == StringType)

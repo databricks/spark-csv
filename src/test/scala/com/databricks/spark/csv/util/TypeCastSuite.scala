@@ -94,4 +94,13 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.castTo("1,00", FloatType) == 1.0)
     assert(TypeCast.castTo("1,00", DoubleType) == 1.0)
   }
+
+  test("Can handle mapping user specified nullValues") {
+    assert(TypeCast.castTo("null", StringType, true, false, "null") == null)
+    assert(TypeCast.castTo("\\N", ByteType, true, false, "\\N") == null)
+    assert(TypeCast.castTo("", ShortType, true, false) == null)
+    assert(TypeCast.castTo("null", StringType, true, true, "null") == null)
+    assert(TypeCast.castTo("", StringType, true, false, "") == "")
+    assert(TypeCast.castTo("", StringType, true, true, "") == null)
+  }
 }

@@ -56,6 +56,7 @@ When reading files the API accepts several options:
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`. Defaults to no compression when a codec is not specified.
+* `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 
@@ -109,7 +110,7 @@ import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerT
 
 val sqlContext = new SQLContext(sc)
 val customSchema = StructType(
-    StructField("year", IntegerType, true), 
+    StructField("year", IntegerType, true),
     StructField("make", StringType, true),
     StructField("model", StringType, true),
     StructField("comment", StringType, true),
@@ -155,7 +156,7 @@ import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
 val df = sqlContext.load(
-    "com.databricks.spark.csv", 
+    "com.databricks.spark.csv",
     Map("path" -> "cars.csv", "header" -> "true", "inferSchema" -> "true"))
 val selectedData = df.select("year", "model")
 selectedData.save("newcars.csv", "com.databricks.spark.csv")
@@ -168,14 +169,14 @@ import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerT
 
 val sqlContext = new SQLContext(sc)
 val customSchema = StructType(
-    StructField("year", IntegerType, true), 
+    StructField("year", IntegerType, true),
     StructField("make", StringType, true),
     StructField("model", StringType, true),
     StructField("comment", StringType, true),
     StructField("blank", StringType, true))
 
 val df = sqlContext.load(
-    "com.databricks.spark.csv", 
+    "com.databricks.spark.csv",
     schema = customSchema,
     Map("path" -> "cars.csv", "header" -> "true"))
 
@@ -210,7 +211,7 @@ import org.apache.spark.sql.types.*;
 
 SQLContext sqlContext = new SQLContext(sc);
 StructType customSchema = new StructType(new StructField[] {
-    new StructField("year", DataTypes.IntegerType, true, Metadata.empty()), 
+    new StructField("year", DataTypes.IntegerType, true, Metadata.empty()),
     new StructField("make", DataTypes.StringType, true, Metadata.empty()),
     new StructField("model", DataTypes.StringType, true, Metadata.empty()),
     new StructField("comment", DataTypes.StringType, true, Metadata.empty()),
