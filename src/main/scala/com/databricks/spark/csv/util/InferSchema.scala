@@ -25,7 +25,8 @@ import org.apache.spark.sql.types._
 private[csv] object InferSchema {
 
   /**
-   * Similar to the JSON schema inference. [[org.apache.spark.sql.json.InferSchema]]
+   * Similar to the JSON schema inference.
+   * [[org.apache.spark.sql.execution.datasources.json.InferSchema]]
    *     1. Infer type of each row
    *     2. Merge row types to find common type
    *     3. Replace any null types with string type
@@ -35,11 +36,11 @@ private[csv] object InferSchema {
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
     val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(inferRowType, mergeRowTypes)
 
-    val stuctFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
+    val structFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       StructField(thisHeader, rootType, nullable = true)
     }
 
-    StructType(stuctFields)
+    StructType(structFields)
   }
 
   private def inferRowType(rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {

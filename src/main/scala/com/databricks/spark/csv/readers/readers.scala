@@ -244,7 +244,6 @@ private class StringIteratorReader(val iter: Iterator[String]) extends java.io.R
         }
       }
     }
-
     n
   }
 
