@@ -220,7 +220,7 @@ StructType customSchema = new StructType(new StructField[] {
 
 DataFrame df = sqlContext.read()
     .format("com.databricks.spark.csv")
-    .option("inferSchema", "true")
+    .schema(customSchema)
     .option("header", "true")
     .load("cars.csv");
 
