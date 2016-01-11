@@ -26,6 +26,13 @@ matrix:
     - jdk: openjdk7
       scala: 2.11.7
       env: TEST_SPARK_VERSION="1.5.0"
+    # Spark 1.6.0
+    - jdk: openjdk7
+      scala: 2.10.5
+      env: TEST_SPARK_VERSION="1.6.0"
+    - jdk: openjdk7
+      scala: 2.11.7
+      env: TEST_SPARK_VERSION="1.6.0"
 script:
   - sbt -Dspark.testVersion=$TEST_SPARK_VERSION ++$TRAVIS_SCALA_VERSION coverage test
   - sbt ++$TRAVIS_SCALA_VERSION assembly

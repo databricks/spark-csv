@@ -136,6 +136,7 @@ class DefaultSource
     } else {
       throw new Exception("Infer schema flag can be true or false")
     }
+    val nullValue = parameters.getOrElse("nullValue", "")
 
     val codec = parameters.getOrElse("codec", null)
 
@@ -154,7 +155,8 @@ class DefaultSource
       treatEmptyValuesAsNullsFlag,
       schema,
       inferSchemaFlag,
-      codec)(sqlContext)
+      codec,
+      nullValue)(sqlContext)
   }
 
   override def createRelation(
