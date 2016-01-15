@@ -52,9 +52,10 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+        inferSchema: Boolean = false,
+        minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
-        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
         useHeader = useHeader,
         delimiter = delimiter,
@@ -77,9 +78,10 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+        inferSchema: Boolean = false,
+        minPartitions: Int = 0): DataFrame = {
       val csvRelation = CsvRelation(
-        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset, minPartitions),
         location = Some(filePath),
         useHeader = useHeader,
         delimiter = '\t',

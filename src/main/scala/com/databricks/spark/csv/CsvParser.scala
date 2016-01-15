@@ -41,6 +41,7 @@ class CsvParser extends Serializable {
   private var inferSchema: Boolean = false
   private var codec: String = null
   private var nullValue: String = ""
+  private var minPartitions: Int = 0
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -117,11 +118,16 @@ class CsvParser extends Serializable {
     this
   }
 
+  def withMinPartitions(minPartitions: Int): CsvParser = {
+    this.minPartitions = minPartitions
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
     val relation: CsvRelation = CsvRelation(
-      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      () => TextFile.withCharset(sqlContext.sparkContext, path, charset, minPartitions),
       Some(path),
       useHeader,
       delimiter,

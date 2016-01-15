@@ -25,13 +25,14 @@ import org.apache.spark.rdd.RDD
 private[csv] object TextFile {
   val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
-  def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
+  def withCharset(context: SparkContext, location: String, charset: String, minPartitions: Int): RDD[String] = {
+    val minPartitionsOrDefault = if (minPartitions > 0) minPartitions else context.defaultMinPartitions
     if (Charset.forName(charset) == DEFAULT_CHARSET) {
-      context.textFile(location)
+      context.textFile(location, minPartitionsOrDefault)
     } else {
       // can't pass a Charset object here cause its not serializable
       // TODO: maybe use mapPartitions instead?
-      context.hadoopFile[LongWritable, Text, TextInputFormat](location).map(
+      context.hadoopFile[LongWritable, Text, TextInputFormat](location, minPartitionsOrDefault).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
       )
     }
