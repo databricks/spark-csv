@@ -49,31 +49,31 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("read utf-8 encoded file") {
-    val baseRDD = TextFile.withCharset(sparkContext, carsFile, utf8)
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile, utf8, 0)
     assert(baseRDD.count() === numLines)
     assert(baseRDD.first().count(_ == ',') == numColumns)
   }
 
   test("read utf-8 encoded file using charset alias") {
-    val baseRDD = TextFile.withCharset(sparkContext, carsFile, "utf8")
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile, "utf8", 0)
     assert(baseRDD.count() === numLines)
     assert(baseRDD.first().count(_ == ',') == numColumns)
   }
 
   test("read iso-8859-1 encoded file") {
-    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, iso88591)
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, iso88591, 0)
     assert(baseRDD.count() === numLines)
     assert(baseRDD.first().count(_ == smallThorn) == numColumns)
   }
 
   test("read iso-8859-1 encoded file using charset alias") {
-    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, "8859_1")
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, "8859_1", 0)
     assert(baseRDD.count() === numLines)
     assert(baseRDD.first().count(_ == smallThorn) == numColumns)
   }
 
   test("read iso-8859-1 encoded file with invalid charset") {
-    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, utf8)
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile8859, utf8, 0)
     assert(baseRDD.count() === numLines)
     // file loads but since it's not encoded in utf-8, non-ascii characters are not decoded
     // correctly.
@@ -82,8 +82,14 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
 
   test("unsupported charset") {
     val exception = intercept[UnsupportedCharsetException] {
-      TextFile.withCharset(sparkContext, carsFile, "frylock").count()
+      TextFile.withCharset(sparkContext, carsFile, "frylock", 0).count()
     }
     assert(exception.getMessage.contains("frylock"))
   }
+
+  test("read with minPartitions specified") {
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile, utf8, 3)
+    assert(baseRDD.getNumPartitions === 3)
+  }
+
 }
