@@ -326,7 +326,7 @@ case class CsvRelation protected[spark] (
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
 
-      val codecClass = compresionCodecClass(codec)
+      val codecClass = CompressionCodecs.getCodecClass(codec)
       data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
         codecClass)
     } else {
