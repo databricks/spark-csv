@@ -30,8 +30,7 @@ private[csv] object CompressionCodecs {
   }
 
   /**
-   * Return the full version of the given codec class.
-   * If it is already a class name, just return it.
+   * Return the codec class of the given name.
    */
   def getCodecClass: String => Class[_ <: CompressionCodec] = {
     case null => null
