@@ -15,14 +15,19 @@
  */
 package com.databricks.spark.csv.util
 
+import scala.util.control.Exception._
+
 import org.apache.hadoop.io.compress._
 
 private[csv] object CompressionCodecs {
-  private val shortCompressionCodecNames = Map(
-    "bzip2" -> classOf[BZip2Codec].getName,
-    "gzip" -> classOf[GzipCodec].getName,
-    "lz4" -> classOf[Lz4Codec].getName,
-    "snappy" -> classOf[SnappyCodec].getName)
+  private val shortCompressionCodecNames: Map[String, String] = {
+    val codecMap = collection.mutable.Map.empty[String, String]
+    allCatch opt(codecMap += "bzip2" -> classOf[BZip2Codec].getName)
+    allCatch opt(codecMap += "gzip" -> classOf[GzipCodec].getName)
+    allCatch opt(codecMap += "lz4" -> classOf[Lz4Codec].getName)
+    allCatch opt(codecMap += "snappy" -> classOf[SnappyCodec].getName)
+    codecMap.toMap
+  }
 
   /**
    * Return the full version of the given codec class.
