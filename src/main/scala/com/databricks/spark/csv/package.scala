@@ -19,7 +19,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
-import com.databricks.spark.csv.util.{CompressionCodecs, TextFile}
+import com.databricks.spark.csv.util.TextFile
 
 package object csv {
 
