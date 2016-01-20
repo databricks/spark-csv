@@ -32,14 +32,14 @@ private[csv] object CompressionCodecs {
     case null => null
     case codec =>
       val codecName = shortCompressionCodecNames.getOrElse(codec.toLowerCase, codec)
-      val codecClass = try {
+      try {
         // scalastyle:off classforname
-        Some(Class.forName(codecName).asInstanceOf[Class[CompressionCodec]])
+        Class.forName(codecName).asInstanceOf[Class[CompressionCodec]]
         // scalastyle:on classforname
       } catch {
-        case e: ClassNotFoundException => None
+        case e: ClassNotFoundException =>
+          throw new IllegalArgumentException(s"Codec [$codecName] is not " +
+            s"available. Known codecs are ${shortCompressionCodecNames.keys.mkString(", ")}.")
       }
-      codecClass.getOrElse(throw new IllegalArgumentException(s"Codec [$codecName] is not " +
-        s"available. Available codecs are ${shortCompressionCodecNames.keys.mkString(", ")}."))
   }
 }
