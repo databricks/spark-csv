@@ -21,8 +21,8 @@ import org.scalatest.FunSuite
 class CompressionCodecsSuite extends FunSuite {
 
   /**
-   * Note that there are not all codecs via Hadoop versions. Some tests might fail when Hadoop
-   * version is lower with not class found exception.
+   * Note that Lz4 codec was added from Hadoop 2.x. So, some tests might fail when Hadoop
+   * version is lower with class-not-found exception.
    */
   test("Get classes of compression codecs") {
     assert(CompressionCodecs.getCodecClass(classOf[GzipCodec].getName) == classOf[GzipCodec])
