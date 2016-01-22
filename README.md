@@ -10,7 +10,7 @@ A library for parsing and querying CSV data with Apache Spark, for Spark SQL and
 This library requires Spark 1.3+
 
 ## Linking
-You can link against this library in your program at the following coordiates:
+You can link against this library in your program at the following coordinates:
 
 ### Scala 2.10
 ```
@@ -429,7 +429,7 @@ You can save with compressed output:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
