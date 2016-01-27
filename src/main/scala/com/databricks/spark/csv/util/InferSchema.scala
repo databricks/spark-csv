@@ -142,7 +142,7 @@ private[csv] object InferSchema {
       FloatType,
       DoubleType,
       TimestampType,
-      DecimalType.Unlimited)
+      DecimalType.SYSTEM_DEFAULT)
 
   /**
    * Copied from internal Spark api
