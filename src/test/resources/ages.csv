@@ -1,4 +1,5 @@
-Name,Age,Height
-Bob,10,180
-Joe,20.5,200
-Tom,30,Dan
+Name,Age,Height,Born
+Bob,10,180,Unknown
+Joe,20.5,200,1995-01-01 00:00:00
+Tom,30,Dan,1985-01-01 00:00:00
+Hyukjin,25,165,1990-02-24 00:00:00
