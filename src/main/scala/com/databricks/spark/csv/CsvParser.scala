@@ -116,8 +116,9 @@ class CsvParser extends Serializable {
     this
   }
 
-  /** Returns a csvRelation instance based on the state definition of csv parser.*/
-  private[csv] def csvRelation(sqlContext: SQLContext, csvRDD: RDD[String], path: Option[String]): CsvRelation = {
+  /** Returns a csvRelation instance based on the state definition of csv parser. */
+  private[csv] def csvRelation(sqlContext: SQLContext, csvRDD: RDD[String],
+                               path: Option[String]): CsvRelation = {
       CsvRelation(
       () => csvRDD,
       path,
