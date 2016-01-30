@@ -139,7 +139,8 @@ class CsvParser extends Serializable {
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
-    val relation: CsvRelation = csvRelation(sqlContext, TextFile.withCharset(sqlContext.sparkContext, path, charset), Some(path))
+    val relation: CsvRelation = csvRelation(sqlContext,
+                TextFile.withCharset(sqlContext.sparkContext, path, charset), Some(path))
     sqlContext.baseRelationToDataFrame(relation)
   }
 
