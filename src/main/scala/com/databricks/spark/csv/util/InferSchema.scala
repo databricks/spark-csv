@@ -121,7 +121,7 @@ private[csv] object InferSchema {
       tryParseBoolean(field)
     }
   }
-  
+
   def tryParseBoolean(field: String): DataType = {
     if ((allCatch opt field.toBoolean).isDefined) {
       BooleanType
