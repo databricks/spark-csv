@@ -83,7 +83,7 @@ class InferSchemaSuite extends FunSuite with BeforeAndAfterAll {
       Array(LongType)).deep == Array(DoubleType).deep)
   }
 
-  test("Type/Schema inference works as expected for the simple parse dataset.")
+  test("Type/Schema inference works as expected for the simple sparse dataset.")
   {
     val df = new CsvParser().withUseHeader(true).withInferSchema(true)
             .csvFile(sqlContext, simpleDatasetFile)
