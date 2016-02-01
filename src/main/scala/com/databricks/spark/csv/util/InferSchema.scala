@@ -31,7 +31,7 @@ private[csv] object InferSchema {
    *     2. Merge row types to find common type
    *     3. Replace any null types with string type
    */
-  def apply(
+  def infer(
     tokenRdd: RDD[Array[String]],
     header: Array[String],
     nullValue: String = ""): StructType = {

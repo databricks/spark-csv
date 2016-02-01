@@ -240,7 +240,7 @@ case class CsvRelation protected[spark] (
         firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
       if (this.inferCsvSchema) {
-        InferSchema(tokenRdd(header), header, nullValue)
+        InferSchema.infer(tokenRdd(header), header, nullValue)
       } else {
         // By default fields are assumed to be StringType
         val schemaFields = header.map { fieldName =>
