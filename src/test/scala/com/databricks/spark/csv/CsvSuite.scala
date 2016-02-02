@@ -43,6 +43,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val tempEmptyDir = "target/test/empty/"
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
+  val boolFile = "src/test/resources/bool.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
@@ -649,6 +650,9 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val results = sqlContext
       .csvFile(carsFile, parserLib = parserLib, inferSchema = true)
 
+    val boolResults = sqlContext
+      .csvFile(boolFile, parserLib = parserLib, inferSchema = true)
+
     assert(results.schema == StructType(List(
       StructField("year", IntegerType, nullable = true),
       StructField("make", StringType, nullable = true),
@@ -657,7 +661,13 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       StructField("blank", StringType, nullable = true))
     ))
 
+    assert(boolResults.schema == StructType(List(
+      StructField("bool", BooleanType, nullable = true))
+    ))
+
     assert(results.collect().size === numCars)
+
+    assert(boolResults.collect().size === 3)
   }
 
   test("DSL test inferred schema passed through") {
