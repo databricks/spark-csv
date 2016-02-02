@@ -234,7 +234,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(agesCopy.collect.toSet == agesRows.toSet)
   }
 
-  test("DSL test tokens more than the schema") {
+  test("DSL test for tokens more than the schema") {
     val results = sqlContext
       .csvFile(carsMalformedFile, parserLib = parserLib)
       .select("year")
