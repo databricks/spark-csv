@@ -442,6 +442,36 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
 
+  test("DSL save with a quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quoteMode" -> "ALL"))
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with non numeric quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quoteMode" -> "non_numeric"))
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
   test("DSL save with a compression codec") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
