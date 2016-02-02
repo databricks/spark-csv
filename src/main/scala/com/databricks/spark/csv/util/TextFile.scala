@@ -15,7 +15,7 @@
  */
 package com.databricks.spark.csv.util
 
-import java.nio.charset.Charset
+import java.nio.charset.{UnsupportedCharsetException, Charset}
 
 import org.apache.hadoop.io.{Text, LongWritable}
 import org.apache.hadoop.mapred.TextInputFormat
@@ -26,7 +26,19 @@ private[csv] object TextFile {
   val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
   def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
-    if (Charset.forName(charset) == DEFAULT_CHARSET) {
+    val checkedCharset = {
+      val charsetObj = Charset.forName(charset)
+      val lineSeq = "\n"
+      val isAsciiCapable =
+        java.util.Arrays.equals(lineSeq.getBytes(DEFAULT_CHARSET), lineSeq.getBytes(charsetObj))
+      if (!isAsciiCapable) {
+        throw new UnsupportedCharsetException(charsetObj.name())
+      } else {
+        charsetObj
+      }
+    }
+
+    if (checkedCharset == DEFAULT_CHARSET) {
       context.textFile(location)
     } else {
       // can't pass a Charset object here cause its not serializable

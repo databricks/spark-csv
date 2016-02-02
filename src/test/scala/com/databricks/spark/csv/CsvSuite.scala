@@ -92,6 +92,16 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("1-9588-osi"))
   }
 
+  test("DSL test non-ascii capable charset name") {
+    val exception = intercept[UnsupportedCharsetException] {
+      val results = sqlContext
+        .csvFile(carsFile8859, parserLib = parserLib, charset = "utf-32")
+        .select("year")
+        .collect()
+    }
+    assert(exception.getMessage.contains("UTF-32"))
+  }
+
   test("DDL test") {
     sqlContext.sql(
       s"""
