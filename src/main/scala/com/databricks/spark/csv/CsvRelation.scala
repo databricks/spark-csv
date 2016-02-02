@@ -100,18 +100,18 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  override def buildScan: RDD[Row] = {
+  override def buildScan(): RDD[Row] = {
     val schemaFields = schema.fields
+    val rowArray = new Array[Any](schemaFields.length)
     tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
-      if (dropMalformed && schemaFields.length != tokens.size) {
+      if (dropMalformed && schemaFields.length != tokens.length) {
         logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
         None
-      } else if (failFast && schemaFields.length != tokens.size) {
+      } else if (failFast && schemaFields.length != tokens.length) {
         throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
       } else {
         var index: Int = 0
-        val rowArray = new Array[Any](schemaFields.length)
         try {
           index = 0
           while (index < schemaFields.length) {
@@ -158,7 +158,7 @@ case class CsvRelation protected[spark] (
       requiredFields
     }
     if (shouldTableScan) {
-      buildScan
+      buildScan()
     } else {
       val safeRequiredIndices = new Array[Int](safeRequiredFields.length)
       schemaFields.zipWithIndex.filter {
@@ -169,15 +169,16 @@ case class CsvRelation protected[spark] (
       val rowArray = new Array[Any](safeRequiredIndices.length)
       val requiredSize = requiredFields.length
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
-        if (dropMalformed && schemaFields.length != tokens.size) {
+
+        if (dropMalformed && schemaFields.length != tokens.length) {
           logger.warn(s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
           None
-        } else if (failFast && schemaFields.length != tokens.size) {
+        } else if (failFast && schemaFields.length != tokens.length) {
           throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
             s"${tokens.mkString(delimiter.toString)}")
         } else {
-          val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
-            tokens ++ new Array[String](schemaFields.length - tokens.size)
+          val indexSafeTokens = if (permissive && schemaFields.length != tokens.length) {
+            tokens ++ new Array[String](schemaFields.length - tokens.length)
           } else {
             tokens
           }
