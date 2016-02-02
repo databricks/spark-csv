@@ -29,9 +29,9 @@ private[csv] object TextFile {
     val checkedCharset = {
       val charsetObj = Charset.forName(charset)
       val lineSeq = "\n"
-      val isAsciiCapable =
+      val isASCIICompatible =
         java.util.Arrays.equals(lineSeq.getBytes(DEFAULT_CHARSET), lineSeq.getBytes(charsetObj))
-      if (!isAsciiCapable) {
+      if (!isASCIICompatible) {
         throw new UnsupportedCharsetException(charsetObj.name())
       } else {
         charsetObj
