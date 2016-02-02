@@ -178,6 +178,8 @@ case class CsvRelation protected[spark] (
         } else {
           val indexSafeTokens = if (permissive && schemaFields.length > tokens.size) {
             tokens ++ new Array[String](schemaFields.length - tokens.size)
+          } else if (permissive && schemaFields.length < tokens.size) {
+            tokens.take(schemaFields.size)
           } else {
             tokens
           }
