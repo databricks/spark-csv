@@ -44,6 +44,7 @@ private[csv] object TextFile {
       context.textFile(location, minPartitions)
     } else {
       // can't pass a Charset object here cause its not serializable
+      // TODO: maybe use mapPartitions instead?
       context.hadoopFile[LongWritable, Text, TextInputFormat](location, minPartitions).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset)
       )
