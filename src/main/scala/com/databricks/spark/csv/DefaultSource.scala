@@ -139,9 +139,11 @@ class DefaultSource
     val nullValue = parameters.getOrElse("nullValue", "")
 
     val codec = parameters.getOrElse("codec", null)
+    val minPartitions: Integer = parameters.getOrElse("minPartitions",
+      sqlContext.sparkContext.defaultMinPartitions.toString).toInt
 
     CsvRelation(
-      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      () => TextFile.withCharset(sqlContext.sparkContext, path, charset, minPartitions),
       Some(path),
       headerFlag,
       delimiter,
