@@ -25,7 +25,16 @@ import org.apache.spark.rdd.RDD
 private[csv] object TextFile {
   val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
-  def withCharset(context: SparkContext, location: String, charset: String, minPartitionsParam: Integer = null): RDD[String] = {
+  def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
+    withCharset(context, location, charset, null)
+  }
+
+  def withCharset(
+    context: SparkContext,
+    location: String,
+    charset: String,
+    minPartitionsParam: Integer = null
+  ): RDD[String] = {
     val minPartitions: Int = if (minPartitionsParam == null) {
       context.defaultMinPartitions
     } else {
