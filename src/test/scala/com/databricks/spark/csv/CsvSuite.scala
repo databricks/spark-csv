@@ -177,7 +177,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", IntegerType, true),
-        StructField("Height", DoubleType, true)
+        StructField("Height", DoubleType, true),
+        StructField("Born", TimestampType, true)
       )
     )
 
@@ -329,7 +330,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", StringType, true),
-        StructField("Height", StringType, true)
+        StructField("Height", StringType, true),
+        StructField("Born", StringType, true)
       )
     )
 
@@ -341,7 +343,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .csvFile(sqlContext, ageFile)
       .count()
 
-    assert(results === 3)
+    assert(results === 4)
   }
 
   test("DSL test with poorly formatted file and known schema") {
@@ -349,7 +351,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       Array(
         StructField("Name", StringType, true),
         StructField("Age", IntegerType, true),
-        StructField("Height", DoubleType, true)
+        StructField("Height", DoubleType, true),
+        StructField("Born", TimestampType, true)
       )
     )
 
@@ -464,6 +467,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
     cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
       Map("path" -> copyFilePath, "header" -> "true", "codec" -> classOf[GzipCodec].getName))
+    val carsCopyPartFile = new File(copyFilePath, "part-00000.gz")
+    // Check that the part file has a .gz extension
+    assert(carsCopyPartFile.exists())
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("Scala API save with gzip compression codec by shorten name") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
+      Map("path" -> copyFilePath, "header" -> "true", "codec" -> "gZiP"))
     val carsCopyPartFile = new File(copyFilePath, "part-00000.gz")
     // Check that the part file has a .gz extension
     assert(carsCopyPartFile.exists())

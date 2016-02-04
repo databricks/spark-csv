@@ -125,13 +125,14 @@ case class CsvRelation protected[spark] (
           case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
-          case nfe: java.lang.NumberFormatException if dropMalformed =>
+          case _: java.lang.NumberFormatException |
+               _: IllegalArgumentException if dropMalformed =>
             logger.warn("Number format exception. " +
-              s"Dropping malformed line: ${tokens.mkString(",")}")
+              s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
           case pe: java.text.ParseException if dropMalformed =>
-            logger.warn("Parse Exception. " +
-              s"Dropping malformed line: ${tokens.mkString(",")}")
+            logger.warn("Parse exception. " +
+              s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
         }
       }
@@ -197,12 +198,13 @@ case class CsvRelation protected[spark] (
             }
             Some(Row.fromSeq(rowArray.take(requiredSize)))
           } catch {
-            case nfe: java.lang.NumberFormatException if dropMalformed =>
+            case _: java.lang.NumberFormatException |
+                 _: IllegalArgumentException if dropMalformed =>
               logger.warn("Number format exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
             case pe: java.text.ParseException if dropMalformed =>
-              logger.warn("Parse Exception. " +
+              logger.warn("Parse exception. " +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
           }
@@ -326,7 +328,7 @@ case class CsvRelation protected[spark] (
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
 
-      val codecClass = compresionCodecClass(codec)
+      val codecClass = CompressionCodecs.getCodecClass(codec)
       data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
         codecClass)
     } else {

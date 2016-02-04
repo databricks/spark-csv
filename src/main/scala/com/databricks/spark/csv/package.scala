@@ -26,16 +26,6 @@ package object csv {
   val defaultCsvFormat =
     CSVFormat.DEFAULT.withRecordSeparator(System.getProperty("line.separator", "\n"))
 
-  private[csv] def compresionCodecClass(className: String): Class[_ <: CompressionCodec] = {
-    className match {
-      case null => null
-      case codec =>
-        // scalastyle:off classforname
-        Class.forName(codec).asInstanceOf[Class[CompressionCodec]]
-        // scalastyle:on classforname
-    }
-  }
-
   /**
    * Adds a method, `csvFile`, to SQLContext that allows reading CSV data.
    */

@@ -10,7 +10,7 @@ A library for parsing and querying CSV data with Apache Spark, for Spark SQL and
 This library requires Spark 1.3+
 
 ## Linking
-You can link against this library in your program at the following coordiates:
+You can link against this library in your program at the following coordinates:
 
 ### Scala 2.10
 ```
@@ -55,7 +55,7 @@ When reading files the API accepts several options:
 * `charset`: defaults to 'UTF-8' but can be set to other valid charset names
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
-* `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec`. Defaults to no compression when a codec is not specified.
+* `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec` or one of case-insensitive shorten names (`bzip2`, `gzip`, `lz4`, and `snappy`). Defaults to no compression when a codec is not specified.
 * `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
@@ -429,7 +429,7 @@ You can save with compressed output:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.2.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
