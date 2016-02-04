@@ -57,9 +57,9 @@ class InferSchemaSuite extends FunSuite {
 
   test("Merging Nulltypes should yeild Nulltype.")
   {
-      assert(
-        InferSchema.mergeRowTypes(Array(NullType),
-        Array(NullType)).deep == Array(NullType).deep)
+    assert(
+      InferSchema.mergeRowTypes(Array(NullType),
+      Array(NullType)).deep == Array(NullType).deep)
   }
 
   test("Type arrays are merged to highest common type") {
