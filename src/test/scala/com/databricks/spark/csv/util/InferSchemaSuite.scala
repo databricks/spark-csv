@@ -55,8 +55,7 @@ class InferSchemaSuite extends FunSuite {
     assert(InferSchema.inferField(LongType, "2015-08 14:49:00") == StringType)
   }
 
-  test("Merging Nulltypes should yeild Nulltype.")
-  {
+  test("Merging Nulltypes should yeild Nulltype.") {
     assert(
       InferSchema.mergeRowTypes(Array(NullType),
       Array(NullType)).deep == Array(NullType).deep)

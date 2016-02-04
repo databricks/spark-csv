@@ -718,8 +718,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.size === numCars)
   }
 
-  test("Type/Schema inference works as expected for the simple sparse dataset.")
-  {
+  test("Type/Schema inference works as expected for the simple sparse dataset.") {
     val df = new CsvParser().withUseHeader(true).withInferSchema(true)
       .csvFile(sqlContext, simpleDatasetFile)
 
