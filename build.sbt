@@ -8,15 +8,17 @@ scalaVersion := "2.11.7"
 
 spName := "databricks/spark-csv"
 
-crossScalaVersions := Seq("2.10.5", "2.11.7")
+crossScalaVersions := Seq("2.10.4", "2.11.7")
 
-sparkVersion := "1.6.0"
+sparkVersion := "1.5.2"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 
 testSparkVersion := sys.props.get("spark.testVersion").getOrElse(sparkVersion.value)
 
 sparkComponents := Seq("core", "sql")
+
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-csv" % "1.1",
@@ -29,7 +31,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % testSparkVersion.value % "test" force(),
   "org.apache.spark" %% "spark-sql" % testSparkVersion.value % "test" force(),
-  "org.scala-lang" % "scala-library" % scalaVersion.value % "compile"
+  "org.scala-lang" % "scala-library" % scalaVersion.value % "provided"
 )
 
 // This is necessary because of how we explicitly specify Spark dependencies
