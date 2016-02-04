@@ -2,31 +2,8 @@ package com.databricks.spark.csv.util
 
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
-import org.scalatest.BeforeAndAfterAll
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
-import com.databricks.spark.csv.CsvParser
-import com.databricks.spark.csv.CsvRelation
 
-class InferSchemaSuite extends FunSuite with BeforeAndAfterAll {
-
-  private val simpleDatasetFile = "src/test/resources/simple.csv"
-  private val utf8Charset = "utf-8"
-  private var sqlContext: SQLContext = _
-
-  override def beforeAll(): Unit =
-  {
-    super.beforeAll()
-    sqlContext = new SQLContext(new SparkContext("local[2]", "InferSchemaSuite"))
-  }
-
-  override def afterAll(): Unit = {
-    try {
-      sqlContext.sparkContext.stop()
-    } finally {
-      super.afterAll()
-    }
-  }
+class InferSchemaSuite extends FunSuite {
 
   test("String fields types are inferred correctly from null types") {
     assert(InferSchema.inferField(NullType, "") == NullType)
@@ -66,9 +43,8 @@ class InferSchemaSuite extends FunSuite with BeforeAndAfterAll {
   test("Merging Nulltypes should yeild Nulltype.")
   {
       assert(
-      InferSchema.mergeRowTypes(Array(NullType),
-      Array(NullType)).deep == Array(NullType).deep)
-
+        InferSchema.mergeRowTypes(Array(NullType),
+        Array(NullType)).deep == Array(NullType).deep)
   }
 
   test("Type arrays are merged to highest common type") {
@@ -81,16 +57,5 @@ class InferSchemaSuite extends FunSuite with BeforeAndAfterAll {
     assert(
       InferSchema.mergeRowTypes(Array(DoubleType),
       Array(LongType)).deep == Array(DoubleType).deep)
-  }
-
-  test("Type/Schema inference works as expected for the simple sparse dataset.")
-  {
-    val df = new CsvParser().withUseHeader(true).withInferSchema(true)
-            .csvFile(sqlContext, simpleDatasetFile)
-    assert(
-        df.schema.fields.map{field => field.dataType}.deep ==
-        Array(IntegerType, IntegerType, IntegerType, IntegerType).deep
-    )
-
   }
 }
