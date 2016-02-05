@@ -43,8 +43,8 @@ private[csv] object InferSchema {
 
     val structFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
       val dType = rootType match {
-          case z: NullType => StringType
-          case other => other
+        case z: NullType => StringType
+        case other => other
       }
       StructField(thisHeader, dType, nullable = true)
     }
