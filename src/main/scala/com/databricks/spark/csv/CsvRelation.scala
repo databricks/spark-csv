@@ -105,7 +105,7 @@ case class CsvRelation protected[spark] (
     tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
       if (dropMalformed && schemaFields.length != tokens.size) {
-        logger.warn(s"Dropping malformed line: ${tokens.mkString(",")}")
+        logger.warn(s"Dropping malformed line (wrong length): ${tokens.mkString(",")}")
         None
       } else if (failFast && schemaFields.length != tokens.size) {
         throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
@@ -125,13 +125,16 @@ case class CsvRelation protected[spark] (
           case aiob: ArrayIndexOutOfBoundsException if permissive =>
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
-          case _: java.lang.NumberFormatException |
-               _: IllegalArgumentException if dropMalformed =>
-            logger.warn("Number format exception. " +
+          case e: java.lang.NumberFormatException if dropMalformed =>
+            logger.warn("Number format exception  (" + e + ")." +
+              s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
+            None
+          case e: IllegalArgumentException if dropMalformed =>
+            logger.warn("IllegalArgument exception  (" + e + ")." +
               s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
           case pe: java.text.ParseException if dropMalformed =>
-            logger.warn("Parse exception. " +
+            logger.warn("Parse exception. (" + pe + ")." +
               s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
         }
@@ -170,7 +173,7 @@ case class CsvRelation protected[spark] (
       val requiredSize = requiredFields.length
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
-          logger.warn(s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
+          logger.warn(s"Dropping malformed line (wrong length): ${tokens.mkString(delimiter.toString)}")
           None
         } else if (failFast && schemaFields.length != tokens.size) {
           throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
@@ -198,13 +201,16 @@ case class CsvRelation protected[spark] (
             }
             Some(Row.fromSeq(rowArray.take(requiredSize)))
           } catch {
-            case _: java.lang.NumberFormatException |
-                 _: IllegalArgumentException if dropMalformed =>
-              logger.warn("Number format exception. " +
+            case e: java.lang.NumberFormatException if dropMalformed =>
+              logger.warn("Number format exception  (" + e + ")." +
+                s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
+              None
+            case e: IllegalArgumentException if dropMalformed =>
+              logger.warn("IllegalArgument exception  (" + e + ")." +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
             case pe: java.text.ParseException if dropMalformed =>
-              logger.warn("Parse exception. " +
+              logger.warn("Parse exception (" + pe + ")." +
                 s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
               None
           }
