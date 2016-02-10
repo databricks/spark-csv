@@ -213,7 +213,7 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  private def inferSchema(): StructType = {
+  protected def inferSchema(): StructType = {
     if (this.userSchema != null) {
       userSchema
     } else {
@@ -265,7 +265,7 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  private def univocityParseCSV(
+  protected def univocityParseCSV(
      file: RDD[String],
      header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
