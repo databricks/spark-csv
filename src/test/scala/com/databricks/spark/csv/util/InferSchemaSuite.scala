@@ -72,4 +72,5 @@ class InferSchemaSuite extends FunSuite {
       InferSchema.mergeRowTypes(Array(DoubleType),
       Array(LongType)).deep == Array(DoubleType).deep)
   }
+
 }
