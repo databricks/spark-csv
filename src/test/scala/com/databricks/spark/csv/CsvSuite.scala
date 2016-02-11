@@ -719,11 +719,13 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Type/Schema inference works as expected for the simple sparse dataset.") {
-    val df = new CsvParser().withUseHeader(true).withInferSchema(true)
+    val df = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
       .csvFile(sqlContext, simpleDatasetFile)
 
     assert(
-      df.schema.fields.map{field => field.dataType}.deep ==
+      df.schema.fields.map(_.dataType).deep ==
       Array(IntegerType, IntegerType, IntegerType, IntegerType).deep)
   }
 }
