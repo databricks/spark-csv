@@ -173,7 +173,8 @@ case class CsvRelation protected[spark] (
       val requiredSize = requiredFields.length
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
-          logger.warn(s"Dropping malformed line (wrong length): ${tokens.mkString(delimiter.toString)}")
+          logger.warn(s"Dropping malformed line (wrong length): " +
+            s"${tokens.mkString(delimiter.toString)}")
           None
         } else if (failFast && schemaFields.length != tokens.size) {
           throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
