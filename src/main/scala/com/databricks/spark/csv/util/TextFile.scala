@@ -22,7 +22,7 @@ import org.apache.hadoop.mapred.TextInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-private[csv] object TextFile {
+object TextFile {
   val DEFAULT_CHARSET = Charset.forName("UTF-8")
 
   def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
