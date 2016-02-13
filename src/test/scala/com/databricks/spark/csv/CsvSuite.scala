@@ -41,6 +41,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val tempEmptyDir = "target/test/empty/"
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
+  private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
 
@@ -658,7 +659,6 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.toSeq.map(_.toSeq) === expected)
   }
 
-
   test("Setting comment to null disables comment support") {
     val results: Array[Row] = new CsvParser()
       .withDelimiter(',')
@@ -716,6 +716,17 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .collect()
 
     assert(results.size === numCars)
+  }
+
+  test("Type/Schema inference works as expected for the simple sparse dataset.") {
+    val df = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
+      .csvFile(sqlContext, simpleDatasetFile)
+
+    assert(
+      df.schema.fields.map(_.dataType).deep ==
+      Array(IntegerType, IntegerType, IntegerType, IntegerType).deep)
   }
 }
 
