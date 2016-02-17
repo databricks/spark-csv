@@ -43,20 +43,20 @@ This package allows reading CSV files in local or distributed filesystem as [Spa
 When reading files the API accepts several options:
 * `path`: location of files. Similar to Spark can accept standard Hadoop globbing expressions.
 * `header`: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string. Default value is false.
-* `delimiter`: by default columns are delimited using `,`, but delimiter can be set to any character
-* `quote`: by default the quote character is `"`, but can be set to any character. Delimiters inside quotes are ignored
-* `escape`: by default the escape character is `\`, but can be set to any character. Escaped quote characters are ignored
+* `delimiter`: by default columns are delimited using `,`, but delimiter can be set to any character.
+* `quote`: by default the quote character is `"`, but can be set to any character. Delimiters inside quotes are ignored.
+* `escape`: by default the escape character is `\`, but can be set to any character. Escaped quote characters are ignored.
 * `parserLib`: by default it is "commons" can be set to "univocity" to use that library for CSV parsing.
 * `mode`: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
   * `PERMISSIVE`: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
   * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected or tokens which do
-   not match the schema
-  * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
-* `charset`: defaults to 'UTF-8' but can be set to other valid charset names
-* `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
+   not match the schema.
+  * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line.
+* `charset`: defaults to 'UTF-8' but can be set to other valid charset names. This library does not support non-ascii compatible encodings (UTF-16/32 etc.).
+* `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default.
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec` or one of case-insensitive shorten names (`bzip2`, `gzip`, `lz4`, and `snappy`). Defaults to no compression when a codec is not specified.
-* `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
+* `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame.
 
 The package also support saving simple (non-nested) DataFrame. When saving you can specify the delimiter and whether we should generate a header row for the table. See following examples for more details.
 

@@ -86,4 +86,11 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
     }
     assert(exception.getMessage.contains("frylock"))
   }
+
+  test("unsupported non-ascii capable charset") {
+    val exception = intercept[UnsupportedCharsetException] {
+      TextFile.withCharset(sparkContext, carsFile, "utf-16").count()
+    }
+    assert(exception.getMessage.contains("UTF-16"))
+  }
 }
