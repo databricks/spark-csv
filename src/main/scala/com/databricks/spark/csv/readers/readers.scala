@@ -22,18 +22,12 @@ import java.io.StringReader
 
 import com.univocity.parsers.csv._
 
-/**
-  * Allows for greater extensibility
-  */
 trait BulkReader extends Iterator[Array[String]] {
-  protected def getReader(iter: Iterator[String]) = new StringIteratorReader(iter)
+  protected def reader(iter: Iterator[String]) = new StringIteratorReader(iter)
 }
 
-/**
- * Allows for greater extensibility
- */
 trait LineReader {
-  protected def getReader(line: String) = new StringReader(line)
+  protected def reader(line: String) = new StringReader(line)
   def parseLine(line: String): Array[String]
 }
 
@@ -120,7 +114,7 @@ private[csv] class LineCsvReader(
    * @return array of strings where each string is a field in the CSV record
    */
   def parseLine(line: String): Array[String] = {
-    parser.beginParsing(getReader(line))
+    parser.beginParsing(reader(line))
     val parsed = parser.parseNext()
     parser.stopParsing()
     parsed
@@ -166,7 +160,7 @@ private[csv] class BulkCsvReader(
     maxCols)
   with BulkReader {
 
-  parser.beginParsing(getReader(iter))
+  parser.beginParsing(reader(iter))
   private var nextRecord = parser.parseNext()
 
   /**
