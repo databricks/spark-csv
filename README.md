@@ -12,17 +12,16 @@ This library requires Spark 1.3+
 ## Linking
 You can link against this library in your program at the following coordinates:
 
-### Scala 2.10
 ```
 groupId: com.databricks
-artifactId: spark-csv_2.10
+artifactId: spark-csv_2.11 or spark-csv_2.10
 version: 1.3.0
 ```
-### Scala 2.11
+
+For example, if you use `sbt` and scala 2.11. You would add a line like
+
 ```
-groupId: com.databricks
-artifactId: spark-csv_2.11
-version: 1.3.0
+libraryDependencies += "com.databricks" % "spark-csv_2.11" % "1.3.0"
 ```
 
 ## Using with Spark shell
