@@ -50,11 +50,6 @@ case class CsvRelation protected[spark] (
     nullValue: String = "")(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
-  /**
-   * Limit the number of lines we'll search for a header row that isn't comment-prefixed.
-   */
-  private val MAX_COMMENT_LINES_IN_HEADER = 10
-
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
   // Parse mode flags
@@ -260,13 +255,14 @@ case class CsvRelation protected[spark] (
    * Returns the first line of the first non-empty file in path
    */
   private lazy val firstLine = {
-    if (comment == null) {
-      baseRDD().first()
+    if (comment != null) {
+      baseRDD().filter { line =>
+        line.trim.nonEmpty && !line.startsWith(comment.toString)
+      }.first()
     } else {
-      baseRDD().take(MAX_COMMENT_LINES_IN_HEADER)
-        .find(! _.startsWith(comment.toString))
-        .getOrElse(sys.error(s"No uncommented header line in " +
-          s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
+      baseRDD().filter { line =>
+        line.trim.nonEmpty
+      }.first()
     }
   }
 

@@ -42,7 +42,11 @@ private[csv] object InferSchema {
       mergeRowTypes)
 
     val structFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
-      StructField(thisHeader, rootType, nullable = true)
+      val dType = rootType match {
+        case z: NullType => StringType
+        case other => other
+      }
+      StructField(thisHeader, dType, nullable = true)
     }
 
     StructType(structFields)
@@ -62,11 +66,7 @@ private[csv] object InferSchema {
       first: Array[DataType],
       second: Array[DataType]): Array[DataType] = {
     first.zipAll(second, NullType, NullType).map { case ((a, b)) =>
-      val tpe = findTightestCommonType(a, b).getOrElse(StringType)
-      tpe match {
-        case _: NullType => StringType
-        case other => other
-      }
+      findTightestCommonType(a, b).getOrElse(NullType)
     }
   }
 
@@ -92,7 +92,6 @@ private[csv] object InferSchema {
       }
     }
   }
-
 
   private def tryParseInteger(field: String): DataType = if ((allCatch opt field.toInt).isDefined) {
     IntegerType
@@ -152,6 +151,8 @@ private[csv] object InferSchema {
     case (t1, t2) if t1 == t2 => Some(t1)
     case (NullType, t1) => Some(t1)
     case (t1, NullType) => Some(t1)
+    case (StringType, t2) => Some(StringType)
+    case (t1, StringType) => Some(StringType)
 
     // Promote numeric types to the highest of the two and all numeric types to unlimited decimal
     case (t1, t2) if Seq(t1, t2).forall(numericPrecedence.contains) =>

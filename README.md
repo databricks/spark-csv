@@ -1,4 +1,4 @@
-# Spark CSV Library
+# CSV Data Source for Spark
 
 A library for parsing and querying CSV data with Apache Spark, for Spark SQL and DataFrames.
 
@@ -68,7 +68,7 @@ $ wget https://github.com/databricks/spark-csv/raw/master/src/test/resources/car
 
 ### SQL API
 
-Spark-csv can infer data types:
+CSV data source for Spark can infer data types:
 ```sql
 CREATE TABLE cars
 USING com.databricks.spark.csv
