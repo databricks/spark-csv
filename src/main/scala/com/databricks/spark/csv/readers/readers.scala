@@ -187,7 +187,7 @@ private[csv] class BulkCsvReader(
  * parsed and needs the newlines to be present
  * @param iter iterator over RDD[String]
  */
-private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
+private[readers] class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
   private var next: Long = 0
   private var length: Long = 0  // length of input so far
