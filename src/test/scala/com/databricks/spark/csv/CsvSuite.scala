@@ -18,6 +18,7 @@ package com.databricks.spark.csv
 import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 import java.sql.Timestamp
+import scala.io.Source
 
 import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
@@ -438,6 +439,98 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     cars.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
 
     val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with a quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val delimiter = ","
+    var quote = "\""
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true",
+      "quote" -> quote, "delimiter" -> delimiter, "quoteMode" -> "ALL"))
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+    for(file <- new File(copyFilePath + "/").listFiles) {
+      if (!(file.getName.startsWith("_") || file.getName.startsWith("."))) {
+        for(line <- Source.fromFile(file).getLines()) {
+          for(column <- line.split(delimiter)) {
+            assert(column.startsWith(quote))
+            assert(column.endsWith(quote))
+          }
+        }
+      }
+    }
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with non numeric quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib, inferSchema = true)
+    val delimiter = ","
+    var quote = "\""
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true",
+      "quote" -> quote, "delimiter" -> delimiter, "quoteMode" -> "NON_NUMERIC"))
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+    for(file <- new File(copyFilePath + "/").listFiles) {
+      if (!(file.getName.startsWith("_") || file.getName.startsWith("."))) {
+        for((line, lineno) <- Source.fromFile(file).getLines().zipWithIndex) {
+          val columns = line.split(delimiter)
+          if (lineno == 0) {
+            assert(columns(0).startsWith(quote))
+            assert(columns(0).endsWith(quote))
+            assert(columns(1).startsWith(quote))
+            assert(columns(1).endsWith(quote))
+          } else {
+            assert(!columns(0).startsWith(quote))
+            assert(!columns(0).endsWith(quote))
+            assert(columns(1).startsWith(quote))
+            assert(columns(1).endsWith(quote))
+          }
+        }
+      }
+    }
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL save with null quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val delimiter = ","
+    var quote = "\""
+    cars.saveAsCsvFile(copyFilePath, Map("header" -> "true",
+      "quote" -> quote, "delimiter" -> delimiter, "quoteMode" -> null))
+
+    val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+    for(file <- new File(copyFilePath + "/").listFiles) {
+      if (!(file.getName.startsWith("_") || file.getName.startsWith("."))) {
+        for(line <- Source.fromFile(file).getLines()) {
+          for(column <- line.split(delimiter)) {
+            assert(!column.startsWith(quote))
+            assert(!column.endsWith(quote))
+          }
+        }
+      }
+    }
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)

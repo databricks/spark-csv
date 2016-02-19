@@ -15,7 +15,7 @@
  */
 package com.databricks.spark
 
-import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -121,11 +121,19 @@ package object csv {
         throw new Exception("Quotation cannot be more than one character.")
       }
 
+      val quoteModeString = parameters.getOrElse("quoteMode", "MINIMAL")
+      val quoteMode: QuoteMode = if (quoteModeString == null) {
+        null
+      } else {
+        QuoteMode.valueOf(quoteModeString.toUpperCase)
+      }
+
       val nullValue = parameters.getOrElse("nullValue", "null")
 
       val csvFormat = defaultCsvFormat
         .withDelimiter(delimiterChar)
         .withQuote(quoteChar)
+        .withQuoteMode(quoteMode)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
         .withNullString(nullValue)
@@ -141,6 +149,7 @@ package object csv {
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
           .withQuote(quoteChar)
+          .withQuoteMode(quoteMode)
           .withEscape(escapeChar)
           .withSkipHeaderRecord(false)
           .withNullString(nullValue)
