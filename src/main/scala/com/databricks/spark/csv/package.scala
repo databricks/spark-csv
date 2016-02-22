@@ -99,7 +99,7 @@ package object csv {
       val csvFormat = createCsvFormat(parameters)
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
       val header = if (generateHeader) {
-        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
+        csvFormat.format(createHeader(dataFrame): _*)
       } else {
         "" // There is no need to generate header in this case
       }
@@ -198,6 +198,6 @@ package object csv {
         .withNullString(nullValue)
     }
     
-    private def createHeader(dataFrame: DataFrame) = dataFrame.columns.map(_.asInstanceOf[AnyRef])
+    private def createHeader(dataFrame: DataFrame): Array[AnyRef] = dataFrame.columns.map(_.asInstanceOf[AnyRef])
   }
 }
