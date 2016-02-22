@@ -237,6 +237,31 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(agesCopy.collect.toSet == agesRows.toSet)
   }
 
+  test("DSL test roundtrip nulls (csvRdd version)") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "null-numbers.csv"
+    val agesSchema = StructType(List(StructField("name", StringType, true),
+                                     StructField("age", IntegerType, true)))
+
+    val agesRows = Seq(Row("alice", 35), Row("bob", null), Row(null, 24))
+    val agesRdd = sqlContext.sparkContext.parallelize(agesRows)
+    val agesDf = sqlContext.createDataFrame(agesRdd, agesSchema)
+
+    val strRdd = agesDf.convertToCsvRdd(Map("header" -> "true", "nullValue" -> ""))
+
+    val agesCopy = new CsvParser()
+      .withSchema(agesSchema)
+      .withUseHeader(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withParserLib(parserLib)
+      .csvRdd(sqlContext, strRdd)
+
+    assert(agesCopy.count == agesRows.size)
+    assert(agesCopy.collect.toSet == agesRows.toSet)
+  }
+
   test("DSL test for tokens more than the schema") {
     val results = sqlContext
       .csvFile(carsMalformedFile, parserLib = parserLib)
@@ -440,6 +465,19 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT * FROM carsTableEmpty").collect().size == numCars)
   }
 
+  test("DSL convert") {
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val carsRdd = cars.convertToCsvRdd(Map("header" -> "true"))
+
+    val carsCopy = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .csvRdd(sqlContext, carsRdd)
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+  
   test("DSL save") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
@@ -600,6 +638,20 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
 
+  test("DSL convert with quoting") {
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val carsRdd = cars.convertToCsvRdd(Map("header" -> "true", "quote" -> "\""))
+
+    val carsCopy = new CsvParser()
+      .withUseHeader(true)
+      .withQuoteChar('\"')
+      .withParserLib(parserLib)
+      .csvRdd(sqlContext, carsRdd)
+
+    assert(carsCopy.count == cars.count)
+    assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+  
   test("DSL save with quoting") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
