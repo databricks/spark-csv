@@ -131,16 +131,18 @@ package object csv {
         case codec => strRDD.saveAsTextFile(path, codec)
       }
     }
-    
+
     /**
-     * Converts DataFrame to RDD[String] in CSV format. By default uses ',' as delimiter, and includes header line.
+     * Converts DataFrame to RDD[String] in CSV format. By default uses ',' as delimiter,
+     * and includes header line.
      */
     def convertToCsvRdd(parameters: Map[String, String] = Map()): RDD[String] = {
       val csvFormat = createCsvFormat(parameters)
       val dataRdd = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
         new Iterator[String] {
           override def hasNext: Boolean = iter.hasNext
-          override def next: String = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+          override def next: String = csvFormat.format(
+              iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
         }
       }
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
@@ -152,7 +154,7 @@ package object csv {
         dataRdd
       }
     }
-    
+
     private def createCsvFormat(parameters: Map[String, String]): CSVFormat = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
@@ -197,7 +199,8 @@ package object csv {
         .withSkipHeaderRecord(false)
         .withNullString(nullValue)
     }
-    
-    private def createHeader(dataFrame: DataFrame): Array[AnyRef] = dataFrame.columns.map(_.asInstanceOf[AnyRef])
+
+    private def createHeader(dataFrame: DataFrame): Array[AnyRef] =
+      dataFrame.columns.map(_.asInstanceOf[AnyRef])
   }
 }
