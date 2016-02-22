@@ -28,6 +28,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
+  val carsMalformedFile = "src/test/resources/cars-malformed.csv"
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
@@ -207,6 +208,15 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(agesCopy.count == agesRows.size)
     assert(agesCopy.collect.toSet == agesRows.toSet)
+  }
+
+  test("DSL test for tokens more than the schema") {
+    val results = sqlContext
+      .csvFile(carsMalformedFile, parserLib = parserLib)
+      .select("year")
+      .collect()
+
+    assert(results.size === numCars)
   }
 
   test("DSL test with alternative delimiter and quote") {
