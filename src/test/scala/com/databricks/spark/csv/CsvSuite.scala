@@ -26,6 +26,7 @@ import org.apache.spark.sql.{SQLContext, Row, SaveMode}
 import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.sql.types._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.Matchers._
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
@@ -545,6 +546,24 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL checking non null escapeChar is set before NONE quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val delimiter = ","
+    var quote = "\""
+    var escape = "\\"
+    var quoteMode = "NONE"
+
+    noException should be thrownBy {
+      cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> quote,
+        "delimiter" -> delimiter, "escape" -> escape, "quoteMode" -> quoteMode))
+    }
   }
 
   test("DSL save with a compression codec") {
