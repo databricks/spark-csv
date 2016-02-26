@@ -61,8 +61,8 @@ The package also support saving simple (non-nested) DataFrame. When writing file
 * `path`: location of files.
 * `header`: when set to true, the header (from the schema in the DataFrame) will be written at the first line.
 * `delimiter`: by default columns are delimited using `,`, but delimiter can be set to any character
-* `quote`: by default the quote character is `"`, but can be set to any character. Delimiters inside quotes are ignored
-* `escape`: by default the escape character is `\`, but can be set to any character. Escaped quote characters are ignored
+* `quote`: by default the quote character is `"`, but can be set to any character. This is written according to `quoteMode`.
+* `escape`: by default the escape character is `\`, but can be set to any character. Escaped quote characters are written.
 * `nullValue`: specificy a string that indicates a null value, nulls in the DataFrame will be written as this string.
 * `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec` or one of case-insensitive shorten names (`bzip2`, `gzip`, `lz4`, and `snappy`). Defaults to no compression when a codec is not specified.
 * `quoteMode`: when to quote fields (`ALL`, `MINIMAL` (default), `NON_NUMERIC`, `NONE`), see [Quote Modes](https://commons.apache.org/proper/commons-csv/apidocs/org/apache/commons/csv/QuoteMode.html)
