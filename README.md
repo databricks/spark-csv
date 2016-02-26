@@ -57,7 +57,7 @@ When reading files the API accepts several options:
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
 
-When writing files the API accepts several options:
+The package also support saving simple (non-nested) DataFrame. When writing files the API accepts several options:
 * `path`: location of files.
 * `header`: when set to true, the header (from the schema in the DataFrame) will be written at the first line.
 * `delimiter`: by default columns are delimited using `,`, but delimiter can be set to any character
