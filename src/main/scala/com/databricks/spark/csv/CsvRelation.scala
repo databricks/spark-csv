@@ -126,15 +126,15 @@ case class CsvRelation protected[spark] (
             (index until schemaFields.length).foreach(ind => rowArray(ind) = null)
             Some(Row.fromSeq(rowArray))
           case e: java.lang.NumberFormatException if dropMalformed =>
-            logger.warn("Number format exception  (" + e + ")." +
+            logger.warn("Number format exception  (${e.getMessage})." +
               s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
           case e: IllegalArgumentException if dropMalformed =>
-            logger.warn("IllegalArgument exception  (" + e + ")." +
+            logger.warn("IllegalArgument exception  (${e.getMessage})." +
               s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
           case pe: java.text.ParseException if dropMalformed =>
-            logger.warn("Parse exception. (" + pe + ")." +
+            logger.warn("Parse exception. (${pe.getMessage})." +
               s"Dropping malformed line: ${tokens.mkString(delimiter.toString)}")
             None
         }
