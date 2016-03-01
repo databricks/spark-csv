@@ -56,6 +56,7 @@ When reading files the API accepts several options:
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
+* `minPartitions`: determines into how many partitions the file is divided
 
 The package also supports saving simple (non-nested) DataFrame. When writing files the API accepts several options:
 * `path`: location of files.

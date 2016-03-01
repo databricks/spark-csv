@@ -52,6 +52,7 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
     val baseRDD = TextFile.withCharset(sparkContext, carsFile, utf8)
     assert(baseRDD.count() === numLines)
     assert(baseRDD.first().count(_ == ',') == numColumns)
+    assert(baseRDD.partitions.length == sparkContext.defaultMinPartitions)
   }
 
   test("read utf-8 encoded file using charset alias") {
@@ -85,5 +86,12 @@ class TextFileSuite extends FunSuite with BeforeAndAfterAll {
       TextFile.withCharset(sparkContext, carsFile, "frylock").count()
     }
     assert(exception.getMessage.contains("frylock"))
+  }
+
+  test("read file with minPartitions") {
+    val baseRDD = TextFile.withCharset(sparkContext, carsFile, utf8, 3)
+    assert(baseRDD.count() === numLines)
+    assert(baseRDD.first().count(_ == ',') == numColumns)
+    assert(baseRDD.partitions.length == 3)
   }
 }
