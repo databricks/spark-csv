@@ -133,8 +133,8 @@ package object csv {
       val csvFormat = defaultCsvFormat
         .withDelimiter(delimiterChar)
         .withQuote(quoteChar)
-        .withQuoteMode(quoteMode)
         .withEscape(escapeChar)
+        .withQuoteMode(quoteMode)
         .withSkipHeaderRecord(false)
         .withNullString(nullValue)
 
@@ -149,8 +149,8 @@ package object csv {
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
           .withQuote(quoteChar)
-          .withQuoteMode(quoteMode)
           .withEscape(escapeChar)
+          .withQuoteMode(quoteMode)
           .withSkipHeaderRecord(false)
           .withNullString(nullValue)
 
