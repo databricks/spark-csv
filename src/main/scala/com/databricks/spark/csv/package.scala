@@ -18,6 +18,7 @@ package com.databricks.spark
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import com.databricks.spark.csv.util.TextFile
 
@@ -95,6 +96,66 @@ package object csv {
      */
     def saveAsCsvFile(path: String, parameters: Map[String, String] = Map(),
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
+      val csvFormat = createCsvFormat(parameters)
+      val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      val header = if (generateHeader) {
+        csvFormat.format(createHeader(dataFrame): _*)
+      } else {
+        "" // There is no need to generate header in this case
+      }
+
+      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
+        new Iterator[String] {
+          var firstRow: Boolean = generateHeader
+
+          override def hasNext: Boolean = iter.hasNext || firstRow
+
+          override def next: String = {
+            if (iter.nonEmpty) {
+              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+              if (firstRow) {
+                firstRow = false
+                header + csvFormat.getRecordSeparator() + row
+              } else {
+                row
+              }
+            } else {
+              firstRow = false
+              header
+            }
+          }
+        }
+      }
+      compressionCodec match {
+        case null => strRDD.saveAsTextFile(path)
+        case codec => strRDD.saveAsTextFile(path, codec)
+      }
+    }
+
+    /**
+     * Converts DataFrame to RDD[String] in CSV format. By default uses ',' as delimiter,
+     * and includes header line.
+     */
+    def convertToCsvRdd(parameters: Map[String, String] = Map()): RDD[String] = {
+      val csvFormat = createCsvFormat(parameters)
+      val dataRdd = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
+        new Iterator[String] {
+          override def hasNext: Boolean = iter.hasNext
+          override def next: String = csvFormat.format(
+              iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+        }
+      }
+      val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      if (generateHeader) {
+        val headerRdd = dataFrame.sqlContext.sparkContext.parallelize(
+            List(csvFormat.format(createHeader(dataFrame): _*)))
+        headerRdd.union(dataRdd)
+      } else {
+        dataRdd
+      }
+    }
+
+    private def createCsvFormat(parameters: Map[String, String]): CSVFormat = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
       val delimiterChar = if (delimiter.length == 1) {
@@ -130,55 +191,16 @@ package object csv {
 
       val nullValue = parameters.getOrElse("nullValue", "null")
 
-      val csvFormat = defaultCsvFormat
+      defaultCsvFormat
         .withDelimiter(delimiterChar)
         .withQuote(quoteChar)
         .withQuoteMode(quoteMode)
         .withEscape(escapeChar)
         .withSkipHeaderRecord(false)
         .withNullString(nullValue)
-
-      val generateHeader = parameters.getOrElse("header", "false").toBoolean
-      val header = if (generateHeader) {
-        csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
-      } else {
-        "" // There is no need to generate header in this case
-      }
-
-      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
-        val csvFormat = defaultCsvFormat
-          .withDelimiter(delimiterChar)
-          .withQuote(quoteChar)
-          .withQuoteMode(quoteMode)
-          .withEscape(escapeChar)
-          .withSkipHeaderRecord(false)
-          .withNullString(nullValue)
-
-        new Iterator[String] {
-          var firstRow: Boolean = generateHeader
-
-          override def hasNext: Boolean = iter.hasNext || firstRow
-
-          override def next: String = {
-            if (iter.nonEmpty) {
-              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
-              if (firstRow) {
-                firstRow = false
-                header + csvFormat.getRecordSeparator() + row
-              } else {
-                row
-              }
-            } else {
-              firstRow = false
-              header
-            }
-          }
-        }
-      }
-      compressionCodec match {
-        case null => strRDD.saveAsTextFile(path)
-        case codec => strRDD.saveAsTextFile(path, codec)
-      }
     }
+
+    private def createHeader(dataFrame: DataFrame): Array[AnyRef] =
+      dataFrame.columns.map(_.asInstanceOf[AnyRef])
   }
 }
