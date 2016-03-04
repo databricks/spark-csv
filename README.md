@@ -16,7 +16,7 @@ You can link against this library in your program at the following coordinates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 1.3.0
+version: 1.4.0
 ```
 ### Scala 2.11
 ```
