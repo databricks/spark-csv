@@ -775,8 +775,12 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Inferring timestamp types via custom date format") {
-    val results = sqlContext
-      .csvFile(datesFile, parserLib = parserLib, inferSchema = true, dateFormat = "dd/MM/yyyy hh:mm")
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy hh:mm")
+      .withInferSchema(true)
+      .csvFile(sqlContext, datesFile)
       .select("date")
       .collect()
 
