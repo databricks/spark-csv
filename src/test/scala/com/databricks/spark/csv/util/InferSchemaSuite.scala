@@ -15,6 +15,8 @@
  */
 package com.databricks.spark.csv.util
 
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 
@@ -53,6 +55,15 @@ class InferSchemaSuite extends FunSuite {
     assert(InferSchema.inferField(LongType, "True") == BooleanType)
     assert(InferSchema.inferField(IntegerType, "FALSE") == BooleanType)
     assert(InferSchema.inferField(TimestampType, "FALSE") == BooleanType)
+  }
+
+  test("Timestamp field types are inferred correctly via custom data format"){
+    val formatter = new SimpleDateFormat("yyyy-mm")
+    assert(
+      InferSchema.inferField(TimestampType, "2015-08", dateFormatter = formatter) == TimestampType)
+    formatter.applyPattern("yyyy")
+    assert(
+      InferSchema.inferField(TimestampType, "2015", dateFormatter = formatter) == TimestampType)
   }
 
   test("Timestamp field types are inferred correctly from other types") {

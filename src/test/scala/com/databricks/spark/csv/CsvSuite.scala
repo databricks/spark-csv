@@ -17,7 +17,8 @@ package com.databricks.spark.csv
 
 import java.io.File
 import java.nio.charset.UnsupportedCharsetException
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
+import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -50,6 +51,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
   val boolFile = "src/test/resources/bool.csv"
+  val datesFile = "src/test/resources/dates.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
@@ -827,6 +829,49 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
           Seq(1, 2, 3, 4, 5, Timestamp.valueOf("2015-08-23 18:00:42")))
 
     assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("Inferring timestamp types via custom date format") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy hh:mm")
+      .withInferSchema(true)
+      .csvFile(sqlContext, datesFile)
+      .select("date")
+      .collect()
+
+    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val expected =
+      Seq(Seq(new Timestamp(dateFormatter.parse("26/08/2015 18:00").getTime)),
+        Seq(new Timestamp(dateFormatter.parse("27/10/2014 18:30").getTime)),
+        Seq(new Timestamp(dateFormatter.parse("28/01/2016 20:00").getTime)))
+    assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("Load date types via custom date format") {
+    val customSchema = new StructType(Array(StructField("date", DateType, true)))
+    val results = new CsvParser()
+      .withSchema(customSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy hh:mm")
+      .csvFile(sqlContext, datesFile)
+      .select("date")
+      .collect()
+
+    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val expected = Seq(
+      new Date(dateFormatter.parse("26/08/2015 18:00").getTime),
+      new Date(dateFormatter.parse("27/10/2014 18:30").getTime),
+      new Date(dateFormatter.parse("28/01/2016 20:00").getTime))
+    val dates = results.toSeq.map(_.toSeq.head)
+    expected.zip(dates).foreach {
+      case (expectedDate, date) =>
+        // As it truncates the hours, minutes and etc., we only check
+        // if the dates (days, months and years) are the same via `toString()`.
+        assert(expectedDate.toString === date.toString)
+    }
   }
 
   test("Setting comment to null disables comment support") {
