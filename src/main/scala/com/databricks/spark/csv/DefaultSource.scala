@@ -128,8 +128,6 @@ class DefaultSource
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
 
-    val dataFormat = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
-
     val inferSchema = parameters.getOrElse("inferSchema", "false")
     val inferSchemaFlag = if (inferSchema == "false") {
       false
