@@ -326,9 +326,20 @@ case class CsvRelation protected[spark] (
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
 
-      val codecClass = CompressionCodecs.getCodecClass(codec)
-      data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
-        codecClass)
+      val hadoopConf = data.sqlContext.sparkContext.hadoopConfiguration
+      val maybeCodecClass = CompressionCodecs.getCodecClass(codec)
+      val parameters = Map("delimiter" -> delimiter.toString)
+      maybeCodecClass match {
+        case Some(codecClass) if codecClass == null =>
+          // Explicitly set the output as uncompressed.
+          CompressionCodecs.disableCompressConfiguration(hadoopConf)
+          data.saveAsCsvFile(filesystemPath.toString, parameters)
+        case Some(codecClass) =>
+          data.saveAsCsvFile(filesystemPath.toString, parameters, codecClass)
+        case None =>
+          // Explicitly set the output as uncompressed.
+          data.saveAsCsvFile(filesystemPath.toString, parameters)
+      }
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }

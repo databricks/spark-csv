@@ -25,16 +25,22 @@ class CompressionCodecsSuite extends FunSuite {
    * class-not-found exception when Hadoop version is lower.
    */
   test("Get classes of compression codecs") {
-    assert(CompressionCodecs.getCodecClass(classOf[GzipCodec].getName) == classOf[GzipCodec])
-    assert(CompressionCodecs.getCodecClass(classOf[SnappyCodec].getName) == classOf[SnappyCodec])
-    assert(CompressionCodecs.getCodecClass(classOf[Lz4Codec].getName) == classOf[Lz4Codec])
-    assert(CompressionCodecs.getCodecClass(classOf[BZip2Codec].getName) == classOf[BZip2Codec])
+    assert(CompressionCodecs.getCodecClass(classOf[GzipCodec].getName).get == classOf[GzipCodec])
+    assert(
+      CompressionCodecs.getCodecClass(classOf[DeflateCodec].getName).get == classOf[DeflateCodec])
+    assert(
+      CompressionCodecs.getCodecClass(classOf[SnappyCodec].getName).get == classOf[SnappyCodec])
+    assert(CompressionCodecs.getCodecClass(classOf[Lz4Codec].getName).get == classOf[Lz4Codec])
+    assert(CompressionCodecs.getCodecClass(classOf[BZip2Codec].getName).get == classOf[BZip2Codec])
   }
 
   test("Get classes of compression codecs with short names") {
-    assert(CompressionCodecs.getCodecClass("GzIp") == classOf[GzipCodec])
-    assert(CompressionCodecs.getCodecClass("Snappy") == classOf[SnappyCodec])
-    assert(CompressionCodecs.getCodecClass("lz4") == classOf[Lz4Codec])
-    assert(CompressionCodecs.getCodecClass("bZip2") == classOf[BZip2Codec])
+    assert(CompressionCodecs.getCodecClass("noNe").get == null)
+    assert(CompressionCodecs.getCodecClass("Uncompressed").get == null)
+    assert(CompressionCodecs.getCodecClass("deflate").get == classOf[DeflateCodec])
+    assert(CompressionCodecs.getCodecClass("GzIp").get == classOf[GzipCodec])
+    assert(CompressionCodecs.getCodecClass("Snappy").get == classOf[SnappyCodec])
+    assert(CompressionCodecs.getCodecClass("lz4").get == classOf[Lz4Codec])
+    assert(CompressionCodecs.getCodecClass("bZip2").get == classOf[BZip2Codec])
   }
 }

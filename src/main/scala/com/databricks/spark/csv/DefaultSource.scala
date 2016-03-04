@@ -183,8 +183,18 @@ class DefaultSource
     }
     if (doSave) {
       // Only save data when the save mode is not ignore.
-      val codecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
-      data.saveAsCsvFile(path, parameters, codecClass)
+      val hadoopConf = data.sqlContext.sparkContext.hadoopConfiguration
+      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
+      maybeCodecClass match {
+        case Some(codecClass) if codecClass == null =>
+          // Explicitly set the output as uncompressed.
+          CompressionCodecs.disableCompressConfiguration(hadoopConf)
+          data.saveAsCsvFile(path, parameters)
+        case Some(codecClass) =>
+          data.saveAsCsvFile(path, parameters, codecClass)
+        case None =>
+          data.saveAsCsvFile(path, parameters)
+      }
     }
 
     createRelation(sqlContext, parameters, data.schema)

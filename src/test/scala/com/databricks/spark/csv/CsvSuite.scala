@@ -18,7 +18,12 @@ package com.databricks.spark.csv
 import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 import java.sql.Timestamp
+
+import scala.collection.JavaConverters._
 import scala.io.Source
+
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.SequenceFile.CompressionType
 
 import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
@@ -617,6 +622,39 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("Scala API save output as uncompressed via option()") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+    val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
+    val clonedConf = new Configuration(hadoopConfiguration)
+    hadoopConfiguration.set("mapred.compress.map.output", "true")
+    hadoopConfiguration.set("mapred.output.compress", "true")
+    hadoopConfiguration.set("mapred.map.output.compression.codec", classOf[GzipCodec].getName)
+    hadoopConfiguration.set("mapred.output.compression.codec", classOf[GzipCodec].getName)
+    hadoopConfiguration.set("mapred.output.compression.type", CompressionType.BLOCK.toString)
+
+    try {
+      val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+      cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
+        Map("path" -> copyFilePath, "header" -> "true", "codec" -> "none"))
+      val carsCopyPartFile = new File(copyFilePath, "part-00000")
+      val files = new File(copyFilePath).listFiles()
+      // Check that the part file has a .gz extension
+      assert(carsCopyPartFile.exists())
+
+      val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+
+      assert(carsCopy.count == cars.count)
+      assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+    } finally {
+      // Hadoop 1 doesn't have `Configuration.unset`
+      hadoopConfiguration.clear()
+      clonedConf.asScala.foreach(entry => hadoopConfiguration.set(entry.getKey, entry.getValue))
+    }
   }
 
   test("DSL save with quoting") {
