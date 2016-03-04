@@ -33,10 +33,10 @@ private[csv] object InferSchema {
    *     3. Replace any null types with string type
    */
   def apply(
-    tokenRdd: RDD[Array[String]],
-    header: Array[String],
-    nullValue: String = "",
-    dateFormatter: SimpleDateFormat = null): StructType = {
+      tokenRdd: RDD[Array[String]],
+      header: Array[String],
+      nullValue: String = "",
+      dateFormatter: SimpleDateFormat = null): StructType = {
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
     val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(
       inferRowType(nullValue, dateFormatter),
@@ -76,9 +76,9 @@ private[csv] object InferSchema {
    * point checking if it is an Int, as the final type must be Double or higher.
    */
   private[csv] def inferField(typeSoFar: DataType,
-    field: String,
-    nullValue: String = "",
-    dateFormatter: SimpleDateFormat = null): DataType = {
+      field: String,
+      nullValue: String = "",
+      dateFormatter: SimpleDateFormat = null): DataType = {
     def tryParseInteger(field: String): DataType = if ((allCatch opt field.toInt).isDefined) {
       IntegerType
     } else {
