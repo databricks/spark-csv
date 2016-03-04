@@ -128,6 +128,8 @@ class DefaultSource
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
 
+    val dataFormat = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
+
     val inferSchema = parameters.getOrElse("inferSchema", "false")
     val inferSchemaFlag = if (inferSchema == "false") {
       false
@@ -137,6 +139,8 @@ class DefaultSource
       throw new Exception("Infer schema flag can be true or false")
     }
     val nullValue = parameters.getOrElse("nullValue", "")
+
+    val dateFormat = parameters.getOrElse("dateFormat", null)
 
     val codec = parameters.getOrElse("codec", null)
 
@@ -156,7 +160,8 @@ class DefaultSource
       schema,
       inferSchemaFlag,
       codec,
-      nullValue)(sqlContext)
+      nullValue,
+      dateFormat)(sqlContext)
   }
 
   override def createRelation(

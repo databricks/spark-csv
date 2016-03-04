@@ -16,6 +16,7 @@
 package com.databricks.spark.csv
 
 import java.io.IOException
+import java.text.SimpleDateFormat
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
@@ -47,8 +48,12 @@ case class CsvRelation protected[spark] (
     userSchema: StructType = null,
     inferCsvSchema: Boolean,
     codec: String = null,
-    nullValue: String = "")(@transient val sqlContext: SQLContext)
+    nullValue: String = "",
+    dateFormat: String = "")(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
+
+  // Share date format object as it is expensive to parse date pattern.
+  private val dateFormatter = if (dateFormat != null) new SimpleDateFormat(dateFormat) else null
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 
@@ -96,6 +101,7 @@ case class CsvRelation protected[spark] (
   }
 
   override def buildScan: RDD[Row] = {
+    val simpleDateFormatter = dateFormatter
     val schemaFields = schema.fields
     tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
@@ -112,7 +118,7 @@ case class CsvRelation protected[spark] (
           while (index < schemaFields.length) {
             val field = schemaFields(index)
             rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable,
-              treatEmptyValuesAsNulls, nullValue)
+              treatEmptyValuesAsNulls, nullValue, simpleDateFormatter)
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))
@@ -142,6 +148,7 @@ case class CsvRelation protected[spark] (
    * both the indices produced by `requiredColumns` and the ones of tokens.
    */
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
+    val simpleDateFormatter = dateFormatter
     val schemaFields = schema.fields
     val requiredFields = StructType(requiredColumns.map(schema(_))).fields
     val shouldTableScan = schemaFields.deep == requiredFields.deep
@@ -189,7 +196,8 @@ case class CsvRelation protected[spark] (
                 field.dataType,
                 field.nullable,
                 treatEmptyValuesAsNulls,
-                nullValue
+                nullValue,
+                simpleDateFormatter
               )
               subIndex = subIndex + 1
             }
@@ -237,7 +245,8 @@ case class CsvRelation protected[spark] (
         firstRow.zipWithIndex.map { case (value, index) => s"C$index"}
       }
       if (this.inferCsvSchema) {
-        InferSchema(tokenRdd(header), header, nullValue)
+        val simpleDateFormatter = dateFormatter
+        InferSchema(tokenRdd(header), header, nullValue, simpleDateFormatter)
       } else {
         // By default fields are assumed to be StringType
         val schemaFields = header.map { fieldName =>

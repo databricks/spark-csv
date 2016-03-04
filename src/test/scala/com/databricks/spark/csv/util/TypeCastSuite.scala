@@ -17,6 +17,7 @@ package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
 import java.sql.{Date, Timestamp}
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 import org.scalatest.FunSuite
@@ -86,6 +87,17 @@ class TypeCastSuite extends FunSuite {
     val timestamp = "2015-01-01 00:00:00"
     assert(TypeCast.castTo(timestamp, TimestampType) == Timestamp.valueOf(timestamp))
     assert(TypeCast.castTo("2015-01-01", DateType) == Date.valueOf("2015-01-01"))
+
+    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val customTimestamp = "31/01/2015 00:00"
+    // `SimpleDateFormat.parse` returns `java.util.Date`. This needs to be converted
+    // to `java.sql.Date`
+    val expectedDate = new Date(dateFormatter.parse("31/01/2015 00:00").getTime)
+    val expectedTimestamp = new Timestamp(expectedDate.getTime)
+    assert(TypeCast.castTo(customTimestamp, TimestampType, dateFormatter = dateFormatter)
+      == expectedTimestamp)
+    assert(TypeCast.castTo(customTimestamp, DateType, dateFormatter = dateFormatter) ==
+      expectedDate)
   }
 
   test("Float and Double Types are cast correctly with Locale") {
