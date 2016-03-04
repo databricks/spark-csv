@@ -22,7 +22,7 @@ version: 1.3.0
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.3.0
+version: 1.4.0
 ```
 
 ## Using with Spark shell
@@ -30,16 +30,16 @@ This package can be added to  Spark using the `--packages` command line option. 
 
 ### Spark compiled with Scala 2.11
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.3.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.4.0
 ```
 
 ### Spark compiled with Scala 2.10
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.3.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.4.0
 ```
 
 ## Features
-This package allows reading CSV files in local or distributed filesystem as [Spark DataFrames](https://spark.apache.org/docs/1.3.0/sql-programming-guide.html).
+This package allows reading CSV files in local or distributed filesystem as [Spark DataFrames](https://spark.apache.org/docs/1.6.0/sql-programming-guide.html).
 When reading files the API accepts several options:
 * `path`: location of files. Similar to Spark can accept standard Hadoop globbing expressions.
 * `header`: when set to true the first line of files will be used to name columns and will not be included in data. All types will be assumed string. Default value is false.
@@ -407,7 +407,7 @@ Automatically infer schema (data types), otherwise everything is assumed string:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.4.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
@@ -419,7 +419,7 @@ You can manually specify schema:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.4.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 customSchema <- structType(
     structField("year", "integer"),
@@ -437,7 +437,7 @@ You can save with compressed output:
 ```R
 library(SparkR)
 
-Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
+Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.4.0" "sparkr-shell"')
 sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
