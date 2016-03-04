@@ -56,6 +56,7 @@ When reading files the API accepts several options:
 * `inferSchema`: automatically infers column types. It requires one extra pass over the data and is false by default
 * `comment`: skip lines beginning with this character. Default is `"#"`. Disable comments by setting this to `null`.
 * `nullValue`: specificy a string that indicates a null value, any fields matching this string will be set as nulls in the DataFrame
+* `dateFormat`: specificy a string that indicates a date format. Custom date formats follow the formats at [`java.text.SimpleDateFormat`](https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html). This applies to both `DateType` and `TimestampType`. By default, it is `null` which means trying to parse times and date by `java.sql.Timestamp.valueOf()` and `java.sql.Date.valueOf()`.
 
 The package also supports saving simple (non-nested) DataFrame. When writing files the API accepts several options:
 * `path`: location of files.
