@@ -17,7 +17,8 @@ package com.databricks.spark.csv
 
 import java.io.File
 import java.nio.charset.UnsupportedCharsetException
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
+import java.text.SimpleDateFormat
 import scala.io.Source
 
 import com.databricks.spark.csv.util.ParseModes
@@ -26,6 +27,7 @@ import org.apache.spark.sql.{SQLContext, Row, SaveMode}
 import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.sql.types._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.Matchers._
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
@@ -44,6 +46,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val commentsFile = "src/test/resources/comments.csv"
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
   val boolFile = "src/test/resources/bool.csv"
+  val datesFile = "src/test/resources/dates.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
@@ -547,6 +550,24 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
   }
 
+  test("DSL checking non null escapeChar is set before NONE quoteMode") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+
+    val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+    val delimiter = ","
+    var quote = "\""
+    var escape = "\\"
+    var quoteMode = "NONE"
+
+    noException should be thrownBy {
+      cars.saveAsCsvFile(copyFilePath, Map("header" -> "true", "quote" -> quote,
+        "delimiter" -> delimiter, "escape" -> escape, "quoteMode" -> quoteMode))
+    }
+  }
+
   test("DSL save with a compression codec") {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
@@ -770,6 +791,49 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
           Seq(1, 2, 3, 4, 5, Timestamp.valueOf("2015-08-23 18:00:42")))
 
     assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("Inferring timestamp types via custom date format") {
+    val results = new CsvParser()
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy hh:mm")
+      .withInferSchema(true)
+      .csvFile(sqlContext, datesFile)
+      .select("date")
+      .collect()
+
+    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val expected =
+      Seq(Seq(new Timestamp(dateFormatter.parse("26/08/2015 18:00").getTime)),
+        Seq(new Timestamp(dateFormatter.parse("27/10/2014 18:30").getTime)),
+        Seq(new Timestamp(dateFormatter.parse("28/01/2016 20:00").getTime)))
+    assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("Load date types via custom date format") {
+    val customSchema = new StructType(Array(StructField("date", DateType, true)))
+    val results = new CsvParser()
+      .withSchema(customSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy hh:mm")
+      .csvFile(sqlContext, datesFile)
+      .select("date")
+      .collect()
+
+    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val expected = Seq(
+      new Date(dateFormatter.parse("26/08/2015 18:00").getTime),
+      new Date(dateFormatter.parse("27/10/2014 18:30").getTime),
+      new Date(dateFormatter.parse("28/01/2016 20:00").getTime))
+    val dates = results.toSeq.map(_.toSeq.head)
+    expected.zip(dates).foreach {
+      case (expectedDate, date) =>
+        // As it truncates the hours, minutes and etc., we only check
+        // if the dates (days, months and years) are the same via `toString()`.
+        assert(expectedDate.toString === date.toString)
+    }
   }
 
   test("Setting comment to null disables comment support") {
