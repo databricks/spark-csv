@@ -166,8 +166,10 @@ case class CsvRelation protected[spark] (
           throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
             s"${tokens.mkString(delimiter.toString)}")
         } else {
-          val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
-            tokens ++ new Array[String](schemaFields.length - tokens.length)
+          val indexSafeTokens = if (permissive && schemaFields.length > tokens.size) {
+            tokens ++ new Array[String](schemaFields.length - tokens.size)
+          } else if (permissive && schemaFields.length < tokens.size) {
+            tokens.take(schemaFields.size)
           } else {
             tokens
           }
