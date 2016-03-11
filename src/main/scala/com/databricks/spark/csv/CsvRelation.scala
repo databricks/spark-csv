@@ -105,10 +105,14 @@ case class CsvRelation protected[spark] (
     tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
 
       if (dropMalformed && schemaFields.length != tokens.size) {
-        logger.warn(s"Dropping malformed line (wrong length): ${tokens.mkString(",")}")
+        logger.warn(s"Dropping malformed line " +
+          s"(expected ${schemaFields.length} tokens but received " +
+          s"${tokens.size} tokens): ${tokens.mkString(",")}")
         None
       } else if (failFast && schemaFields.length != tokens.size) {
-        throw new RuntimeException(s"Malformed line in FAILFAST mode: ${tokens.mkString(",")}")
+        throw new RuntimeException(s"Malformed line " +
+          s"(expected ${schemaFields.length} tokens but received " +
+          s"${tokens.size} tokens) in FAILFAST mode: ${tokens.mkString(",")}")
       } else {
         var index: Int = 0
         val rowArray = new Array[Any](schemaFields.length)
@@ -173,12 +177,14 @@ case class CsvRelation protected[spark] (
       val requiredSize = requiredFields.length
       tokenRdd(schemaFields.map(_.name)).flatMap { tokens =>
         if (dropMalformed && schemaFields.length != tokens.size) {
-          logger.warn(s"Dropping malformed line (wrong length): " +
-            s"${tokens.mkString(delimiter.toString)}")
+          logger.warn(s"Dropping malformed line " +
+            s"(expected ${schemaFields.length} tokens but received " +
+            s"${tokens.size} tokens): ${tokens.mkString(delimiter.toString)}")
           None
         } else if (failFast && schemaFields.length != tokens.size) {
-          throw new RuntimeException(s"Malformed line in FAILFAST mode: " +
-            s"${tokens.mkString(delimiter.toString)}")
+          throw new RuntimeException(s"Malformed line in FAILFAST mode " +
+            s"(expected ${schemaFields.length} tokens but received " + 
+            s"${tokens.size} tokens): ${tokens.mkString(delimiter.toString)}")
         } else {
           val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
             tokens ++ new Array[String](schemaFields.length - tokens.size)
