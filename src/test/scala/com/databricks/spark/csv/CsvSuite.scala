@@ -212,7 +212,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
         .collect()
     }
 
-    assert(exception.getMessage.contains("Malformed line in FAILFAST mode: 2015,Chevy,Volt"))
+    assert(exception.getMessage.contains("Malformed line in FAILFAST mode (expected 5 tokens but received 3 tokens): 2015,Chevy,Volt"))
   }
 
   test("DSL test roundtrip nulls") {
