@@ -183,7 +183,7 @@ case class CsvRelation protected[spark] (
           None
         } else if (failFast && schemaFields.length != tokens.size) {
           throw new RuntimeException(s"Malformed line in FAILFAST mode " +
-            s"(expected ${schemaFields.length} tokens but received " + 
+            s"(expected ${schemaFields.length} tokens but received " +
             s"${tokens.size} tokens): ${tokens.mkString(delimiter.toString)}")
         } else {
           val indexSafeTokens = if (permissive && schemaFields.length != tokens.size) {
