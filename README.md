@@ -16,13 +16,13 @@ You can link against this library in your program at the following coordiates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 1.3.0
+version: 1.3.2
 ```
 ### Scala 2.11
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.3.0
+version: 1.3.2
 ```
 
 ## Using with Spark shell
@@ -30,12 +30,12 @@ This package can be added to  Spark using the `--packages` command line option. 
 
 ### Spark compiled with Scala 2.11
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.3.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.3.2
 ```
 
 ### Spark compiled with Scala 2.10
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.3.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.3.2
 ```
 
 ## Features
