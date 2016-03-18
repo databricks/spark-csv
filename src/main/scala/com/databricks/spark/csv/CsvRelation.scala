@@ -49,7 +49,9 @@ case class CsvRelation protected[spark] (
     inferCsvSchema: Boolean,
     codec: String = null,
     nullValue: String = "",
-    dateFormat: String = null)(@transient val sqlContext: SQLContext)
+    dateFormat: String = null,
+    treatParseExceptionAsNull: Boolean)
+  (@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   // Share date format object as it is expensive to parse date pattern.
@@ -118,7 +120,8 @@ case class CsvRelation protected[spark] (
           while (index < schemaFields.length) {
             val field = schemaFields(index)
             rowArray(index) = TypeCast.castTo(tokens(index), field.dataType, field.nullable,
-              treatEmptyValuesAsNulls, nullValue, simpleDateFormatter)
+              treatEmptyValuesAsNulls, nullValue, simpleDateFormatter,
+              treatParseExceptionAsNull)
             index = index + 1
           }
           Some(Row.fromSeq(rowArray))
@@ -197,7 +200,8 @@ case class CsvRelation protected[spark] (
                 field.nullable,
                 treatEmptyValuesAsNulls,
                 nullValue,
-                simpleDateFormatter
+                simpleDateFormatter,
+                treatParseExceptionAsNull
               )
               subIndex = subIndex + 1
             }
