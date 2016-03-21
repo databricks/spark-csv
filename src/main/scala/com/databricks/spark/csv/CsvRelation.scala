@@ -29,7 +29,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{PrunedScan, BaseRelation, InsertableRelation, TableScan}
 import org.apache.spark.sql.types._
-import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
+import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader, BulkReader, LineReader}
 import com.databricks.spark.csv.util._
 
 case class CsvRelation protected[spark] (
@@ -219,19 +219,24 @@ case class CsvRelation protected[spark] (
     }
   }
 
+  protected def getLineReader(): LineReader = {
+    val escapeVal = if (escape == null) '\\' else escape.charValue()
+    val commentChar: Char = if (comment == null) '\0' else comment
+    val quoteChar: Char = if (quote == null) '\0' else quote
+
+    new LineCsvReader(
+      fieldSep = delimiter,
+      quote = quoteChar,
+      escape = escapeVal,
+      commentMarker = commentChar)
+  }
+
   private def inferSchema(): StructType = {
     if (this.userSchema != null) {
       userSchema
     } else {
       val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar: Char = if (comment == null) '\0' else comment
-        val quoteChar: Char = if (quote == null) '\0' else quote
-        new LineCsvReader(
-          fieldSep = delimiter,
-          quote = quoteChar,
-          escape = escapeVal,
-          commentMarker = commentChar).parseLine(firstLine)
+        getLineReader().parseLine(firstLine)
       } else {
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
@@ -273,6 +278,18 @@ case class CsvRelation protected[spark] (
     }
   }
 
+  protected def getBulkReader(
+     header: Seq[String],
+     iter: Iterator[String], split: Int): BulkReader = {
+    val escapeVal = if (escape == null) '\\' else escape.charValue()
+    val commentChar: Char = if (comment == null) '\0' else comment
+    val quoteChar: Char = if (quote == null) '\0' else quote
+
+    new BulkCsvReader(iter, split,
+      headers = header, fieldSep = delimiter,
+      quote = quoteChar, escape = escapeVal, commentMarker = commentChar)
+  }
+
   private def univocityParseCSV(
      file: RDD[String],
      header: Seq[String]): RDD[Array[String]] = {
@@ -281,13 +298,7 @@ case class CsvRelation protected[spark] (
     val dataLines = if (useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
       case (split, iter) => {
-        val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar: Char = if (comment == null) '\0' else comment
-        val quoteChar: Char = if (quote == null) '\0' else quote
-
-        new BulkCsvReader(iter, split,
-          headers = header, fieldSep = delimiter,
-          quote = quoteChar, escape = escapeVal, commentMarker = commentChar)
+        getBulkReader(header, iter, split)
       }
     }, true)
 

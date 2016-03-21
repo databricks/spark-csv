@@ -22,6 +22,15 @@ import java.io.StringReader
 
 import com.univocity.parsers.csv._
 
+trait BulkReader extends Iterator[Array[String]] {
+  protected def reader(iter: Iterator[String]) = new StringIteratorReader(iter)
+}
+
+trait LineReader {
+  protected def reader(line: String) = new StringReader(line)
+  def parseLine(line: String): Array[String]
+}
+
 /**
  * Read and parse CSV-like input
  * @param fieldSep the delimiter used to separate fields in a line
@@ -97,14 +106,15 @@ private[csv] class LineCsvReader(
     ignoreTrailingSpace,
     null,
     inputBufSize,
-    maxCols) {
+    maxCols)
+  with LineReader{
   /**
    * parse a line
    * @param line a String with no newline at the end
    * @return array of strings where each string is a field in the CSV record
    */
   def parseLine(line: String): Array[String] = {
-    parser.beginParsing(new StringReader(line))
+    parser.beginParsing(reader(line))
     val parsed = parser.parseNext()
     parser.stopParsing()
     parsed
@@ -148,10 +158,9 @@ private[csv] class BulkCsvReader(
     headers,
     inputBufSize,
     maxCols)
-  with Iterator[Array[String]] {
+  with BulkReader {
 
-  private val reader = new StringIteratorReader(iter)
-  parser.beginParsing(reader)
+  parser.beginParsing(reader(iter))
   private var nextRecord = parser.parseNext()
 
   /**
@@ -178,7 +187,7 @@ private[csv] class BulkCsvReader(
  * parsed and needs the newlines to be present
  * @param iter iterator over RDD[String]
  */
-private class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
+private[readers] class StringIteratorReader(val iter: Iterator[String]) extends java.io.Reader {
 
   private var next: Long = 0
   private var length: Long = 0  // length of input so far
