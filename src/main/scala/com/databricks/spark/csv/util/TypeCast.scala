@@ -64,9 +64,11 @@ object TypeCast {
           case _: IntegerType => datum.toInt
           case _: LongType => datum.toLong
           case _: FloatType => Try(datum.toFloat)
-                               .getOrElse(NumberFormat.getInstance(Locale.getDefault).parse(datum).floatValue())
+                               .getOrElse(NumberFormat
+                                          .getInstance(Locale.getDefault).parse(datum).floatValue())
           case _: DoubleType => Try(datum.toDouble)
-                                .getOrElse(NumberFormat.getInstance(Locale.getDefault).parse(datum).doubleValue())
+                                .getOrElse(NumberFormat.getInstance(Locale.getDefault)
+                                           .parse(datum).doubleValue())
           case _: BooleanType => datum.toBoolean
           case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
           case _: TimestampType if dateFormatter != null =>
