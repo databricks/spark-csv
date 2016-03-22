@@ -189,7 +189,8 @@ package object csv {
       val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
       maybeCodecClass match {
         case Some(codecClass) if codecClass == null =>
-          // Explicitly set the output as uncompressed.
+          // This case means `codec` is set to `uncompressed` or `none`. In this vase, explicitly
+          // set the output as uncompressed and ignore existing Hadoop compression configurations.
           CompressionCodecs.disableCompressConfiguration(hadoopConfiguration)
           strRDD
             .saveAsHadoopFile(path,

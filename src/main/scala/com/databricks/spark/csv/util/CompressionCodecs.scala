@@ -61,7 +61,6 @@ private[csv] object CompressionCodecs {
    * Disable compression codec.
    */
   def disableCompressConfiguration(hadoopConf: Configuration): Unit = {
-    // This infers the option `compression` is set to `uncompressed` or `none`.
     hadoopConf.set("mapred.output.compress", "false")
     hadoopConf.set("mapred.compress.map.output", "false")
     hadoopConf.set("mapreduce.output.fileoutputformat.compress", "false")
