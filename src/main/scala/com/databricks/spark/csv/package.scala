@@ -176,7 +176,10 @@ package object csv {
             }
           }
         }
-      }.mapPartitions { iter =>
+      }
+
+      // Convert this to a paired RDD.
+      val hadoopPairRDD = strRDD.mapPartitions { iter =>
         val text = new Text()
         iter.map { x =>
           text.set(x.toString)
@@ -192,18 +195,18 @@ package object csv {
           // This case means `codec` is set to `uncompressed` or `none`. In this vase, explicitly
           // set the output as uncompressed and ignore existing Hadoop compression configurations.
           CompressionCodecs.disableCompressConfiguration(hadoopConfiguration)
-          strRDD
+          hadoopPairRDD
             .saveAsHadoopFile(path,
               classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
               hadoopConfiguration, None)
         case Some(codecClass) =>
-          strRDD
+          hadoopPairRDD
             .saveAsHadoopFile(path,
               classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
               hadoopConfiguration, Some(codecClass))
         case None =>
           // If no compression codec is set in `parameters`, then use `compressionCodec` here.
-          strRDD
+          hadoopPairRDD
             .saveAsHadoopFile(path,
               classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
               hadoopConfiguration, Option(compressionCodec))
