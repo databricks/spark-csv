@@ -652,7 +652,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       // Check if this is written correctly.
       val carsCopy = sqlContext.csvFile(copyFilePathOne)
       assert(carsCopy.count == cars.count)
-      assert(carsCopy.collect().map(_.toString()) === cars.collect().map(_.toString()))
+      assert(carsCopy.collect().map(_.toString()).toSeq === cars.collect().map(_.toString()).toSeq)
 
       // Check if setting codec to `none` has broad side-effects.
       val carsTwo = sqlContext.csvFile(carsFile, parserLib = parserLib)
