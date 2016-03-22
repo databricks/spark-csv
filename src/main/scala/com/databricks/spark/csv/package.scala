@@ -185,8 +185,8 @@ package object csv {
       }
 
       // Create a clone of Hadoop configuration.
-      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
       val hadoopConfiguration = new JobConf(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
+      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
       maybeCodecClass match {
         case Some(codecClass) if codecClass == null =>
           // Explicitly set the output as uncompressed.
