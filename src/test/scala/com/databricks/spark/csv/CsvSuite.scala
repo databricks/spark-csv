@@ -630,7 +630,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     // Create temp directory
     TestUtils.deleteRecursively(new File(tempEmptyDir))
     new File(tempEmptyDir).mkdirs()
-    val copyFilePath = tempEmptyDir + "cars-copy.csv"
+    val copyFilePathOne = tempEmptyDir + "cars-copy-one.csv"
+    val copyFilePathTwo = tempEmptyDir + "cars-copy-two.csv"
     val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
     val clonedConf = new Configuration(hadoopConfiguration)
     hadoopConfiguration.set("mapred.compress.map.output", "true")
@@ -642,16 +643,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     try {
       val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
       cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
-        Map("path" -> copyFilePath, "header" -> "true", "codec" -> "none"))
-      val carsCopyPartFile = new File(copyFilePath, "part-00000")
-      val files = new File(copyFilePath).listFiles()
-      // Check that the part file has a .gz extension
-      assert(carsCopyPartFile.exists())
+        Map("path" -> copyFilePathOne, "header" -> "true", "codec" -> "none"))
+      val carsCopyPartFileOne = new File(copyFilePathOne, "part-00000")
 
-      val carsCopy = sqlContext.csvFile(copyFilePath + "/")
+      // Check that the part file is written as uncompressed.
+      assert(carsCopyPartFileOne.exists())
 
+      // Check if this is written correctly.
+      val carsCopy = sqlContext.csvFile(copyFilePathOne)
       assert(carsCopy.count == cars.count)
-      assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+      assert(carsCopy.collect().map(_.toString()) === cars.collect().map(_.toString()))
+
+      // Check if setting codec to `none` has broad side-effects.
+      val carsTwo = sqlContext.csvFile(carsFile, parserLib = parserLib)
+      carsTwo.save("com.databricks.spark.csv", SaveMode.Overwrite,
+        Map("path" -> copyFilePathTwo, "header" -> "true"))
+      val carsCopyPartFileTwo = new File(copyFilePathTwo, "part-00000.gz")
+
+      // Check that the part file has a .gz extension
+      assert(carsCopyPartFileTwo.exists())
     } finally {
       // Hadoop 1 doesn't have `Configuration.unset`
       hadoopConfiguration.clear()

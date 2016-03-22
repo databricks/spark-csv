@@ -16,10 +16,12 @@
 package com.databricks.spark
 
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
+import org.apache.hadoop.io.{NullWritable, Text}
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.hadoop.mapred.{JobConf, TextOutputFormat}
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
-import com.databricks.spark.csv.util.TextFile
+import com.databricks.spark.csv.util.{CompressionCodecs, TextFile}
 
 package object csv {
 
@@ -174,10 +176,36 @@ package object csv {
             }
           }
         }
+      }.mapPartitions { iter =>
+        val text = new Text()
+        iter.map { x =>
+          text.set(x.toString)
+          (NullWritable.get(), text)
+        }
       }
-      compressionCodec match {
-        case null => strRDD.saveAsTextFile(path)
-        case codec => strRDD.saveAsTextFile(path, codec)
+
+      // Create a clone of Hadoop configuration.
+      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
+      val hadoopConfiguration = new JobConf(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
+      maybeCodecClass match {
+        case Some(codecClass) if codecClass == null =>
+          // Explicitly set the output as uncompressed.
+          CompressionCodecs.disableCompressConfiguration(hadoopConfiguration)
+          strRDD
+            .saveAsHadoopFile(path,
+              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
+              hadoopConfiguration, None)
+        case Some(codecClass) =>
+          strRDD
+            .saveAsHadoopFile(path,
+              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
+              hadoopConfiguration, Some(codecClass))
+        case None =>
+          // If no compression codec is set in `parameters`, then use `compressionCodec` here.
+          strRDD
+            .saveAsHadoopFile(path,
+              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
+              hadoopConfiguration, Option(compressionCodec))
       }
     }
   }

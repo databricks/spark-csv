@@ -19,7 +19,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
-import com.databricks.spark.csv.util.{CompressionCodecs, ParserLibs, TextFile, TypeCast}
+import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the
@@ -186,18 +186,7 @@ class DefaultSource
     }
     if (doSave) {
       // Only save data when the save mode is not ignore.
-      val hadoopConf = data.sqlContext.sparkContext.hadoopConfiguration
-      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
-      maybeCodecClass match {
-        case Some(codecClass) if codecClass == null =>
-          // Explicitly set the output as uncompressed.
-          CompressionCodecs.disableCompressConfiguration(hadoopConf)
-          data.saveAsCsvFile(path, parameters)
-        case Some(codecClass) =>
-          data.saveAsCsvFile(path, parameters, codecClass)
-        case None =>
-          data.saveAsCsvFile(path, parameters)
-      }
+      data.saveAsCsvFile(filesystemPath.toString, parameters)
     }
 
     createRelation(sqlContext, parameters, data.schema)
