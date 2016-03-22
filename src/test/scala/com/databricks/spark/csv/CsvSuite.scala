@@ -24,15 +24,15 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.io.SequenceFile.CompressionType
-
-import com.databricks.spark.csv.util.ParseModes
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.{SQLContext, Row, SaveMode}
-import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.sql.types._
+import org.apache.hadoop.io.SequenceFile.CompressionType
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.Matchers._
+
+import org.apache.spark.{SparkContext, SparkException}
+import org.apache.spark.sql.{SQLContext, Row, SaveMode}
+import org.apache.spark.sql.types._
+import com.databricks.spark.csv.util.ParseModes
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
