@@ -199,17 +199,13 @@ package object csv {
             .saveAsHadoopFile(path,
               classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
               hadoopConfiguration, None)
-        case Some(codecClass) =>
-          hadoopPairRDD
-            .saveAsHadoopFile(path,
-              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
-              hadoopConfiguration, Some(codecClass))
-        case None =>
+        case _ =>
           // If no compression codec is set in `parameters`, then use `compressionCodec` here.
+          val safeCodecClass = maybeCodecClass.orElse(Option(compressionCodec))
           hadoopPairRDD
             .saveAsHadoopFile(path,
               classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
-              hadoopConfiguration, Option(compressionCodec))
+              hadoopConfiguration, safeCodecClass)
       }
     }
   }
