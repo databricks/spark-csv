@@ -16,10 +16,12 @@
 package com.databricks.spark
 
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
+import org.apache.hadoop.io.{NullWritable, Text}
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.hadoop.mapred.{JobConf, TextOutputFormat}
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
-import com.databricks.spark.csv.util.TextFile
+import com.databricks.spark.csv.util.{CompressionCodecs, TextFile}
 
 package object csv {
 
@@ -175,9 +177,35 @@ package object csv {
           }
         }
       }
-      compressionCodec match {
-        case null => strRDD.saveAsTextFile(path)
-        case codec => strRDD.saveAsTextFile(path, codec)
+
+      // Convert this to a paired RDD.
+      val hadoopPairRDD = strRDD.mapPartitions { iter =>
+        val text = new Text()
+        iter.map { x =>
+          text.set(x.toString)
+          (NullWritable.get(), text)
+        }
+      }
+
+      // Create a clone of Hadoop configuration.
+      val hadoopConfiguration = new JobConf(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
+      val maybeCodecClass = CompressionCodecs.getCodecClass(parameters.getOrElse("codec", null))
+      maybeCodecClass match {
+        case Some(codecClass) if codecClass == null =>
+          // This case means `codec` is set to `uncompressed` or `none`. In this vase, explicitly
+          // set the output as uncompressed and ignore existing Hadoop compression configurations.
+          CompressionCodecs.disableCompressConfiguration(hadoopConfiguration)
+          hadoopPairRDD
+            .saveAsHadoopFile(path,
+              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
+              hadoopConfiguration, None)
+        case _ =>
+          // If no compression codec is set in `parameters`, then use `compressionCodec` here.
+          val safeCodecClass = maybeCodecClass.orElse(Option(compressionCodec))
+          hadoopPairRDD
+            .saveAsHadoopFile(path,
+              classOf[NullWritable], classOf[Text], classOf[TextOutputFormat[NullWritable, Text]],
+              hadoopConfiguration, safeCodecClass)
       }
     }
   }

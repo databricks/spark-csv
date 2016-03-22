@@ -19,15 +19,20 @@ import java.io.File
 import java.nio.charset.UnsupportedCharsetException
 import java.sql.{Date, Timestamp}
 import java.text.SimpleDateFormat
+
+import scala.collection.JavaConverters._
 import scala.io.Source
 
-import com.databricks.spark.csv.util.ParseModes
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.{SQLContext, Row, SaveMode}
-import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.sql.types._
+import org.apache.hadoop.io.SequenceFile.CompressionType
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.Matchers._
+
+import org.apache.spark.{SparkContext, SparkException}
+import org.apache.spark.sql.{SQLContext, Row, SaveMode}
+import org.apache.spark.sql.types._
+import com.databricks.spark.csv.util.ParseModes
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
@@ -619,6 +624,49 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(carsCopy.count == cars.count)
     assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+  }
+
+  test("Scala API save output as uncompressed via option()") {
+    // Create temp directory
+    TestUtils.deleteRecursively(new File(tempEmptyDir))
+    new File(tempEmptyDir).mkdirs()
+    val copyFilePathOne = tempEmptyDir + "cars-copy-one.csv"
+    val copyFilePathTwo = tempEmptyDir + "cars-copy-two.csv"
+    val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
+    val clonedConf = new Configuration(hadoopConfiguration)
+    hadoopConfiguration.set("mapred.compress.map.output", "true")
+    hadoopConfiguration.set("mapred.output.compress", "true")
+    hadoopConfiguration.set("mapred.map.output.compression.codec", classOf[GzipCodec].getName)
+    hadoopConfiguration.set("mapred.output.compression.codec", classOf[GzipCodec].getName)
+    hadoopConfiguration.set("mapred.output.compression.type", CompressionType.BLOCK.toString)
+
+    try {
+      val cars = sqlContext.csvFile(carsFile, parserLib = parserLib)
+      cars.save("com.databricks.spark.csv", SaveMode.Overwrite,
+        Map("path" -> copyFilePathOne, "header" -> "true", "codec" -> "none"))
+      val carsCopyPartFileOne = new File(copyFilePathOne, "part-00000")
+
+      // Check that the part file is written as uncompressed.
+      assert(carsCopyPartFileOne.exists())
+
+      // Check if this is written correctly.
+      val carsCopy = sqlContext.csvFile(copyFilePathOne)
+      assert(carsCopy.count == cars.count)
+      assert(carsCopy.collect.map(_.toString).toSet == cars.collect.map(_.toString).toSet)
+
+      // Check if setting codec to `none` has broad side-effects.
+      val carsTwo = sqlContext.csvFile(carsFile, parserLib = parserLib)
+      carsTwo.save("com.databricks.spark.csv", SaveMode.Overwrite,
+        Map("path" -> copyFilePathTwo, "header" -> "true"))
+      val carsCopyPartFileTwo = new File(copyFilePathTwo, "part-00000.gz")
+
+      // Check that the part file has a .gz extension
+      assert(carsCopyPartFileTwo.exists())
+    } finally {
+      // Hadoop 1 doesn't have `Configuration.unset`
+      hadoopConfiguration.clear()
+      clonedConf.asScala.foreach(entry => hadoopConfiguration.set(entry.getKey, entry.getValue))
+    }
   }
 
   test("DSL save with quoting") {

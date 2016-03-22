@@ -335,10 +335,12 @@ case class CsvRelation protected[spark] (
               + s" to INSERT OVERWRITE a CSV table:\n${e.toString}")
       }
       // Write the data. We assume that schema isn't changed, and we won't update it.
-
-      val codecClass = CompressionCodecs.getCodecClass(codec)
-      data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
-        codecClass)
+      val parameters = collection.mutable.Map.empty[String, String]
+      parameters += "delimiter" -> delimiter.toString
+      if (codec != null) {
+        parameters += "codec" -> codec
+      }
+      data.saveAsCsvFile(filesystemPath.toString, parameters.toMap)
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
