@@ -62,8 +62,10 @@ case class CsvRelation protected[spark] (
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
 
-  if ((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
-    logger.warn(s"Ignore white space options may not work with Commons parserLib option")
+  if ((ignoreLeadingWhiteSpace != ignoreTrailingWhiteSpace) &&
+    !ParserLibs.isUnivocityLib(parserLib)) {
+    logger.warn(s"Ignoring either leading or trailing whitespaces " +
+      "is only supported for the Univocity parser.")
   }
 
   private val failFast = ParseModes.isFailFastMode(parseMode)
@@ -77,6 +79,8 @@ case class CsvRelation protected[spark] (
     if (ParserLibs.isUnivocityLib(parserLib)) {
       univocityParseCSV(baseRDD(), header)
     } else {
+      // Apache Common CSV supports to trim only both leading and trailing white spaces.
+      val shouldTrim = ignoreLeadingWhiteSpace && ignoreTrailingWhiteSpace
       val csvFormat = defaultCsvFormat
         .withDelimiter(delimiter)
         .withQuote(quote)
@@ -84,6 +88,7 @@ case class CsvRelation protected[spark] (
         .withSkipHeaderRecord(false)
         .withHeader(header: _*)
         .withCommentMarker(comment)
+        .withIgnoreSurroundingSpaces(shouldTrim)
 
       // If header is set, make sure firstLine is materialized before sending to executors.
       val filterLine = if (useHeader) firstLine else null
@@ -100,7 +105,7 @@ case class CsvRelation protected[spark] (
     }
   }
 
-  override def buildScan: RDD[Row] = {
+  override def buildScan(): RDD[Row] = {
     val simpleDateFormatter = dateFormatter
     val schemaFields = schema.fields
     val rowArray = new Array[Any](schemaFields.length)
@@ -231,13 +236,18 @@ case class CsvRelation protected[spark] (
           fieldSep = delimiter,
           quote = quoteChar,
           escape = escapeVal,
-          commentMarker = commentChar).parseLine(firstLine)
+          commentMarker = commentChar,
+          ignoreLeadingSpace = ignoreLeadingWhiteSpace,
+          ignoreTrailingSpace = ignoreTrailingWhiteSpace).parseLine(firstLine)
       } else {
+        // Apache Common CSV supports to trim only both leading and trailing white spaces.
+        val shouldTrim = ignoreLeadingWhiteSpace && ignoreTrailingWhiteSpace
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
           .withQuote(quote)
           .withEscape(escape)
           .withSkipHeaderRecord(false)
+          .withIgnoreSurroundingSpaces(shouldTrim)
         CSVParser.parse(firstLine, csvFormat).getRecords.head.toArray
       }
       val header = if (useHeader) {
@@ -280,15 +290,21 @@ case class CsvRelation protected[spark] (
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if (useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
-      case (split, iter) => {
+      case (split, iter) =>
         val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
         val quoteChar: Char = if (quote == null) '\0' else quote
 
-        new BulkCsvReader(iter, split,
-          headers = header, fieldSep = delimiter,
-          quote = quoteChar, escape = escapeVal, commentMarker = commentChar)
-      }
+        new BulkCsvReader(
+          iter,
+          split,
+          headers = header,
+          fieldSep = delimiter,
+          quote = quoteChar,
+          escape = escapeVal,
+          commentMarker = commentChar,
+          ignoreLeadingSpace = ignoreLeadingWhiteSpace,
+          ignoreTrailingSpace = ignoreTrailingWhiteSpace)
     }, true)
 
     rows

@@ -30,24 +30,25 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.Matchers._
 
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
-  val carsFile = "src/test/resources/cars.csv"
-  val carsMalformedFile = "src/test/resources/cars-malformed.csv"
-  val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
-  val carsTsvFile = "src/test/resources/cars.tsv"
-  val carsAltFile = "src/test/resources/cars-alternative.csv"
-  val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
-  val nullNumbersFile = "src/test/resources/null-numbers.csv"
-  val nullNullNumbersFile = "src/test/resources/null_null_numbers.csv"
-  val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
-  val emptyFile = "src/test/resources/empty.csv"
-  val ageFile = "src/test/resources/ages.csv"
-  val escapeFile = "src/test/resources/escape.csv"
-  val tempEmptyDir = "target/test/empty/"
-  val commentsFile = "src/test/resources/comments.csv"
-  val disableCommentsFile = "src/test/resources/disable_comments.csv"
-  val boolFile = "src/test/resources/bool.csv"
-  val datesFile = "src/test/resources/dates.csv"
+  private val carsFile = "src/test/resources/cars.csv"
+  private val carsMalformedFile = "src/test/resources/cars-malformed.csv"
+  private val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
+  private val carsTsvFile = "src/test/resources/cars.tsv"
+  private val carsAltFile = "src/test/resources/cars-alternative.csv"
+  private val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
+  private val nullNumbersFile = "src/test/resources/null-numbers.csv"
+  private val nullNullNumbersFile = "src/test/resources/null_null_numbers.csv"
+  private val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
+  private val emptyFile = "src/test/resources/empty.csv"
+  private val ageFile = "src/test/resources/ages.csv"
+  private val escapeFile = "src/test/resources/escape.csv"
+  private val tempEmptyDir = "target/test/empty/"
+  private val commentsFile = "src/test/resources/comments.csv"
+  private val disableCommentsFile = "src/test/resources/disable_comments.csv"
+  private val boolFile = "src/test/resources/bool.csv"
+  private val datesFile = "src/test/resources/dates.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
+  private val carsWhitespaces = "src/test/resources/cars-whitespaces.csv"
 
   val numCars = 3
 
@@ -238,6 +239,80 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(agesCopy.count == agesRows.size)
     assert(agesCopy.collect.toSet == agesRows.toSet)
+  }
+
+  test("DSL test both ignoreLeadingWhiteSpace and ignoreTrailingWhiteSpace options") {
+    val cars = new CsvParser()
+      .withUseHeader(true)
+      .withComment('~')
+      .withInferSchema(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withIgnoreLeadingWhiteSpace(true)
+      .withIgnoreTrailingWhiteSpace(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, carsWhitespaces)
+    val expectedSchema = StructType(List(
+      StructField("year", IntegerType, nullable = true),
+      StructField("make", StringType, nullable = true),
+      StructField("model", StringType ,nullable = true),
+      StructField("comment", StringType, nullable = true),
+      StructField("blank", StringType, nullable = true))
+    )
+    val expectedCars = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, carsFile)
+
+    assert(cars.schema == expectedSchema)
+    assert(cars.collect.map(_.toString).toSet == expectedCars.collect.map(_.toString).toSet)
+  }
+
+  test("DSL test ignoreLeadingWhiteSpace option") {
+    assume(parserLib == "UNIVOCITY", "Setting ignoreTrailingWhiteSpace true and " +
+      "ignoreLeadingWhiteSpace to false is only supported for Univocity parser ")
+    // Test leading white spaces.
+    val cars = new CsvParser()
+      .withUseHeader(true)
+      .withComment('~')
+      .withInferSchema(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withIgnoreLeadingWhiteSpace(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, carsWhitespaces)
+    val maybeYearField = cars.schema.fields.find(_.name == "year")
+    assert(maybeYearField.isDefined)
+    // If the leading spaces were trimmed then it should be inferred as `IntegerType`.
+    assert(maybeYearField.get == StructField("year", IntegerType, nullable = true))
+    cars.collect().foreach { row =>
+      row.toSeq.filter(_ != null).foreach { value =>
+        assert(!value.toString.startsWith(" "), "Leading white spaces were not trimmed.")
+      }
+    }
+  }
+
+  test("DSL test either ignoreTrailingWhiteSpace option") {
+    assume(parserLib == "UNIVOCITY", "Setting ignoreTrailingWhiteSpace true and " +
+      "ignoreLeadingWhiteSpace to false is only supported for Univocity parser ")
+    // Test leading white spaces.
+    val cars = new CsvParser()
+      .withUseHeader(true)
+      .withComment('~')
+      .withInferSchema(true)
+      .withTreatEmptyValuesAsNulls(true)
+      .withIgnoreTrailingWhiteSpace(true)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, carsWhitespaces)
+    // If the leading spaces were not trimmed then it should be inferred as `StringType`.
+    val maybeYearField = cars.schema.fields.find(_.name == "year")
+    assert(maybeYearField.isDefined)
+    assert(maybeYearField.get == StructField("year", StringType, nullable = true))
+    cars.collect().foreach { row =>
+      row.toSeq.filter(_ != null).foreach { value =>
+        assert(!value.toString.endsWith(" "), "Trailing white spaces were not trimmed.")
+      }
+    }
   }
 
   test("DSL test for tokens more than the schema") {

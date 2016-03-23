@@ -67,6 +67,8 @@ The package also supports saving simple (non-nested) DataFrame. When writing fil
 * `nullValue`: specificy a string that indicates a null value, nulls in the DataFrame will be written as this string.
 * `codec`: compression codec to use when saving to file. Should be the fully qualified name of a class implementing `org.apache.hadoop.io.compress.CompressionCodec` or one of case-insensitive shorten names (`bzip2`, `gzip`, `lz4`, and `snappy`). Defaults to no compression when a codec is not specified.
 * `quoteMode`: when to quote fields (`ALL`, `MINIMAL` (default), `NON_NUMERIC`, `NONE`), see [Quote Modes](https://commons.apache.org/proper/commons-csv/apidocs/org/apache/commons/csv/QuoteMode.html)
+* `ignoreLeadingWhiteSpace`:  when set to true, it ignores leading white spaces. This option is only supported for "univocity" `parseLib` but "common" `parseLib` supports this when both `ignoreLeadingWhiteSpace` and `ignoreTrailingWhiteSpace` are set to true.
+* `ignoreTrailingWhiteSpace`: when set to true, it ignores trailing white spaces. This option is only supported for "univocity" `parseLib` but "common" `parseLib` supports this when both `ignoreLeadingWhiteSpace` and `ignoreTrailingWhiteSpace` are set to true.
 
 These examples use a CSV file available for download [here](https://github.com/databricks/spark-csv/raw/master/src/test/resources/cars.csv):
 

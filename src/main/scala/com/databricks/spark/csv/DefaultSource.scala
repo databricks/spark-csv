@@ -94,28 +94,31 @@ class DefaultSource
     }
 
     val parserLib = parameters.getOrElse("parserLib", ParserLibs.DEFAULT)
+
     val ignoreLeadingWhiteSpace = parameters.getOrElse("ignoreLeadingWhiteSpace", "false")
     val ignoreLeadingWhiteSpaceFlag = if (ignoreLeadingWhiteSpace == "false") {
       false
     } else if (ignoreLeadingWhiteSpace == "true") {
-      if (!ParserLibs.isUnivocityLib(parserLib)) {
-        throw new Exception("Ignore whitesspace supported for Univocity parser only")
-      }
       true
     } else {
       throw new Exception("Ignore white space flag can be true or false")
     }
+
     val ignoreTrailingWhiteSpace = parameters.getOrElse("ignoreTrailingWhiteSpace", "false")
     val ignoreTrailingWhiteSpaceFlag = if (ignoreTrailingWhiteSpace == "false") {
       false
     } else if (ignoreTrailingWhiteSpace == "true") {
-      if (!ParserLibs.isUnivocityLib(parserLib)) {
-        throw new Exception("Ignore whitespace supported for the Univocity parser only")
-      }
       true
     } else {
       throw new Exception("Ignore white space flag can be true or false")
     }
+
+    if ((ignoreLeadingWhiteSpaceFlag != ignoreTrailingWhiteSpaceFlag) &&
+        !ParserLibs.isUnivocityLib(parserLib)) {
+      throw new Exception("Ignoring either leading or trailing whitespaces " +
+        "is only supported for the Univocity parser.")
+    }
+
     val treatEmptyValuesAsNulls = parameters.getOrElse("treatEmptyValuesAsNulls", "false")
     val treatEmptyValuesAsNullsFlag = if (treatEmptyValuesAsNulls == "false") {
       false
