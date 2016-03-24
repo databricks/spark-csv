@@ -42,6 +42,7 @@ class CsvParser extends Serializable {
   private var codec: String = null
   private var nullValue: String = ""
   private var dateFormat: String = null
+  private var maxCharsPerCol: Int = 100000
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -123,6 +124,11 @@ class CsvParser extends Serializable {
     this
   }
 
+  def withMaxCharsPerCol(maxCharsPerCol: Int): CsvParser = {
+    this.maxCharsPerCol = maxCharsPerCol
+    this
+  }
+
   /** Returns a Schema RDD for the given CSV path. */
   @throws[RuntimeException]
   def csvFile(sqlContext: SQLContext, path: String): DataFrame = {
@@ -143,7 +149,8 @@ class CsvParser extends Serializable {
       inferSchema,
       codec,
       nullValue,
-      dateFormat)(sqlContext)
+      dateFormat,
+      maxCharsPerCol)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
@@ -165,7 +172,8 @@ class CsvParser extends Serializable {
       inferSchema,
       codec,
       nullValue,
-      dateFormat)(sqlContext)
+      dateFormat,
+      maxCharsPerCol)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 }
