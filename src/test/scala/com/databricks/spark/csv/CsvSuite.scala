@@ -48,7 +48,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   private val boolFile = "src/test/resources/bool.csv"
   private val datesFile = "src/test/resources/dates.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
-  private val carsWhitespaces = "src/test/resources/cars-whitespaces.csv"
+  private val carsWhitespacesFile = "src/test/resources/cars-whitespaces.csv"
 
   val numCars = 3
 
@@ -250,7 +250,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withIgnoreLeadingWhiteSpace(true)
       .withIgnoreTrailingWhiteSpace(true)
       .withParserLib(parserLib)
-      .csvFile(sqlContext, carsWhitespaces)
+      .csvFile(sqlContext, carsWhitespacesFile)
     val expectedSchema = StructType(List(
       StructField("year", IntegerType, nullable = true),
       StructField("make", StringType, nullable = true),
@@ -280,7 +280,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withTreatEmptyValuesAsNulls(true)
       .withIgnoreLeadingWhiteSpace(true)
       .withParserLib(parserLib)
-      .csvFile(sqlContext, carsWhitespaces)
+      .csvFile(sqlContext, carsWhitespacesFile)
     val maybeYearField = cars.schema.fields.find(_.name == "year")
     assert(maybeYearField.isDefined)
     // If the leading spaces were trimmed then it should be inferred as `IntegerType`.
@@ -303,7 +303,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withTreatEmptyValuesAsNulls(true)
       .withIgnoreTrailingWhiteSpace(true)
       .withParserLib(parserLib)
-      .csvFile(sqlContext, carsWhitespaces)
+      .csvFile(sqlContext, carsWhitespacesFile)
     // If the leading spaces were not trimmed then it should be inferred as `StringType`.
     val maybeYearField = cars.schema.fields.find(_.name == "year")
     assert(maybeYearField.isDefined)
