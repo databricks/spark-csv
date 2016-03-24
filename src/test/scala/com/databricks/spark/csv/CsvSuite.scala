@@ -292,7 +292,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  test("DSL test either ignoreTrailingWhiteSpace option") {
+  test("DSL test ignoreTrailingWhiteSpace option") {
     assume(parserLib == "UNIVOCITY", "Setting ignoreTrailingWhiteSpace true and " +
       "ignoreLeadingWhiteSpace to false is only supported for Univocity parser ")
     // Test leading white spaces.
