@@ -270,8 +270,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("DSL test ignoreLeadingWhiteSpace option") {
-    assume(parserLib == "UNIVOCITY", "Setting ignoreTrailingWhiteSpace true and " +
-      "ignoreLeadingWhiteSpace to false is only supported for Univocity parser ")
+    assume(parserLib == "UNIVOCITY", "Setting ignoreTrailingWhiteSpace false and " +
+      "ignoreLeadingWhiteSpace to true is only supported for Univocity parser ")
     // Test leading white spaces.
     val cars = new CsvParser()
       .withUseHeader(true)
