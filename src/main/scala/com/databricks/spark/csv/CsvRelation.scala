@@ -288,7 +288,8 @@ case class CsvRelation protected[spark] (
 
         new BulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
-          quote = quoteChar, escape = escapeVal, commentMarker = commentChar, maxCharsPerCol = maxCharsPerCol)
+          quote = quoteChar, escape = escapeVal,
+          commentMarker = commentChar, maxCharsPerCol = maxCharsPerCol)
       }
     }, true)
 
