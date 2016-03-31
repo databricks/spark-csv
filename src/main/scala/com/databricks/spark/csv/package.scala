@@ -15,6 +15,9 @@
  */
 package com.databricks.spark
 
+import java.text.SimpleDateFormat
+import java.sql.{Timestamp, Date}
+
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
 
@@ -97,6 +100,10 @@ package object csv {
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
+      // Before this change the csvFormatter wrot dates like this: "2014-11-15 06:31:10.0" so have that as the default.
+      val dateFormat = parameters.getOrElse("dateFormat", "yyyy-MM-dd HH:mm:ss.S")
+      val dateFormatter: SimpleDateFormat = new SimpleDateFormat(dateFormat)
+
       val delimiterChar = if (delimiter.length == 1) {
         delimiter.charAt(0)
       } else {
@@ -160,11 +167,25 @@ package object csv {
           override def hasNext: Boolean = iter.hasNext || firstRow
 
           override def next: String = {
+            
             if (iter.nonEmpty) {
-              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+              val values: Seq[AnyRef] = iter.next().toSeq.map(
+                fieldValue => fieldValue match {
+                  case timestamp: Timestamp => {
+                    println("date = " + timestamp.toString + " pat = " + dateFormatter.toPattern)
+                    dateFormatter.format(new Date(timestamp.getTime))
+                  }
+                  case date: Date => {
+                    println("date = " + date.toString + " pat = " + dateFormatter.toPattern)
+                    dateFormatter.format(date)
+                  }
+                  case _ => fieldValue.asInstanceOf[AnyRef]
+                })
+              println(values.mkString(", "))
+              val row = csvFormat.format(values: _*)
               if (firstRow) {
                 firstRow = false
-                header + csvFormat.getRecordSeparator() + row
+                header + csvFormat.getRecordSeparator + row
               } else {
                 row
               }
