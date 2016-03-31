@@ -171,14 +171,8 @@ package object csv {
             if (iter.nonEmpty) {
               val values: Seq[AnyRef] = iter.next().toSeq.map(
                 fieldValue => fieldValue match {
-                  case timestamp: Timestamp => {
-                    println("date = " + timestamp.toString + " pat = " + dateFormatter.toPattern)
-                    dateFormatter.format(new Date(timestamp.getTime))
-                  }
-                  case date: Date => {
-                    println("date = " + date.toString + " pat = " + dateFormatter.toPattern)
-                    dateFormatter.format(date)
-                  }
+                  case timestamp: Timestamp => dateFormatter.format(new Date(timestamp.getTime))
+                  case date: Date => dateFormatter.format(date)
                   case _ => fieldValue.asInstanceOf[AnyRef]
                 })
               println(values.mkString(", "))
