@@ -175,7 +175,6 @@ package object csv {
                   case date: Date => dateFormatter.format(date)
                   case _ => fieldValue.asInstanceOf[AnyRef]
                 })
-              println(values.mkString(", "))
               val row = csvFormat.format(values: _*)
               if (firstRow) {
                 firstRow = false
