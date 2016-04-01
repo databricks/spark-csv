@@ -100,7 +100,8 @@ package object csv {
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
-      // Before this change the csvFormatter wrot dates like this: "2014-11-15 06:31:10.0" so have that as the default.
+      // Before this change the csvFormatter wrote dates like this:
+      // "2014-11-15 06:31:10.0", so have that as the default.
       val dateFormat = parameters.getOrElse("dateFormat", "yyyy-MM-dd HH:mm:ss.S")
       val dateFormatter: SimpleDateFormat = new SimpleDateFormat(dateFormat)
 
@@ -167,7 +168,6 @@ package object csv {
           override def hasNext: Boolean = iter.hasNext || firstRow
 
           override def next: String = {
-            
             if (iter.nonEmpty) {
               val values: Seq[AnyRef] = iter.next().toSeq.map(
                 fieldValue => fieldValue match {
