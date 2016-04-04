@@ -54,17 +54,22 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "dates-copy.csv"
     val retDataFile = tempEmptyDir + "dates-result.csv"
 
-    dates.write.format("com.databricks.spark.csv")
-      .option("header", "false")
-      .save(copyFilePath)
+    // Write dataframe this way prior in spark 1.3 and before
+    dates.saveAsCsvFile(copyFilePath, Map("header" -> "false"))
+
+    // This method of writing can be used after spark 1.3
+    // dates.write.format("com.databricks.spark.csv")
+    //   .option("header", "false")
+    //   .save(copyFilePath)
+
     FileUtil.fullyDelete(new File(retDataFile))
     merge(copyFilePath, retDataFile)
 
     val actualContents = readFile(retDataFile)
 
-    assert("2015-08-26 18:00:00.0\n2014-10-27 18:30:00.0\n2016-01-28 20:00:00.0" === actualContents)
+    assert("2015-08-26 18:00:00.0\n2014-10-27 18:30:00.0\n2016-01-28 20:00:00.0"
+      === actualContents)
   }
-
 
   test("Save with custom date format") {
     mkTempDir()
@@ -74,10 +79,15 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "dates-copy.csv"
     val retDataFile = tempEmptyDir + "dates-result.csv"
 
-    dates.write.format("com.databricks.spark.csv")
-      .option("header", "false")
-      .option("dateFormat", "MM/dd/yyyy HH:mm:ss")
-      .save(copyFilePath)
+    // Write dataframe this way prior in spark 1.3 and before
+    dates.saveAsCsvFile(copyFilePath,
+      Map("header" -> "false", "dateFormat" -> "MM/dd/yyyy HH:mm:ss"))
+
+    // This method of writing can be used after spark 1.3
+    // dates.write.format("com.databricks.spark.csv")
+    //   .option("header", "false")
+    //   .option("dateFormat", "MM/dd/yyyy HH:mm:ss")
+    //   .save(copyFilePath)
 
     FileUtil.fullyDelete(new File(retDataFile))
     merge(copyFilePath, retDataFile)
