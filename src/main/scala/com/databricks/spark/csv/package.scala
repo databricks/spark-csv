@@ -154,10 +154,12 @@ package object csv {
         "" // There is no need to generate header in this case
       }
 
-      // Create an index for the format by type so the type check does not have to happen in the inner loop.
+      // Create an index for the format by type so the type check
+      // does not have to happen in the inner loop.
       val schema = dataFrame.schema
       val formatForIdx = schema.fieldNames.map(fname => schema(fname).dataType match {
-        case TimestampType => (timestamp: Any) => dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+        case TimestampType => (timestamp: Any) =>
+          dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
         case DateType => (date: Any) => dateFormatter.format(date)
         case _ => (fieldValue: Any) => fieldValue.asInstanceOf[AnyRef]
       })
