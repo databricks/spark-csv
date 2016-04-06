@@ -20,6 +20,7 @@ import java.sql.{Timestamp, Date}
 
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.spark.sql.types.{DateType, TimestampType}
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import com.databricks.spark.csv.util.TextFile
@@ -153,6 +154,14 @@ package object csv {
         "" // There is no need to generate header in this case
       }
 
+      // Create an index for the format by type so the type check does not have to happen in the inner loop.
+      val schema = dataFrame.schema
+      val formatForIdx = schema.fieldNames.map(fname => schema(fname).dataType match {
+        case TimestampType => (timestamp: Any) => dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+        case DateType => (date: Any) => dateFormatter.format(date)
+        case _ => (fieldValue: Any) => fieldValue.asInstanceOf[AnyRef]
+      })
+
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
@@ -169,12 +178,10 @@ package object csv {
 
           override def next: String = {
             if (iter.nonEmpty) {
-              val values: Seq[AnyRef] = iter.next().toSeq.map(
-                fieldValue => fieldValue match {
-                  case timestamp: Timestamp => dateFormatter.format(new Date(timestamp.getTime))
-                  case date: Date => dateFormatter.format(date)
-                  case _ => fieldValue.asInstanceOf[AnyRef]
-                })
+              // try .zipWithIndex.foreach
+              val values: Seq[AnyRef] = iter.next().toSeq.zipWithIndex.map {
+                case (fieldVal, i) => formatForIdx(i)(fieldVal)
+              }
               val row = csvFormat.format(values: _*)
               if (firstRow) {
                 firstRow = false
