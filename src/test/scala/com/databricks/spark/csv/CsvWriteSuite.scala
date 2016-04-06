@@ -54,13 +54,8 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     val copyFilePath = tempEmptyDir + "dates-copy.csv"
     val retDataFile = tempEmptyDir + "dates-result.csv"
 
-    // Write dataframe this way prior in spark 1.3 and before
+    // Write dataframe this way prior in spark 1.3 and before (later versions use dates.write.format)
     dates.saveAsCsvFile(copyFilePath, Map("header" -> "false"))
-
-    // This method of writing can be used after spark 1.3
-    // dates.write.format("com.databricks.spark.csv")
-    //   .option("header", "false")
-    //   .save(copyFilePath)
 
     FileUtil.fullyDelete(new File(retDataFile))
     merge(copyFilePath, retDataFile)
@@ -82,12 +77,6 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     // Write dataframe this way prior in spark 1.3 and before
     dates.saveAsCsvFile(copyFilePath,
       Map("header" -> "false", "dateFormat" -> "MM/dd/yyyy HH:mm:ss"))
-
-    // This method of writing can be used after spark 1.3
-    // dates.write.format("com.databricks.spark.csv")
-    //   .option("header", "false")
-    //   .option("dateFormat", "MM/dd/yyyy HH:mm:ss")
-    //   .save(copyFilePath)
 
     FileUtil.fullyDelete(new File(retDataFile))
     merge(copyFilePath, retDataFile)
