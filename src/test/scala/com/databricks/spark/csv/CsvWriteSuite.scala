@@ -26,12 +26,12 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import scala.io.Source
 
-class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
+abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
 
   val datesFile = "src/test/resources/dates.csv"
   val tempEmptyDir = "target/test/empty/"
 
-  def parserLib: String = "COMMONS"
+  def parserLib: String
 
   private var sqlContext: SQLContext = _
 
@@ -69,7 +69,6 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
   test("Save with custom date format") {
     mkTempDir()
     val dates = readDatesFromFile()
-    dates.show()
 
     val copyFilePath = tempEmptyDir + "dates-copy.csv"
     val retDataFile = tempEmptyDir + "dates-result.csv"
@@ -116,3 +115,11 @@ class CsvWriteSuite extends FunSuite with BeforeAndAfterAll {
   }
 }
 
+
+class CsvWriteSuite extends AbstractCsvWriteSuite {
+  override def parserLib: String = "COMMONS"
+}
+
+class CsvFastWriteSuite extends AbstractCsvWriteSuite {
+  override def parserLib: String = "UNIVOCITY"
+}
