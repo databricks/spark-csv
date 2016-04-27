@@ -155,7 +155,7 @@ package object csv {
           .withNullString(nullValue)
 
         new Iterator[String] {
-          var firstRow: Boolean = generateHeader
+          var firstRow: Boolean = generateHeader && (index==0)
 
           override def hasNext: Boolean = iter.hasNext || firstRow
 
