@@ -99,7 +99,7 @@ class DefaultSource
       false
     } else if (ignoreLeadingWhiteSpace == "true") {
       if (!ParserLibs.isUnivocityLib(parserLib)) {
-        throw new Exception("Ignore whitesspace supported for Univocity parser only")
+        throw new Exception("Ignore white space supported for Univocity parser only")
       }
       true
     } else {
@@ -110,7 +110,7 @@ class DefaultSource
       false
     } else if (ignoreTrailingWhiteSpace == "true") {
       if (!ParserLibs.isUnivocityLib(parserLib)) {
-        throw new Exception("Ignore whitespace supported for the Univocity parser only")
+        throw new Exception("Ignore white space supported for the Univocity parser only")
       }
       true
     } else {
