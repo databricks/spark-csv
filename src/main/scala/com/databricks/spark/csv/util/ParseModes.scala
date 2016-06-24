@@ -18,6 +18,7 @@ package com.databricks.spark.csv.util
 private[csv] object ParseModes {
 
   val PERMISSIVE_MODE = "PERMISSIVE"
+  val SUPER_PERMISSIVE_MODE = "SUPERPERMISSIVE"
   val DROP_MALFORMED_MODE = "DROPMALFORMED"
   val FAIL_FAST_MODE = "FAILFAST"
 
@@ -25,13 +26,14 @@ private[csv] object ParseModes {
 
   def isValidMode(mode: String): Boolean = {
     mode.toUpperCase match {
-      case PERMISSIVE_MODE | DROP_MALFORMED_MODE | FAIL_FAST_MODE => true
+      case PERMISSIVE_MODE | SUPER_PERMISSIVE_MODE | DROP_MALFORMED_MODE | FAIL_FAST_MODE => true
       case _ => false
     }
   }
 
   def isDropMalformedMode(mode: String): Boolean = mode.toUpperCase == DROP_MALFORMED_MODE
   def isFailFastMode(mode: String): Boolean = mode.toUpperCase == FAIL_FAST_MODE
+  def isSuperPermissiveMode(mode: String): Boolean = mode.toUpperCase == SUPER_PERMISSIVE_MODE
   def isPermissiveMode(mode: String): Boolean = if (isValidMode(mode))  {
     mode.toUpperCase == PERMISSIVE_MODE
   } else {
