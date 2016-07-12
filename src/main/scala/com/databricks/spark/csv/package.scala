@@ -15,8 +15,12 @@
  */
 package com.databricks.spark
 
+import java.text.SimpleDateFormat
+import java.sql.{Timestamp, Date}
+
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.spark.sql.types.{DateType, TimestampType}
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import com.databricks.spark.csv.util.TextFile
@@ -97,6 +101,11 @@ package object csv {
                       compressionCodec: Class[_ <: CompressionCodec] = null): Unit = {
       // TODO(hossein): For nested types, we may want to perform special work
       val delimiter = parameters.getOrElse("delimiter", ",")
+      // Before this change the csvFormatter wrote dates like this:
+      // "2014-11-15 06:31:10.0", so have that as the default.
+      val dateFormat = parameters.getOrElse("dateFormat", "yyyy-MM-dd HH:mm:ss.S")
+      val dateFormatter: SimpleDateFormat = new SimpleDateFormat(dateFormat)
+
       val delimiterChar = if (delimiter.length == 1) {
         delimiter.charAt(0)
       } else {
@@ -145,6 +154,16 @@ package object csv {
         "" // There is no need to generate header in this case
       }
 
+      // Create an index for the format by type so the type check
+      // does not have to happen in the inner loop.
+      val schema = dataFrame.schema
+      val formatForIdx = schema.fieldNames.map(fname => schema(fname).dataType match {
+        case TimestampType => (timestamp: Any) =>
+          dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+        case DateType => (date: Any) => dateFormatter.format(date)
+        case _ => (fieldValue: Any) => fieldValue.asInstanceOf[AnyRef]
+      })
+
       val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiterChar)
@@ -161,10 +180,14 @@ package object csv {
 
           override def next: String = {
             if (iter.nonEmpty) {
-              val row = csvFormat.format(iter.next().toSeq.map(_.asInstanceOf[AnyRef]): _*)
+              // try .zipWithIndex.foreach
+              val values: Seq[AnyRef] = iter.next().toSeq.zipWithIndex.map {
+                case (fieldVal, i) => formatForIdx(i)(fieldVal)
+              }
+              val row = csvFormat.format(values: _*)
               if (firstRow) {
                 firstRow = false
-                header + csvFormat.getRecordSeparator() + row
+                header + csvFormat.getRecordSeparator + row
               } else {
                 row
               }
