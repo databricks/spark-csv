@@ -49,11 +49,11 @@ case class CsvRelation protected[spark] (
     inferCsvSchema: Boolean,
     codec: String = null,
     nullValue: String = "",
-    dateFormat: String = null)(@transient val sqlContext: SQLContext)
+    dateFormat: Seq[String] = null)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
 
   // Share date format object as it is expensive to parse date pattern.
-  private val dateFormatter = if (dateFormat != null) new SimpleDateFormat(dateFormat) else null
+  private val dateFormatter = if (dateFormat != null && dateFormat(0) != null) dateFormat.map(df => new SimpleDateFormat(df)) else null
 
   private val logger = LoggerFactory.getLogger(CsvRelation.getClass)
 

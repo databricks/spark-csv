@@ -17,7 +17,7 @@ package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
 import java.sql.{Date, Timestamp}
-import java.text.{SimpleDateFormat, NumberFormat}
+import java.text.{NumberFormat, SimpleDateFormat}
 import java.util.Locale
 
 import org.apache.spark.sql.types._
@@ -45,7 +45,7 @@ object TypeCast {
       nullable: Boolean = true,
       treatEmptyValuesAsNulls: Boolean = false,
       nullValue: String = "",
-      dateFormatter: SimpleDateFormat = null): Any = {
+      dateFormatter: Seq[SimpleDateFormat] = null): Any = {
     // if nullValue is not an empty string, don't require treatEmptyValuesAsNulls
     // to be set to true
     val nullValueIsNotEmpty = nullValue != ""
@@ -67,10 +67,18 @@ object TypeCast {
         case _: BooleanType => datum.toBoolean
         case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
         case _: TimestampType if dateFormatter != null =>
-          new Timestamp(dateFormatter.parse(datum).getTime)
+          dateFormatter.iterator.map(df => Try(new Timestamp(df.parse(datum).getTime))).
+            find(_.isSuccess).map(_.get) match {
+            case Some(x) => x
+            case None => null
+          }
         case _: TimestampType => Timestamp.valueOf(datum)
         case _: DateType if dateFormatter != null =>
-          new Date(dateFormatter.parse(datum).getTime)
+          dateFormatter.iterator.map(df => Try(new Date(df.parse(datum).getTime))).
+            find(_.isSuccess).map(_.get) match {
+            case Some(x) => x
+            case None => null
+          }
         case _: DateType => Date.valueOf(datum)
         case _: StringType => datum
         case _ => throw new RuntimeException(s"Unsupported type: ${castType.typeName}")

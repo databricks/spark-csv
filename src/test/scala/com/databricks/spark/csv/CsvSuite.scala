@@ -836,6 +836,47 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
+  test("Support multiple dateFormats in same file") {
+    val datesFile = "src/test/resources/multiple-date-formats.csv"
+    val customSchema = new StructType(
+      Array(
+        StructField("timestamp1", TimestampType, true),
+        StructField("date1", DateType, true),
+        StructField("date2", DateType, true)
+    ))
+
+    val results = new CsvParser()
+      .withSchema(customSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy HH:mm", "yyyy/MM/dd", "yyyy-MM-dd")
+      .csvFile(sqlContext, datesFile)
+      .select("timestamp1", "date1", "date2")
+      .collect()
+
+    val dateFormatter = Seq(
+      new SimpleDateFormat("dd/MM/yyyy HH:mm"),
+      new SimpleDateFormat("yyyy/MM/dd"),
+      new SimpleDateFormat("yyyy-MM-dd"))
+
+    val expected =
+      Seq(
+        Seq(
+          new Timestamp(dateFormatter(0).parse("26/08/2015 18:00").getTime),
+          new Date(dateFormatter(1).parse("2015/08/26").getTime),
+          new Date(dateFormatter(2).parse("2015-08-26").getTime)),
+        Seq(
+          new Timestamp(dateFormatter(0).parse("27/10/2014 18:30").getTime),
+          new Date(dateFormatter(1).parse("2014/10/27").getTime),
+          new Date(dateFormatter(2).parse("2014-10-27").getTime)),
+        Seq(
+          new Timestamp(dateFormatter(0).parse("28/01/2016 20:00").getTime),
+          new Date(dateFormatter(1).parse("2016/01/28").getTime),
+          new Date(dateFormatter(2).parse("2016-01-28").getTime))
+        )
+    assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
   test("Setting comment to null disables comment support") {
     val results: Array[Row] = new CsvParser()
       .withDelimiter(',')

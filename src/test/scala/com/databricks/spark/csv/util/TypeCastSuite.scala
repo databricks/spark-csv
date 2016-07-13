@@ -88,11 +88,11 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.castTo(timestamp, TimestampType) == Timestamp.valueOf(timestamp))
     assert(TypeCast.castTo("2015-01-01", DateType) == Date.valueOf("2015-01-01"))
 
-    val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val dateFormatter = Seq(new SimpleDateFormat("dd/MM/yyyy hh:mm"))
     val customTimestamp = "31/01/2015 00:00"
     // `SimpleDateFormat.parse` returns `java.util.Date`. This needs to be converted
     // to `java.sql.Date`
-    val expectedDate = new Date(dateFormatter.parse("31/01/2015 00:00").getTime)
+    val expectedDate = new Date(dateFormatter(0).parse("31/01/2015 00:00").getTime)
     val expectedTimestamp = new Timestamp(expectedDate.getTime)
     assert(TypeCast.castTo(customTimestamp, TimestampType, dateFormatter = dateFormatter)
       == expectedTimestamp)

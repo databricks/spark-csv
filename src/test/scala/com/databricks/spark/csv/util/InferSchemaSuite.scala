@@ -58,10 +58,10 @@ class InferSchemaSuite extends FunSuite {
   }
 
   test("Timestamp field types are inferred correctly via custom data format"){
-    val formatter = new SimpleDateFormat("yyyy-mm")
+    val formatter = Seq(new SimpleDateFormat("yyyy-mm"))
     assert(
       InferSchema.inferField(TimestampType, "2015-08", dateFormatter = formatter) == TimestampType)
-    formatter.applyPattern("yyyy")
+    formatter(0).applyPattern("yyyy")
     assert(
       InferSchema.inferField(TimestampType, "2015", dateFormatter = formatter) == TimestampType)
   }

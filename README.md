@@ -138,6 +138,19 @@ selectedData.write
     .save("newcars.csv")
 ```
 
+You can specify one or more date formats when reading data:
+```scala
+import org.apache.spark.sql.SQLContext
+
+val sqlContext = new SQLContext(sc)
+
+val df = sqlContext.read
+    .format("com.databricks.spark.csv")
+    .option("header", "true")
+    .option("dateFormat", "dd/MM/yyyy HH:mm", "yyyy/MM/dd", "yyyy-MM-dd")
+    .load("cars.csv")
+```
+
 You can save with compressed output:
 ```scala
 import org.apache.spark.sql.SQLContext
