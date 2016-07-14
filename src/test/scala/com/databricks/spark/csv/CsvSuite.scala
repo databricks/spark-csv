@@ -100,16 +100,6 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("1-9588-osi"))
   }
 
-  test("DSL test dateFormat") {
-    val results = sqlContext
-      .csvFile(carsMultipleDateFormats, dateFormat = "yyyy-MM-dd,yyyy/MM/dd HH:mm")
-      .select("date1")
-      .collect()
-
-    assert(results.size === numCars)
-
-  }
-
   test("DDL test") {
     sqlContext.sql(
       s"""
@@ -175,6 +165,19 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
     assert(
       sqlContext.sql("SELECT makeName FROM carsTable where priceTag > 60000").collect().size === 1)
+  }
+
+  test("DDL test parsing date format") {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, date1 date, date2 date)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
+         | dateFormat "yyyy-MM-dd,MM-DD-YYYY")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
   }
 
   test("DSL test for DROPMALFORMED parsing mode") {

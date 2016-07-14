@@ -73,7 +73,8 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false): DataFrame = {
+        inferSchema: Boolean = false,
+        dateFormat: String = null): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),
@@ -87,7 +88,8 @@ package object csv {
         ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
         ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
         treatEmptyValuesAsNulls = false,
-        inferCsvSchema = inferSchema)(sqlContext)
+        inferCsvSchema = inferSchema,
+        dateFormat = dateFormat)(sqlContext)
       sqlContext.baseRelationToDataFrame(csvRelation)
     }
   }
