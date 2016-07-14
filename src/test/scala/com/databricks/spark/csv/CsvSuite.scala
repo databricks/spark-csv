@@ -849,7 +849,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withSchema(customSchema)
       .withUseHeader(true)
       .withParserLib(parserLib)
-      .withDateFormat("dd/MM/yyyy HH:mm", "yyyy/MM/dd", "yyyy-MM-dd")
+      .withDateFormat("dd/MM/yyyy HH:mm,yyyy/MM/dd,yyyy-MM-dd")
       .csvFile(sqlContext, datesFile)
       .select("timestamp1", "date1", "date2")
       .collect()

@@ -118,8 +118,8 @@ class CsvParser extends Serializable {
     this
   }
 
-  def withDateFormat(dateFormat: String*): CsvParser = {
-    this.dateFormat = dateFormat
+  def withDateFormat(dateFormat: String): CsvParser = {
+    this.dateFormat = dateFormat.split(",")
     this
   }
 
