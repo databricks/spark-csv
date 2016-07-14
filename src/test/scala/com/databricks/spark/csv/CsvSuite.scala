@@ -174,10 +174,28 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
          |(yearMade double, makeName string, modelName string, date1 date, date2 date)
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
-         | dateFormat "yyyy-MM-dd,MM-DD-YYYY")
+         | dateFormat "dd-MM-y,MMM-dd-y")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sqlContext.sql("select date1, date2 from carsTable").first().mkString(",") ===
+      "2016-06-01,2016-01-01")
+  }
+
+  test("DDL test parsing date format returns null for field" +
+    " when no dateFormat available to convert input") {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, date1 date, date2 date)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
+         | dateFormat "dd-MM-y")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sqlContext.sql("select date1, date2 from carsTable").first().mkString(",") ===
+      "2016-06-01,null")
   }
 
   test("DSL test for DROPMALFORMED parsing mode") {
