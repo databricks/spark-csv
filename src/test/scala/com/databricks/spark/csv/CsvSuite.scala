@@ -36,6 +36,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
+  val carsMultipleDateFormats = "src/test/resources/cars-multiple-date-formats.csv"
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val nullNullNumbersFile = "src/test/resources/null_null_numbers.csv"
   val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
@@ -97,6 +98,16 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
         .collect()
     }
     assert(exception.getMessage.contains("1-9588-osi"))
+  }
+
+  test("DSL test dateFormat") {
+    val results = sqlContext
+      .csvFile(carsMultipleDateFormats, dateFormat = "yyyy-MM-dd,yyyy/MM/dd HH:mm")
+      .select("date1")
+      .collect()
+
+    assert(results.size === numCars)
+
   }
 
   test("DDL test") {

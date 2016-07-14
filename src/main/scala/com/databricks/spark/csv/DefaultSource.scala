@@ -138,7 +138,7 @@ class DefaultSource
     }
     val nullValue = parameters.getOrElse("nullValue", "")
 
-    val dateFormat = Seq(parameters.getOrElse("dateFormat", null))
+    val dateFormat = parameters.getOrElse("dateFormat", null)
 
     val codec = parameters.getOrElse("codec", null)
 

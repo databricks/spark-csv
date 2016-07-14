@@ -41,7 +41,7 @@ class CsvParser extends Serializable {
   private var inferSchema: Boolean = false
   private var codec: String = null
   private var nullValue: String = ""
-  private var dateFormat: Seq[String] = null
+  private var dateFormat: String = null
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -119,7 +119,7 @@ class CsvParser extends Serializable {
   }
 
   def withDateFormat(dateFormat: String): CsvParser = {
-    this.dateFormat = dateFormat.split(",")
+    this.dateFormat = dateFormat
     this
   }
 
