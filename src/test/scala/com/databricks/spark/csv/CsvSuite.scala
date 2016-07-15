@@ -174,7 +174,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
          |(yearMade double, makeName string, modelName string, date1 date, date2 date)
          |USING com.databricks.spark.csv
          |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
-         | dateFormat "dd-MM-y,MMM-dd-y")
+         | dateFormat "dd-MMM-y,dd-MM-y")
       """.stripMargin.replaceAll("\n", " "))
 
     assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
