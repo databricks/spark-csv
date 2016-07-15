@@ -1,4 +1,4 @@
-# CSV Data Source for Spark
+# CSV Data Source for Apache Spark
 
 A library for parsing and querying CSV data with Apache Spark, for Spark SQL and DataFrames.
 
