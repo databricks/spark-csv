@@ -46,7 +46,7 @@ package object csv {
         ignoreLeadingWhiteSpace: Boolean = false,
         ignoreTrailingWhiteSpace: Boolean = false,
         charset: String = TextFile.DEFAULT_CHARSET.name(),
-        inferSchema: Boolean = false) : DataFrame = {
+        inferSchema: Boolean = false): DataFrame = {
       val csvRelation = CsvRelation(
         () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
         location = Some(filePath),

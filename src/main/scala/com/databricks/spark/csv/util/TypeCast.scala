@@ -17,7 +17,7 @@ package com.databricks.spark.csv.util
 
 import java.math.BigDecimal
 import java.sql.{Date, Timestamp}
-import java.text.{NumberFormat, SimpleDateFormat}
+import java.text.{SimpleDateFormat, NumberFormat}
 import java.util.Locale
 
 import org.apache.spark.sql.types._

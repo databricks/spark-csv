@@ -103,7 +103,7 @@ private[csv] object InferSchema {
       if (dateFormatter != null) {
         // This case infers a custom `dataFormat` is set.
         if (dateFormatter.map(
-          df => if ((allCatch opt df.parse(field)).isDefined) 1 else 0).sum > 0) {
+          sdf => if ((allCatch opt sdf.parse(field)).isDefined) 1 else 0).sum > 0) {
             TimestampType
         } else {
             tryParseBoolean(field)
