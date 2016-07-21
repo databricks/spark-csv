@@ -36,7 +36,7 @@ private[csv] object InferSchema {
       tokenRdd: RDD[Array[String]],
       header: Array[String],
       nullValue: String = "",
-      dateFormatter: Seq[SimpleDateFormat] = null): StructType = {
+      dateFormatter: Seq[SimpleDateFormat] = Seq.empty[SimpleDateFormat]): StructType = {
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
     val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(
       inferRowType(nullValue, dateFormatter),
@@ -78,7 +78,7 @@ private[csv] object InferSchema {
   private[csv] def inferField(typeSoFar: DataType,
       field: String,
       nullValue: String = "",
-      dateFormatter: Seq[SimpleDateFormat] = null): DataType = {
+      dateFormatter: Seq[SimpleDateFormat] = Seq.empty[SimpleDateFormat]): DataType = {
     def tryParseInteger(field: String): DataType = if ((allCatch opt field.toInt).isDefined) {
       IntegerType
     } else {
@@ -100,7 +100,7 @@ private[csv] object InferSchema {
     }
 
     def tryParseTimestamp(field: String): DataType = {
-      if (dateFormatter != null) {
+      if (dateFormatter.nonEmpty) {
         // This case infers a custom `dataFormat` is set.
         if (dateFormatter.map(
           sdf => if ((allCatch opt sdf.parse(field)).isDefined) 1 else 0).sum > 0) {
@@ -109,7 +109,7 @@ private[csv] object InferSchema {
             tryParseBoolean(field)
         }
       } else {
-        // We keep this for backwords competibility.
+        // We keep this for backwards compatibility.
         if ((allCatch opt Timestamp.valueOf(field)).isDefined) {
           TimestampType
         } else {

@@ -45,7 +45,7 @@ object TypeCast {
       nullable: Boolean = true,
       treatEmptyValuesAsNulls: Boolean = false,
       nullValue: String = "",
-      dateFormatter: Seq[SimpleDateFormat] = null): Any = {
+      dateFormatter: Seq[SimpleDateFormat] = Seq.empty[SimpleDateFormat]): Any = {
     // if nullValue is not an empty string, don't require treatEmptyValuesAsNulls
     // to be set to true
     val nullValueIsNotEmpty = nullValue != ""
@@ -66,14 +66,14 @@ object TypeCast {
           .getOrElse(NumberFormat.getInstance(Locale.getDefault).parse(datum).doubleValue())
         case _: BooleanType => datum.toBoolean
         case _: DecimalType => new BigDecimal(datum.replaceAll(",", ""))
-        case _: TimestampType if dateFormatter != null =>
+        case _: TimestampType if dateFormatter.nonEmpty =>
           dateFormatter.iterator.map(df => Try(new Timestamp(df.parse(datum).getTime))).
             find(_.isSuccess).map(_.get) match {
             case Some(x) => x
             case None => null
           }
         case _: TimestampType => Timestamp.valueOf(datum)
-        case _: DateType if dateFormatter != null =>
+        case _: DateType if dateFormatter.nonEmpty =>
           dateFormatter.iterator.map(df => Try(new Date(df.parse(datum).getTime))).
             find(_.isSuccess).map(_.get) match {
             case Some(x) => x
