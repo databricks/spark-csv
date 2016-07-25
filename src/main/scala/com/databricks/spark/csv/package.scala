@@ -159,8 +159,12 @@ package object csv {
       val schema = dataFrame.schema
       val formatForIdx = schema.fieldNames.map(fname => schema(fname).dataType match {
         case TimestampType => (timestamp: Any) => {
-          if (timestamp == null) nullValue
-          else dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+          if (timestamp == null) {
+            nullValue
+          }
+          else {
+            dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+          }
         }
         case DateType => (date: Any) => {
           if (date == null) nullValue else dateFormatter.format(date)
