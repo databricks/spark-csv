@@ -161,8 +161,7 @@ package object csv {
         case TimestampType => (timestamp: Any) => {
           if (timestamp == null) {
             nullValue
-          }
-          else {
+          } else {
             dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
           }
         }
