@@ -798,6 +798,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withUseHeader(true)
       .withParserLib(parserLib)
       .withDateFormat("dd/MM/yyyy hh:mm")
+      .withNullValue("?")
       .withInferSchema(true)
       .csvFile(sqlContext, datesFile)
       .select("date")
@@ -807,6 +808,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val expected =
       Seq(Seq(new Timestamp(dateFormatter.parse("26/08/2015 18:00").getTime)),
         Seq(new Timestamp(dateFormatter.parse("27/10/2014 18:30").getTime)),
+        Seq(null),
         Seq(new Timestamp(dateFormatter.parse("28/01/2016 20:00").getTime)))
     assert(results.toSeq.map(_.toSeq) === expected)
   }
@@ -818,6 +820,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withUseHeader(true)
       .withParserLib(parserLib)
       .withDateFormat("dd/MM/yyyy hh:mm")
+      .withNullValue("?")
       .csvFile(sqlContext, datesFile)
       .select("date")
       .collect()
@@ -826,9 +829,11 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val expected = Seq(
       new Date(dateFormatter.parse("26/08/2015 18:00").getTime),
       new Date(dateFormatter.parse("27/10/2014 18:30").getTime),
+      null,
       new Date(dateFormatter.parse("28/01/2016 20:00").getTime))
     val dates = results.toSeq.map(_.toSeq.head)
     expected.zip(dates).foreach {
+      case (null, date) => assert(date == null)
       case (expectedDate, date) =>
         // As it truncates the hours, minutes and etc., we only check
         // if the dates (days, months and years) are the same via `toString()`.

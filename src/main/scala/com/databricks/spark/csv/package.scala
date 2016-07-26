@@ -158,9 +158,16 @@ package object csv {
       // does not have to happen in the inner loop.
       val schema = dataFrame.schema
       val formatForIdx = schema.fieldNames.map(fname => schema(fname).dataType match {
-        case TimestampType => (timestamp: Any) =>
-          dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
-        case DateType => (date: Any) => dateFormatter.format(date)
+        case TimestampType => (timestamp: Any) => {
+          if (timestamp == null) {
+            nullValue
+          } else {
+            dateFormatter.format(new Date(timestamp.asInstanceOf[Timestamp].getTime))
+          }
+        }
+        case DateType => (date: Any) => {
+          if (date == null) nullValue else dateFormatter.format(date)
+        }
         case _ => (fieldValue: Any) => fieldValue.asInstanceOf[AnyRef]
       })
 

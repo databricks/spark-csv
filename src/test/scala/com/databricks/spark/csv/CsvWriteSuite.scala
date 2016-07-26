@@ -63,7 +63,7 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
 
     val actualContents = readFile(retDataFile)
 
-    assert("2015-08-26 18:00:00.0\n2014-10-27 18:30:00.0\n2016-01-28 20:00:00.0"
+    assert("2015-08-26 18:00:00.0\n2014-10-27 18:30:00.0\nnull\n2016-01-28 20:00:00.0"
       === actualContents)
   }
 
@@ -84,7 +84,7 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     val actualContents = readFile(retDataFile)
 
     // note that dates have been written with custom format
-    assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\n01/28/2016 20:00:00" === actualContents)
+    assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\nnull\n01/28/2016 20:00:00" === actualContents)
   }
 
   // Create temp directory
@@ -99,6 +99,7 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
       .withSchema(customSchema)
       .withUseHeader(true)
       .withParserLib(parserLib)
+      .withNullValue("?")
       .withDateFormat("dd/MM/yyyy HH:mm")
       .csvFile(sqlContext, datesFile)
       .select("date")
