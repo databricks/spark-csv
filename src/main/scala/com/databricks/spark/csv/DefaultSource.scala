@@ -125,6 +125,16 @@ class DefaultSource
       throw new Exception("Treat empty values as null flag can be true or false")
     }
 
+    val treatParseExceptionAsNull = parameters.getOrElse(
+      "treatParseExceptionAsNull", "false")
+    val treatParseExceptionAsNullFlag = if (treatParseExceptionAsNull == "false"){
+      false
+    } else if (treatParseExceptionAsNull == "true") {
+      true
+    } else {
+      throw new Exception("Treat parse exception as null flag can be true or false")
+    }
+
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
 
@@ -159,7 +169,8 @@ class DefaultSource
       inferSchemaFlag,
       codec,
       nullValue,
-      dateFormat)(sqlContext)
+      dateFormat,
+      treatParseExceptionAsNullFlag)(sqlContext)
   }
 
   override def createRelation(

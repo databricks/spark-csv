@@ -32,6 +32,7 @@ import org.scalatest.Matchers._
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
   val carsMalformedFile = "src/test/resources/cars-malformed.csv"
+  val carsDirtyTsvFile = "src/test/resources/cars_dirty.csv"
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
@@ -66,6 +67,12 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     } finally {
       super.afterAll()
     }
+  }
+  test("Dirty Data CSV"){
+    val results = sqlContext.csvFile(
+      carsDirtyTsvFile, parserLib = parserLib
+    ).collect()
+    assert(results.length == 4)
   }
 
   test("DSL test") {
@@ -197,7 +204,42 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .select("Name")
       .collect().size
 
+    val r = new CsvParser()
+                  .withSchema(strictSchema)
+                  .withUseHeader(true)
+                  .withParserLib(parserLib)
+                  .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+                  .csvFile(sqlContext, ageFile)
+                  .select("Name")
+                  .collect()
+
     assert(results === 1)
+  }
+
+  test("Parse Exception with Schema"){
+    val carsSchema = new StructType(
+     Array(
+       StructField("year", IntegerType, nullable = true),
+       StructField("make", StringType, nullable = true),
+       StructField("model", StringType, nullable = true),
+       StructField("price", DoubleType, nullable = true),
+       StructField("comment", StringType, nullable = true),
+       StructField("blank", IntegerType, nullable = true)
+     )
+    )
+
+    val results = new CsvParser()
+      .withSchema(carsSchema)
+      .withUseHeader(true)
+      .withDelimiter(',')
+      .withQuoteChar('\"').withTreatParseExceptionAsNull(true)
+      .csvFile(sqlContext, carsDirtyTsvFile).select("year", "make")
+      .collect()
+
+    assert(results(0).toSeq == Seq(2012, "Tesla"))
+    assert(results(1).toSeq == Seq(null, "Ford"))
+    assert(results(2).toSeq == Seq(2015, ""))
+    assert(results(3).toSeq == Seq(null, ""))
   }
 
   test("DSL test for FAILFAST parsing mode") {
@@ -267,6 +309,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .withDelimiter(',')
       .withQuoteChar(null)
       .withUseHeader(true)
+      .withNullValue("")
       .withParserLib(parserLib)
       .csvFile(sqlContext, carsUnbalancedQuotesFile)
       .select("year")
@@ -677,7 +720,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(results.schema == StructType(List(
       StructField("year", IntegerType, nullable = true),
       StructField("make", StringType, nullable = true),
-      StructField("model", StringType ,nullable = true),
+      StructField("model", StringType, nullable = true),
       StructField("comment", StringType, nullable = true),
       StructField("blank", StringType, nullable = true))
     ))
