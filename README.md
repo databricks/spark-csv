@@ -1,4 +1,4 @@
-**This library does not gurantee the compatibility for Spark 2.0+. This library has been ported into Spark 2.0+. Please use the internal CSV datasource in Spark 2.0+.**
+**This library does not guarantee the compatibility for Spark 2.0+. This library has been ported into Spark 2.0+. Please use the internal CSV datasource in Spark 2.0+.**
 
 # CSV Data Source for Apache Spark
 
