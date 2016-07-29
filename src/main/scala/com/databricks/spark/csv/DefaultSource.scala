@@ -141,9 +141,9 @@ class DefaultSource
     val dateFormat = parameters.getOrElse("dateFormat", null)
 
     val codec = parameters.getOrElse("codec", null)
-
+    val rdd = TextFile.withCharset(sqlContext.sparkContext, path, charset)
     CsvRelation(
-      () => TextFile.withCharset(sqlContext.sparkContext, path, charset),
+      () => rdd,
       Some(path),
       headerFlag,
       delimiter,
