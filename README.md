@@ -1,6 +1,6 @@
 # CSV Data Source for Apache Spark 1.x
 
-__NOTE__: This functionality has been inlined in Apache Spark 2.x. This package is in maintenance mode and we only accept critical bug fixes.
+__NOTE: This functionality has been inlined in Apache Spark 2.x. This package is in maintenance mode and we only accept critical bug fixes.__
 
 A library for parsing and querying CSV data with Apache Spark, for Spark SQL and DataFrames.
 
