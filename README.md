@@ -1,4 +1,6 @@
-# CSV Data Source for Apache Spark
+# CSV Data Source for Apache Spark 1.x
+
+__NOTE: This functionality has been inlined in Apache Spark 2.x. This package is in maintenance mode and we only accept critical bug fixes.__
 
 A library for parsing and querying CSV data with Apache Spark, for Spark SQL and DataFrames.
 
@@ -16,13 +18,13 @@ You can link against this library in your program at the following coordinates:
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.10
-version: 1.4.0
+version: 1.5.0
 ```
 ### Scala 2.11
 ```
 groupId: com.databricks
 artifactId: spark-csv_2.11
-version: 1.4.0
+version: 1.5.0
 ```
 
 ## Using with Spark shell
@@ -30,12 +32,12 @@ This package can be added to  Spark using the `--packages` command line option. 
 
 ### Spark compiled with Scala 2.11
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.4.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.11:1.5.0
 ```
 
 ### Spark compiled with Scala 2.10
 ```
-$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.4.0
+$SPARK_HOME/bin/spark-shell --packages com.databricks:spark-csv_2.10:1.5.0
 ```
 
 ## Features
