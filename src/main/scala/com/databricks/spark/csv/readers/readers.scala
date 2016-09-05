@@ -44,7 +44,8 @@ private[readers] abstract class CsvReader(
     ignoreTrailingSpace: Boolean = true,
     headers: Seq[String],
     inputBufSize: Int = 128,
-    maxCols: Int = 20480) {
+    maxCols: Int = 20480,
+    maxCharsPerCol: Int = 100000) {
   protected lazy val parser: CsvParser = {
     val settings = new CsvParserSettings()
     val format = settings.getFormat
@@ -59,7 +60,7 @@ private[readers] abstract class CsvReader(
     settings.setInputBufferSize(inputBufSize)
     settings.setMaxColumns(maxCols)
     settings.setNullValue("")
-    settings.setMaxCharsPerColumn(100000)
+    settings.setMaxCharsPerColumn(maxCharsPerCol)
     if (headers != null) settings.setHeaders(headers: _*)
 
     new CsvParser(settings)
@@ -86,7 +87,8 @@ private[csv] class LineCsvReader(
     ignoreLeadingSpace: Boolean = true,
     ignoreTrailingSpace: Boolean = true,
     inputBufSize: Int = 128,
-    maxCols: Int = 20480)
+    maxCols: Int = 20480,
+    maxCharsPerCol: Int = 100000)
   extends CsvReader(
     fieldSep,
     lineSep,
@@ -97,7 +99,8 @@ private[csv] class LineCsvReader(
     ignoreTrailingSpace,
     null,
     inputBufSize,
-    maxCols) {
+    maxCols,
+    maxCharsPerCol) {
   /**
    * parse a line
    * @param line a String with no newline at the end
@@ -136,7 +139,8 @@ private[csv] class BulkCsvReader(
     ignoreTrailingSpace: Boolean = true,
     headers: Seq[String],
     inputBufSize: Int = 128,
-    maxCols: Int = 20480)
+    maxCols: Int = 20480,
+    maxCharsPerCol: Int = 100000)
   extends CsvReader(
     fieldSep,
     lineSep,
@@ -147,7 +151,8 @@ private[csv] class BulkCsvReader(
     ignoreTrailingSpace,
     headers,
     inputBufSize,
-    maxCols)
+    maxCols,
+    maxCharsPerCol)
   with Iterator[Array[String]] {
 
   private val reader = new StringIteratorReader(iter)

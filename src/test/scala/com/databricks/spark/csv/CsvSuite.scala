@@ -47,6 +47,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val disableCommentsFile = "src/test/resources/disable_comments.csv"
   val boolFile = "src/test/resources/bool.csv"
   val datesFile = "src/test/resources/dates.csv"
+  val longColsFile = "src/test/resources/long-cols.csv"
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
@@ -855,6 +856,38 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
         Seq("4", "5", "6"))
 
     assert(results.toSeq.map(_.toSeq) === expected)
+  }
+
+  test("DSL allows for setting maxColsPerChar and expect error") {
+    val parser = new CsvParser()
+      .withDelimiter(',')
+      .withUseHeader(true)
+      .withParseMode(ParseModes.FAIL_FAST_MODE)
+      .withMaxCharsPerCol(5000)
+
+    val exception = intercept[SparkException]{
+      parser.csvFile(sqlContext, longColsFile)
+        .select("text")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("Malformed line in FAILFAST mode: 2,Bacon ipsum dolor amet dolore"))
+  }
+
+  test("DSL allows for setting maxColsPerChar and succeeds") {
+    val parser = new CsvParser()
+      .withDelimiter(',')
+      .withUseHeader(true)
+      .withMaxCharsPerCol(15000)
+
+    val res = parser.csvFile(sqlContext, longColsFile)
+      .collect()
+
+    assert(res.size === 3)
+    assert(res(0).toSeq === Seq("1", "bacon is yummy"))
+    assert(res(1).getAs[String](0) === "2")
+    assert(res(1).getAs[String](1).startsWith("Bacon ipsum dolor amet dolore"))
+    assert(res(2).toSeq === Seq("3", "pork is the best"))
   }
 
   test("DSL load csv from rdd") {
