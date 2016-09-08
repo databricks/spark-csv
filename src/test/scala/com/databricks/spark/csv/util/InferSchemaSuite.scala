@@ -57,11 +57,18 @@ class InferSchemaSuite extends FunSuite {
     assert(InferSchema.inferField(TimestampType, "FALSE") == BooleanType)
   }
 
-  test("Timestamp field types are inferred correctly via custom data format"){
-    val formatter = new SimpleDateFormat("yyyy-mm")
+  test("Timestamp field types are inferred correctly with default dateFormat"){
+    val formatter = Seq.empty[SimpleDateFormat]
+    assert(
+      InferSchema.inferField(LongType, "2015-08-10 14:57:00", dateFormatter = formatter)
+        == TimestampType)
+  }
+
+  test("Timestamp field types are inferred correctly via custom dateFormat"){
+    val formatter = Seq(new SimpleDateFormat("yyyy-mm"))
     assert(
       InferSchema.inferField(TimestampType, "2015-08", dateFormatter = formatter) == TimestampType)
-    formatter.applyPattern("yyyy")
+    formatter(0).applyPattern("yyyy")
     assert(
       InferSchema.inferField(TimestampType, "2015", dateFormatter = formatter) == TimestampType)
   }

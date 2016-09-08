@@ -36,6 +36,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
   val carsUnbalancedQuotesFile = "src/test/resources/cars-unbalanced-quotes.csv"
+  val carsMultipleDateFormats = "src/test/resources/cars-multiple-date-formats.csv"
   val nullNumbersFile = "src/test/resources/null-numbers.csv"
   val nullNullNumbersFile = "src/test/resources/null_null_numbers.csv"
   val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
@@ -165,6 +166,37 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
     assert(
       sqlContext.sql("SELECT makeName FROM carsTable where priceTag > 60000").collect().size === 1)
+  }
+
+  test("DDL test parsing date format") {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, date1 date, date2 date)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
+         | dateFormat "dd-MMM-y,dd-MM-y")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sqlContext.sql("select date1, date2 from carsTable").first().mkString(",") ===
+      "2016-06-01,2016-01-01")
+  }
+
+  test("DDL test parsing date format returns null for field" +
+    " when no dateFormat available to convert input") {
+    sqlContext.sql(
+      s"""
+         |CREATE TEMPORARY TABLE carsTable
+         |(yearMade double, makeName string, modelName string, date1 date, date2 date)
+         |USING com.databricks.spark.csv
+         |OPTIONS (path "$carsMultipleDateFormats", header "true", parserLib "$parserLib",
+         | dateFormat "dd-MM-y")
+      """.stripMargin.replaceAll("\n", " "))
+
+    assert(sqlContext.sql("SELECT yearMade FROM carsTable").collect().size === numCars)
+    assert(sqlContext.sql("select date1, date2 from carsTable").first().mkString(",") ===
+      "2016-06-01,null")
   }
 
   test("DSL test for DROPMALFORMED parsing mode") {
@@ -840,6 +872,47 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
         // if the dates (days, months and years) are the same via `toString()`.
         assert(expectedDate.toString === date.toString)
     }
+  }
+
+  test("Support multiple dateFormats in same file") {
+    val datesFile = "src/test/resources/multiple-date-formats.csv"
+    val customSchema = new StructType(
+      Array(
+        StructField("timestamp1", TimestampType, true),
+        StructField("date1", DateType, true),
+        StructField("date2", DateType, true)
+    ))
+
+    val results = new CsvParser()
+      .withSchema(customSchema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withDateFormat("dd/MM/yyyy HH:mm,yyyy/MM/dd,yyyy-MM-dd")
+      .csvFile(sqlContext, datesFile)
+      .select("timestamp1", "date1", "date2")
+      .collect()
+
+    val dateFormatter = Seq(
+      new SimpleDateFormat("dd/MM/yyyy HH:mm"),
+      new SimpleDateFormat("yyyy/MM/dd"),
+      new SimpleDateFormat("yyyy-MM-dd"))
+
+    val expected =
+      Seq(
+        Seq(
+          new Timestamp(dateFormatter(0).parse("26/08/2015 18:00").getTime),
+          new Date(dateFormatter(1).parse("2015/08/26").getTime),
+          new Date(dateFormatter(2).parse("2015-08-26").getTime)),
+        Seq(
+          new Timestamp(dateFormatter(0).parse("27/10/2014 18:30").getTime),
+          new Date(dateFormatter(1).parse("2014/10/27").getTime),
+          new Date(dateFormatter(2).parse("2014-10-27").getTime)),
+        Seq(
+          new Timestamp(dateFormatter(0).parse("28/01/2016 20:00").getTime),
+          new Date(dateFormatter(1).parse("2016/01/28").getTime),
+          new Date(dateFormatter(2).parse("2016-01-28").getTime))
+        )
+    assert(results.toSeq.map(_.toSeq) === expected)
   }
 
   test("Setting comment to null disables comment support") {
