@@ -46,13 +46,9 @@ object TypeCast {
       treatEmptyValuesAsNulls: Boolean = false,
       nullValue: String = "",
       dateFormatter: SimpleDateFormat = null): Any = {
-    // if nullValue is not an empty string, don't require treatEmptyValuesAsNulls
-    // to be set to true
-    val nullValueIsNotEmpty = nullValue != ""
     if (datum == nullValue &&
-      nullable &&
-      (!castType.isInstanceOf[StringType] || treatEmptyValuesAsNulls || nullValueIsNotEmpty)
-      ){
+      nullable ||
+      (treatEmptyValuesAsNulls && datum == "")){
       null
     } else {
       castType match {

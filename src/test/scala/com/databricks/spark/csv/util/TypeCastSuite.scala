@@ -61,12 +61,16 @@ class TypeCastSuite extends FunSuite {
   }
 
   test("Nullable types are handled") {
-    assert(TypeCast.castTo("", IntegerType, nullable = true) == null)
-  }
-
-  test("String type should always return the same as the input") {
-    assert(TypeCast.castTo("", StringType, nullable = true) == "")
-    assert(TypeCast.castTo("", StringType, nullable = false) == "")
+    assert(TypeCast.castTo("-", ByteType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", ShortType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", IntegerType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", LongType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", FloatType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", DoubleType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", BooleanType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", TimestampType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", DateType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", StringType, nullable = true, nullValue = "-") == null)
   }
 
   test("Throws exception for empty string with non null type") {
@@ -112,7 +116,7 @@ class TypeCastSuite extends FunSuite {
     assert(TypeCast.castTo("\\N", ByteType, true, false, "\\N") == null)
     assert(TypeCast.castTo("", ShortType, true, false) == null)
     assert(TypeCast.castTo("null", StringType, true, true, "null") == null)
-    assert(TypeCast.castTo("", StringType, true, false, "") == "")
+    assert(TypeCast.castTo("", StringType, true, false, "") == null)
     assert(TypeCast.castTo("", StringType, true, true, "") == null)
   }
 }
