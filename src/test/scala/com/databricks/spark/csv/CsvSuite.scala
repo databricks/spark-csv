@@ -230,15 +230,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     agesDf.saveAsCsvFile(copyFilePath, Map("header" -> "true", "nullValue" -> ""))
 
-    val agesCopy = new CsvParser()
+    val agesCopyOne = new CsvParser()
       .withSchema(agesSchema)
       .withUseHeader(true)
       .withTreatEmptyValuesAsNulls(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, copyFilePath)
 
-    assert(agesCopy.count == agesRows.size)
-    assert(agesCopy.collect.toSet == agesRows.toSet)
+    assert(agesCopyOne.count == agesRows.size)
+    assert(agesCopyOne.collect.toSet == agesRows.toSet)
+
+    val agesCopyTwo = new CsvParser()
+      .withSchema(agesSchema)
+      .withUseHeader(true)
+      .withNullValue("")
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, copyFilePath)
+
+    assert(agesCopyTwo.count == agesRows.size)
+    assert(agesCopyTwo.collect.toSet == agesRows.toSet)
   }
 
   test("DSL test for tokens more than the schema") {
