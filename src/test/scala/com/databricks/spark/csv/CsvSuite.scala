@@ -230,15 +230,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
     agesDf.saveAsCsvFile(copyFilePath, Map("header" -> "true", "nullValue" -> ""))
 
-    val agesCopy = new CsvParser()
+    val agesCopyOne = new CsvParser()
       .withSchema(agesSchema)
       .withUseHeader(true)
       .withTreatEmptyValuesAsNulls(true)
       .withParserLib(parserLib)
       .csvFile(sqlContext, copyFilePath)
 
-    assert(agesCopy.count == agesRows.size)
-    assert(agesCopy.collect.toSet == agesRows.toSet)
+    assert(agesCopyOne.count == agesRows.size)
+    assert(agesCopyOne.collect.toSet == agesRows.toSet)
+
+    val agesCopyTwo = new CsvParser()
+      .withSchema(agesSchema)
+      .withUseHeader(true)
+      .withNullValue("")
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, copyFilePath)
+
+    assert(agesCopyTwo.count == agesRows.size)
+    assert(agesCopyTwo.collect.toSet == agesRows.toSet)
   }
 
   test("DSL test for tokens more than the schema") {
@@ -399,10 +409,10 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
            |CREATE TEMPORARY TABLE carsTable
            |(yearMade double, makeName string, modelName string, comments string, grp string)
            |USING com.databricks.spark.csv
-           |OPTIONS (path "$carsFile", header "true", parserLib "$parserLib")
+           |OPTIONS (path "$carsFile", header "true", parserLib "$parserLib", nullValue "-")
       """.stripMargin.replaceAll("\n", " "))
 
-    assert(sqlContext.sql("SELECT makeName FROM carsTable").collect().size === numCars)
+    assert(sqlContext.sql("SELECT makeName FROM carsTable").collect().length === numCars)
     assert(sqlContext.sql("SELECT avg(yearMade) FROM carsTable where grp = '' group by grp")
       .collect().head(0) === 2004.5)
   }
