@@ -391,14 +391,13 @@ case class FixedWidthRelation protected[spark] (
   codec: String = null,
   nullValue: String = "",
   dateFormat: String = null,
-  maxCharsPerCol: Int = 100000)(@transient override val sqlContext: SQLContext)
+  maxCharsPerCol: Int = 100000,
+  escape: Character = null,
+  quote: Character = null,
+  delimiter: Char = '\0',
+  inferCsvSchema: Boolean = true,
+  parserLib: String = "UNIVOCITY")(@transient override val sqlContext: SQLContext)
   extends Relation {
-
-  val escape = null
-  val quote = null
-  val delimiter = '\0'
-  val inferCsvSchema = true
-  val parserLib = "UNIVOCITY"
 
   override def getLineReader: LineReader = {
     val commentChar: Char = if (comment == null) '\0' else comment

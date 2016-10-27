@@ -1,7 +1,7 @@
 package com.databricks.spark.csv
 
 import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.sql.types.{DoubleType, IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.specs2.mutable.Specification
 import org.specs2.specification.After
@@ -13,16 +13,18 @@ trait FixedWidthSetup extends After {
   protected val fruitWidths = Array(3, 10, 5, 4)
   protected val fruitSize = 7
   protected val malformedFruitSize = 5
-  protected val fruitFirstRow = Seq(56, "apple", "TRUE", 0.56)
+  protected val fruitFirstRow = Seq(56, "apple", true, 0.56)
 
   protected val fruitSchema = StructType(Seq(
     StructField("val", IntegerType),
     StructField("name", StringType),
-    StructField("avail", StringType),
+    StructField("avail", BooleanType),
     StructField("cost", DoubleType)
   ))
 
-  val sqlContext: SQLContext = new SQLContext(new SparkContext("local[2]", "FixedwidthSuite"))
+  val sqlContext: SQLContext = new SQLContext(
+    new SparkContext(master = "local[2]", appName = "FixedwidthSuite")
+  )
 
   def after: Unit = sqlContext.sparkContext.stop()
 }
@@ -41,7 +43,7 @@ class FixedWidthSpec extends Specification with FixedWidthSetup {
   "FixedwidthParser" should {
     "Parse a basic fixed width file, successfully" in {
       val result = sqlContext.fixedWidthFile(fruit_resource(), fruitWidths, fruitSchema,
-        useHeader = false)
+        useHeader = false, ignoreLeadingWhiteSpace = true, ignoreTrailingWhiteSpace = true)
       sanityChecks(result)
     }
 
