@@ -23,7 +23,8 @@ libraryDependencies ++= Seq(
   "com.univocity" % "univocity-parsers" % "1.5.1",
   "org.slf4j" % "slf4j-api" % "1.7.5" % "provided",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "com.novocode" % "junit-interface" % "0.9" % "test"
+  "com.novocode" % "junit-interface" % "0.9" % "test",
+  "org.specs2" %% "specs2-core" % "3.7" % "test"
 )
 
 libraryDependencies ++= Seq(

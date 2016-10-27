@@ -20,38 +20,37 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
-
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
 import org.slf4j.LoggerFactory
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.sources.{PrunedScan, BaseRelation, InsertableRelation, TableScan}
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, PrunedScan, TableScan}
 import org.apache.spark.sql.types._
-import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
+import com.databricks.spark.csv.readers._
 import com.databricks.spark.csv.util._
 
-case class CsvRelation protected[spark] (
-    baseRDD: () => RDD[String],
-    location: Option[String],
-    useHeader: Boolean,
-    delimiter: Char,
-    quote: Character,
-    escape: Character,
-    comment: Character,
-    parseMode: String,
-    parserLib: String,
-    ignoreLeadingWhiteSpace: Boolean,
-    ignoreTrailingWhiteSpace: Boolean,
-    treatEmptyValuesAsNulls: Boolean,
-    userSchema: StructType = null,
-    inferCsvSchema: Boolean,
-    codec: String = null,
-    nullValue: String = "",
-    dateFormat: String = null,
-    maxCharsPerCol: Int = 100000)(@transient val sqlContext: SQLContext)
-  extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
+sealed trait Relation extends BaseRelation with TableScan with PrunedScan with InsertableRelation {
+  def baseRDD: () => RDD[String]
+  val location: Option[String]
+  val useHeader: Boolean
+  val delimiter: Char
+  val quote: Character
+  val escape: Character
+  val comment: Character
+  val parseMode: String
+  val parserLib: String
+  val ignoreLeadingWhiteSpace: Boolean
+  val ignoreTrailingWhiteSpace: Boolean
+  val treatEmptyValuesAsNulls: Boolean
+  val userSchema: StructType
+  val inferCsvSchema: Boolean
+  val codec: String
+  val nullValue: String
+  val dateFormat: String
+  val maxCharsPerCol: Int
+  def getLineReader: LineReader
+  def getBulkReader(header: Seq[String], iter: Iterator[String], split: Int): BulkReader
 
   // Share date format object as it is expensive to parse date pattern.
   private val dateFormatter = if (dateFormat != null) new SimpleDateFormat(dateFormat) else null
@@ -143,11 +142,11 @@ case class CsvRelation protected[spark] (
 
 
   /**
-   * This supports to eliminate unneeded columns before producing an RDD
-   * containing all of its tuples as Row objects. This reads all the tokens of each line
-   * and then drop unneeded tokens without casting and type-checking by mapping
-   * both the indices produced by `requiredColumns` and the ones of tokens.
-   */
+    * This supports to eliminate unneeded columns before producing an RDD
+    * containing all of its tuples as Row objects. This reads all the tokens of each line
+    * and then drop unneeded tokens without casting and type-checking by mapping
+    * both the indices produced by `requiredColumns` and the ones of tokens.
+    */
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     val simpleDateFormatter = dateFormatter
     val schemaFields = schema.fields
@@ -225,14 +224,7 @@ case class CsvRelation protected[spark] (
       userSchema
     } else {
       val firstRow = if (ParserLibs.isUnivocityLib(parserLib)) {
-        val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar: Char = if (comment == null) '\0' else comment
-        val quoteChar: Char = if (quote == null) '\0' else quote
-        new LineCsvReader(
-          fieldSep = delimiter,
-          quote = quoteChar,
-          escape = escapeVal,
-          commentMarker = commentChar).parseLine(firstLine)
+        getLineReader.parseLine(firstLine)
       } else {
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
@@ -260,8 +252,8 @@ case class CsvRelation protected[spark] (
   }
 
   /**
-   * Returns the first line of the first non-empty file in path
-   */
+    * Returns the first line of the first non-empty file in path
+    */
   private lazy val firstLine = {
     if (comment != null) {
       baseRDD().filter { line =>
@@ -275,30 +267,21 @@ case class CsvRelation protected[spark] (
   }
 
   private def univocityParseCSV(
-     file: RDD[String],
-     header: Seq[String]): RDD[Array[String]] = {
+                                 file: RDD[String],
+                                 header: Seq[String]): RDD[Array[String]] = {
     // If header is set, make sure firstLine is materialized before sending to executors.
     val filterLine = if (useHeader) firstLine else null
     val dataLines = if (useHeader) file.filter(_ != filterLine) else file
     val rows = dataLines.mapPartitionsWithIndex({
-      case (split, iter) => {
-        val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val commentChar: Char = if (comment == null) '\0' else comment
-        val quoteChar: Char = if (quote == null) '\0' else quote
-
-        new BulkCsvReader(iter, split,
-          headers = header, fieldSep = delimiter,
-          quote = quoteChar, escape = escapeVal,
-          commentMarker = commentChar, maxCharsPerCol = maxCharsPerCol)
-      }
+      case (split, iter) => getBulkReader(header, iter, split)
     }, true)
 
     rows
   }
 
   private def parseCSV(
-      iter: Iterator[String],
-      csvFormat: CSVFormat): Iterator[Array[String]] = {
+                        iter: Iterator[String],
+                        csvFormat: CSVFormat): Iterator[Array[String]] = {
     iter.flatMap { line =>
       try {
         val records = CSVParser.parse(line, csvFormat).getRecords
@@ -344,5 +327,92 @@ case class CsvRelation protected[spark] (
     } else {
       sys.error("CSV tables only support INSERT OVERWRITE for now.")
     }
+  }
+}
+
+case class CsvRelation protected[spark] (
+    baseRDD: () => RDD[String],
+    location: Option[String],
+    useHeader: Boolean,
+    delimiter: Char,
+    quote: Character,
+    escape: Character,
+    comment: Character,
+    parseMode: String,
+    parserLib: String,
+    ignoreLeadingWhiteSpace: Boolean,
+    ignoreTrailingWhiteSpace: Boolean,
+    treatEmptyValuesAsNulls: Boolean,
+    userSchema: StructType = null,
+    inferCsvSchema: Boolean,
+    codec: String = null,
+    nullValue: String = "",
+    dateFormat: String = null,
+    maxCharsPerCol: Int = 100000)(@transient val sqlContext: SQLContext)
+  extends Relation {
+
+  override def getLineReader: LineReader = {
+    val escapeVal = if (escape == null) '\\' else escape.charValue()
+    val commentChar: Char = if (comment == null) '\0' else comment
+    val quoteChar: Char = if (quote == null) '\0' else quote
+
+    new LineCsvReader(
+      fieldSep = delimiter,
+      quote = quoteChar,
+      escape = escapeVal,
+      commentMarker = commentChar)
+  }
+
+  override def getBulkReader(header: Seq[String],
+      iter: Iterator[String], split: Int): BulkReader = {
+    val escapeVal = if (escape == null) '\\' else escape.charValue()
+    val commentChar: Char = if (comment == null) '\0' else comment
+    val quoteChar: Char = if (quote == null) '\0' else quote
+
+    new BulkCsvReader(iter, split,
+      headers = header, fieldSep = delimiter,
+      quote = quoteChar, escape = escapeVal,
+      commentMarker = commentChar)
+  }
+}
+
+case class FixedWidthRelation protected[spark] (
+  baseRDD: () => RDD[String],
+  fixedWidths: Array[Int],
+  location: Option[String],
+  useHeader: Boolean,
+  parseMode: String,
+  comment: Character,
+  ignoreLeadingWhiteSpace: Boolean,
+  ignoreTrailingWhiteSpace: Boolean,
+  treatEmptyValuesAsNulls: Boolean,
+  userSchema: StructType,
+  inferSchema: Boolean,
+  codec: String = null,
+  nullValue: String = "",
+  dateFormat: String = null,
+  maxCharsPerCol: Int = 100000)(@transient override val sqlContext: SQLContext)
+  extends Relation {
+
+  val escape = null
+  val quote = null
+  val delimiter = '\0'
+  val inferCsvSchema = true
+  val parserLib = "UNIVOCITY"
+
+  override def getLineReader: LineReader = {
+    val commentChar: Char = if (comment == null) '\0' else comment
+    new LineFixedWidthReader(fixedWidths, commentMarker = commentChar,
+      ignoreLeadingSpace = ignoreLeadingWhiteSpace,
+      ignoreTrailingSpace = ignoreTrailingWhiteSpace)
+  }
+
+  override def getBulkReader(header: Seq[String], iter: Iterator[String],
+                                       split: Int): BulkReader = {
+    val commentChar: Char = if (comment == null) '\0' else comment
+    new BulkFixedwidthReader(iter, split, fixedWidths,
+      headers = header, commentMarker = commentChar,
+      ignoreLeadingSpace = ignoreLeadingWhiteSpace,
+      ignoreTrailingSpace = ignoreTrailingWhiteSpace)
   }
 }

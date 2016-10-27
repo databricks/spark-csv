@@ -16,12 +16,11 @@
 package com.databricks.spark
 
 import java.text.SimpleDateFormat
-import java.sql.{Timestamp, Date}
+import java.sql.{Date, Timestamp}
 
 import org.apache.commons.csv.{CSVFormat, QuoteMode}
 import org.apache.hadoop.io.compress.CompressionCodec
-import org.apache.spark.sql.types.{DateType, TimestampType}
-
+import org.apache.spark.sql.types.{DateType, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import com.databricks.spark.csv.util.TextFile
 
@@ -209,6 +208,37 @@ package object csv {
         case null => strRDD.saveAsTextFile(path)
         case codec => strRDD.saveAsTextFile(path, codec)
       }
+    }
+  }
+
+  /**
+    * Adds a method, `fixedWidthFile`, to SQLContext that allows reading Fixed-Width data.
+    */
+  implicit class FixedWidthContext(sqlContext: SQLContext) extends Serializable {
+    def fixedWidthFile(
+       filePath: String,
+       fixedWidths: Array[Int],
+       schema: StructType = null,
+       useHeader: Boolean = true,
+       mode: String = "PERMISSIVE",
+       comment: Character = null,
+       ignoreLeadingWhiteSpace: Boolean = true,
+       ignoreTrailingWhiteSpace: Boolean = true,
+       charset: String = TextFile.DEFAULT_CHARSET.name(),
+       inferSchema: Boolean = false): DataFrame = {
+      val fixedWidthRelation = FixedWidthRelation(
+        () => TextFile.withCharset(sqlContext.sparkContext, filePath, charset),
+        location = Some(filePath),
+        useHeader = useHeader,
+        comment = comment,
+        parseMode = mode,
+        fixedWidths = fixedWidths,
+        ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace,
+        ignoreTrailingWhiteSpace = ignoreTrailingWhiteSpace,
+        userSchema = schema,
+        inferSchema = inferSchema,
+        treatEmptyValuesAsNulls = false)(sqlContext)
+      sqlContext.baseRelationToDataFrame(fixedWidthRelation)
     }
   }
 }

@@ -1,0 +1,8 @@
+AMTNAME      SALE COST
+56 apple     TRUE 0.56
+45 pear      FALSE1.34
+34 raspberry TRUE 2.43
+34 plum      TRUE 1.31
+53 cherry    TRUE 1.4 
+23 orange    FALSE2.34
+56 persimmon FALSE23.2
