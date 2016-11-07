@@ -117,7 +117,7 @@ selectedData.write
 You can manually specify the schema when reading data:
 ```scala
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType};
+import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType}
 
 val sqlContext = new SQLContext(sc)
 val customSchema = StructType(Array(
