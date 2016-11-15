@@ -32,6 +32,7 @@ import org.scalatest.Matchers._
 abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val carsFile = "src/test/resources/cars.csv"
   val carsMalformedFile = "src/test/resources/cars-malformed.csv"
+  val carsDirtyTsvFile = "src/test/resources/cars_dirty.csv"
   val carsFile8859 = "src/test/resources/cars_iso-8859-1.csv"
   val carsTsvFile = "src/test/resources/cars.tsv"
   val carsAltFile = "src/test/resources/cars-alternative.csv"
@@ -67,6 +68,13 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     } finally {
       super.afterAll()
     }
+  }
+
+  test("Dirty Data CSV"){
+    val results = sqlContext.csvFile(
+      carsDirtyTsvFile, parserLib = parserLib
+    ).collect()
+    assert(results.length == 4)
   }
 
   test("DSL test") {
@@ -214,6 +222,32 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     }
 
     assert(exception.getMessage.contains("Malformed line in FAILFAST mode: 2015,Chevy,Volt"))
+  }
+
+  test("Insert Null On Error with schema"){
+    val carsSchema = new StructType(
+      Array(
+        StructField("year", IntegerType, nullable = true),
+        StructField("make", StringType, nullable = true),
+        StructField("model", StringType, nullable = true),
+        StructField("price", DoubleType, nullable = true),
+        StructField("comment", StringType, nullable = true),
+        StructField("blank", IntegerType, nullable = true)
+      )
+    )
+
+    val results = new CsvParser()
+                  .withSchema(carsSchema)
+                  .withUseHeader(true)
+                  .withDelimiter(',')
+                  .withQuoteChar('\"').withInsertNullOnError(true)
+                  .csvFile(sqlContext, carsDirtyTsvFile).select("year", "make")
+                  .collect()
+
+    assert(results(0).toSeq == Seq(2012, "Tesla"))
+    assert(results(1).toSeq == Seq(null, "Ford"))
+    assert(results(2).toSeq == Seq(2015, null))
+    assert(results(3).toSeq == Seq(null, null))
   }
 
   test("DSL test roundtrip nulls") {
