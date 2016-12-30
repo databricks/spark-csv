@@ -54,6 +54,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
 
   val numCars = 3
   val numAges = 4
+  val numMalformedAges = 2
 
   protected def parserLib: String
 
@@ -966,6 +967,21 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       .csvFile(sqlContext, ageFileAlternative)
 
     assert(ages.count === numAges)
+    assert(ages.schema.fields(0).dataType === StringType)
+    assert(ages.schema.fields(1).dataType === DoubleType)
+    assert(ages.schema.fields(2).dataType === IntegerType)
+    assert(ages.schema.fields(3).dataType === TimestampType)
+  }
+
+  test("DSL test for DROPMALFORMED type inference with malformed lines") {
+    val ages = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, ageFileAlternativeMalformed)
+
+    assert(ages.count === numAges - numMalformedAges)
     assert(ages.schema.fields(0).dataType === StringType)
     assert(ages.schema.fields(1).dataType === DoubleType)
     assert(ages.schema.fields(2).dataType === IntegerType)
