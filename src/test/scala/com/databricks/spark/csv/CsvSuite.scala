@@ -41,6 +41,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   val nullSlashNNumbersFile = "src/test/resources/null_slashn_numbers.csv"
   val emptyFile = "src/test/resources/empty.csv"
   val ageFile = "src/test/resources/ages.csv"
+  val ageFileAlternative = "src/test/resources/ages-alternative.csv"
+  val ageFileAlternativeMalformed = "src/test/resources/ages-alternative-malformed.csv"
   val escapeFile = "src/test/resources/escape.csv"
   val tempEmptyDir = "target/test/empty/"
   val commentsFile = "src/test/resources/comments.csv"
@@ -51,6 +53,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
+  val numAges = 4
 
   protected def parserLib: String
 
@@ -952,6 +955,36 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(
       df.schema.fields.map(_.dataType).deep ==
       Array(IntegerType, IntegerType, IntegerType, IntegerType).deep)
+  }
+
+  test("DSL test for DROPMALFORMED type inference without malformed lines") {
+    val ages = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
+      .withParseMode(ParseModes.DROP_MALFORMED_MODE)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, ageFileAlternative)
+
+    assert(ages.count === numAges)
+    assert(ages.schema.fields(0).dataType === StringType)
+    assert(ages.schema.fields(1).dataType === DoubleType)
+    assert(ages.schema.fields(2).dataType === IntegerType)
+    assert(ages.schema.fields(3).dataType === TimestampType)
+  }
+
+  test("DSL test for PERMISSIVE type inference with malformed lines") {
+    val ages = new CsvParser()
+      .withUseHeader(true)
+      .withInferSchema(true)
+      .withParseMode(ParseModes.PERMISSIVE_MODE)
+      .withParserLib(parserLib)
+      .csvFile(sqlContext, ageFileAlternativeMalformed)
+
+    assert(ages.count === numAges)
+    assert(ages.schema.fields(0).dataType === StringType)
+    assert(ages.schema.fields(1).dataType === StringType)
+    assert(ages.schema.fields(2).dataType === DoubleType)
+    assert(ages.schema.fields(3).dataType === StringType)
   }
 }
 
