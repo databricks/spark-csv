@@ -20,9 +20,11 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
+
 import org.apache.commons.csv._
 import org.apache.hadoop.fs.Path
 import org.slf4j.LoggerFactory
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, PrunedScan, TableScan}
@@ -232,8 +234,6 @@ case class CsvRelation protected[spark] (
           escape = escapeVal,
           commentMarker = commentChar).parseLine(firstLine)
       } else {
-        val escapeVal = if (escape == null) '\\' else escape.charValue()
-        val quoteChar: Char = if (quote == null) '\0' else quote
         val csvFormat = defaultCsvFormat
           .withDelimiter(delimiter)
           .withQuote(quote)

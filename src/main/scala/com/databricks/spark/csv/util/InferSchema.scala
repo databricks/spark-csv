@@ -18,9 +18,8 @@ package com.databricks.spark.csv.util
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
-import com.databricks.spark.csv.readers.LineCsvReader
-
 import scala.util.control.Exception._
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
 
@@ -41,7 +40,7 @@ private[csv] object InferSchema {
       dateFormatter: SimpleDateFormat = null): StructType = {
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
     val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(
-      inferRowType(nullValue, header, dropMalformed, dateFormatter),
+      inferRowType(nullValue, header, dateFormatter, dropMalformed),
       mergeRowTypes)
 
     val structFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
@@ -57,12 +56,14 @@ private[csv] object InferSchema {
 
   private def inferRowType(nullValue: String,
                            header: Array[String],
-                           dropMalformed: Boolean = false,
-                           dateFormatter: SimpleDateFormat)
+                           dateFormatter: SimpleDateFormat,
+                           dropMalformed: Boolean = false)
   (rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
-    if(header.length != next.length && dropMalformed) rowSoFar
-    else {
+    if(header.length != next.length && dropMalformed) {
+      // Type inference should not be based on malformed lines in case of DROPMALFORMED parse mode
+      rowSoFar
+    } else {
       while (i < math.min(rowSoFar.length, next.length)) {  // May have columns on right missing.
         rowSoFar(i) = inferField(rowSoFar(i), next(i), nullValue, dateFormatter)
         i+=1
