@@ -248,8 +248,12 @@ case class CsvRelation protected[spark] (
       }
       if (this.inferCsvSchema) {
         val simpleDateFormatter = dateFormatter
-        InferSchema(tokenRdd(header), header,
-          ParseModes.isDropMalformedMode(parseMode), nullValue, simpleDateFormatter)
+        InferSchema(
+          tokenRdd(header),
+          header,
+          ParseModes.isDropMalformedMode(parseMode),
+          nullValue,
+          simpleDateFormatter)
       } else {
         // By default fields are assumed to be StringType
         val schemaFields = header.map { fieldName =>

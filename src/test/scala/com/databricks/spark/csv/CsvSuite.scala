@@ -53,8 +53,8 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
   private val simpleDatasetFile = "src/test/resources/simple.csv"
 
   val numCars = 3
-  val numAges = 4
-  val numMalformedAges = 2
+  val numAges = 8
+  val numMalformedAges = 6
 
   protected def parserLib: String
 

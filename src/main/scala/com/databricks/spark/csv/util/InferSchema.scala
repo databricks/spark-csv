@@ -54,13 +54,14 @@ private[csv] object InferSchema {
     StructType(structFields)
   }
 
-  private def inferRowType(nullValue: String,
-                           header: Array[String],
-                           dateFormatter: SimpleDateFormat,
-                           dropMalformed: Boolean = false)
+  private def inferRowType(
+      nullValue: String,
+      header: Array[String],
+      dateFormatter: SimpleDateFormat,
+      dropMalformed: Boolean = false)
   (rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
-    if(header.length != next.length && dropMalformed) {
+    if (header.length != next.length && dropMalformed) {
       // Type inference should not be based on malformed lines in case of DROPMALFORMED parse mode
       rowSoFar
     } else {
