@@ -35,11 +35,12 @@ private[csv] object InferSchema {
   def apply(
       tokenRdd: RDD[Array[String]],
       header: Array[String],
+      dropMalformed: Boolean = false,
       nullValue: String = "",
       dateFormatter: SimpleDateFormat = null): StructType = {
     val startType: Array[DataType] = Array.fill[DataType](header.length)(NullType)
     val rootTypes: Array[DataType] = tokenRdd.aggregate(startType)(
-      inferRowType(nullValue, dateFormatter),
+      inferRowType(nullValue, header, dateFormatter, dropMalformed),
       mergeRowTypes)
 
     val structFields = header.zip(rootTypes).map { case (thisHeader, rootType) =>
@@ -53,14 +54,23 @@ private[csv] object InferSchema {
     StructType(structFields)
   }
 
-  private def inferRowType(nullValue: String, dateFormatter: SimpleDateFormat)
+  private def inferRowType(
+      nullValue: String,
+      header: Array[String],
+      dateFormatter: SimpleDateFormat,
+      dropMalformed: Boolean = false)
   (rowSoFar: Array[DataType], next: Array[String]): Array[DataType] = {
     var i = 0
-    while (i < math.min(rowSoFar.length, next.length)) {  // May have columns on right missing.
-      rowSoFar(i) = inferField(rowSoFar(i), next(i), nullValue, dateFormatter)
-      i+=1
+    if (header.length != next.length && dropMalformed) {
+      // Type inference should not be based on malformed lines in case of DROPMALFORMED parse mode
+      rowSoFar
+    } else {
+      while (i < math.min(rowSoFar.length, next.length)) {  // May have columns on right missing.
+        rowSoFar(i) = inferField(rowSoFar(i), next(i), nullValue, dateFormatter)
+        i+=1
+      }
+      rowSoFar
     }
-    rowSoFar
   }
 
   private[csv] def mergeRowTypes(

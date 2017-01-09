@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.sources.{PrunedScan, BaseRelation, InsertableRelation, TableScan}
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, PrunedScan, TableScan}
 import org.apache.spark.sql.types._
 import com.databricks.spark.csv.readers.{BulkCsvReader, LineCsvReader}
 import com.databricks.spark.csv.util._
@@ -248,7 +248,12 @@ case class CsvRelation protected[spark] (
       }
       if (this.inferCsvSchema) {
         val simpleDateFormatter = dateFormatter
-        InferSchema(tokenRdd(header), header, nullValue, simpleDateFormatter)
+        InferSchema(
+          tokenRdd(header),
+          header,
+          ParseModes.isDropMalformedMode(parseMode),
+          nullValue,
+          simpleDateFormatter)
       } else {
         // By default fields are assumed to be StringType
         val schemaFields = header.map { fieldName =>
