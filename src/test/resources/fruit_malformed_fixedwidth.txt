@@ -1,0 +1,7 @@
+23 apple     TRUE 1.44
+45 cherry    FALSE1.33
+34 raspberry TRUE BLR
+34
+ewfergerfgrefergregreg
+hi pear
+56 persimmon FALSE23.2
