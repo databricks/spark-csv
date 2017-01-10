@@ -48,6 +48,7 @@ When reading files the API accepts several options:
 * `delimiter`: by default columns are delimited using `,`, but delimiter can be set to any character
 * `quote`: by default the quote character is `"`, but can be set to any character. Delimiters inside quotes are ignored
 * `escape`: by default the escape character is `\`, but can be set to any character. Escaped quote characters are ignored
+* `treatEmptyValuesAsNulls` : treats empty values as `null` and is false by default
 * `parserLib`: by default it is "commons" can be set to "univocity" to use that library for CSV parsing.
 * `mode`: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
   * `PERMISSIVE`: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
@@ -362,8 +363,15 @@ You can save with compressed output:
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
-df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('cars.csv')
-df.select('year', 'model').write.format('com.databricks.spark.csv').options(codec="org.apache.hadoop.io.compress.GzipCodec").save('newcars.csv')
+df = sqlContext.read \
+    .format('com.databricks.spark.csv') \
+    .options(header='true', inferschema='true') \
+    .load('cars.csv')
+
+df.select('year', 'model').write \
+    .format('com.databricks.spark.csv') \
+    .options(codec="org.apache.hadoop.io.compress.GzipCodec") \
+    .save('newcars.csv')
 ```
 
 __Spark 1.3:__
