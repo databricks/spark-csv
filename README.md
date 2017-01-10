@@ -51,6 +51,8 @@ When reading files the API accepts several options:
 * `parserLib`: by default it is "commons" can be set to "univocity" to use that library for CSV parsing.
 * `mode`: determines the parsing mode. By default it is PERMISSIVE. Possible values are:
   * `PERMISSIVE`: tries to parse all lines: nulls are inserted for missing tokens and extra tokens are ignored.
+  * `SUPERPERMISSIVE`: Adds extra column '__errors' of type StructType(which has two struct fields named '__row', '__error_message').
+    __errors.__row and __errors.__error_message will not be null only if row is malformed.
   * `DROPMALFORMED`: drops lines which have fewer or more tokens than expected or tokens which do
    not match the schema
   * `FAILFAST`: aborts with a RuntimeException if encounters any malformed line
