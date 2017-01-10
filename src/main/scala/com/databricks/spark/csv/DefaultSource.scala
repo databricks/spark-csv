@@ -128,6 +128,14 @@ class DefaultSource
     val charset = parameters.getOrElse("charset", TextFile.DEFAULT_CHARSET.name())
     // TODO validate charset?
 
+    val treatParseExceptionAsNull = parameters.getOrElse("insertNullOnErrors", "false")
+    val insertNullOnErrorFlag = if (treatParseExceptionAsNull == "false"){
+      false
+    } else if (treatParseExceptionAsNull == "true") {
+      true
+    } else {
+      throw new Exception("Insert null on errors flag can be true or false")
+    }
     val inferSchema = parameters.getOrElse("inferSchema", "false")
     val inferSchemaFlag = if (inferSchema == "false") {
       false
@@ -168,7 +176,8 @@ class DefaultSource
       codec,
       nullValue,
       dateFormat,
-      maxCharsPerCol)(sqlContext)
+      maxCharsPerCol,
+      insertNullOnErrorFlag)(sqlContext)
   }
 
   override def createRelation(

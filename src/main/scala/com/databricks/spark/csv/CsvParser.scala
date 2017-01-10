@@ -43,6 +43,7 @@ class CsvParser extends Serializable {
   private var nullValue: String = ""
   private var dateFormat: String = null
   private var maxCharsPerCol: Int = 100000
+  private var treatParseExceptionAsNull : Boolean = false
 
   def withUseHeader(flag: Boolean): CsvParser = {
     this.useHeader = flag
@@ -124,6 +125,16 @@ class CsvParser extends Serializable {
     this
   }
 
+  /**
+    * If this is set to true then dirty data, for example a string in a numeric column,
+    * or a mal-formed date will not cause a failure.
+    * Instead, that value will be null in the resulting data
+    */
+  def withInsertNullOnError(flag : Boolean) : CsvParser = {
+    this.treatParseExceptionAsNull = flag
+    this
+  }
+
   def withMaxCharsPerCol(maxCharsPerCol: Int): CsvParser = {
     this.maxCharsPerCol = maxCharsPerCol
     this
@@ -150,7 +161,8 @@ class CsvParser extends Serializable {
       codec,
       nullValue,
       dateFormat,
-      maxCharsPerCol)(sqlContext)
+      maxCharsPerCol,
+      treatParseExceptionAsNull)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 
@@ -173,7 +185,8 @@ class CsvParser extends Serializable {
       codec,
       nullValue,
       dateFormat,
-      maxCharsPerCol)(sqlContext)
+      maxCharsPerCol,
+      treatParseExceptionAsNull)(sqlContext)
     sqlContext.baseRelationToDataFrame(relation)
   }
 }
