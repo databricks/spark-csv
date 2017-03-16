@@ -63,7 +63,7 @@ case class CsvRelation protected[spark] (
     logger.warn(s"$parseMode is not a valid parse mode. Using ${ParseModes.DEFAULT}.")
   }
 
-  if ((ignoreLeadingWhiteSpace || ignoreLeadingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
+  if ((ignoreLeadingWhiteSpace || ignoreTrailingWhiteSpace) && ParserLibs.isCommonsLib(parserLib)) {
     logger.warn(s"Ignore white space options may not work with Commons parserLib option")
   }
 
