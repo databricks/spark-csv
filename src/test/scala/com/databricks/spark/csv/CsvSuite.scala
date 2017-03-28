@@ -1002,6 +1002,28 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     assert(ages.schema.fields(2).dataType === DoubleType)
     assert(ages.schema.fields(3).dataType === StringType)
   }
+
+  test("Should read null properly when schema is lager than parsed tokens") {
+    val schema = StructType(
+      StructField("bool", BooleanType, true) ::
+      StructField("nullcol", IntegerType, true) ::
+      StructField("nullcol1", IntegerType, true) :: Nil)
+
+    // Selects only bool and nullcol to use `PrunedScan` interface. If we select
+    // all, it falls back to `BaseRelation`.
+    val results = new CsvParser()
+      .withSchema(schema)
+      .withUseHeader(true)
+      .withParserLib(parserLib)
+      .withParseMode(ParseModes.PERMISSIVE_MODE)
+      .csvFile(sqlContext, boolFile)
+      .select("bool", "nullcol")
+      .collect()
+
+    val expected = Seq(Row(true, null), Row(false, null), Row(false, null))
+    assert(results.length == expected.length)
+    assert(results.toSet == expected.toSet)
+  }
 }
 
 class CsvSuite extends AbstractCsvSuite {

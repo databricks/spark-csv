@@ -32,7 +32,7 @@ class TypeCastSuite extends FunSuite {
     val decimalType = new DecimalType(None)
 
     stringValues.zip(decimalValues).foreach { case (strVal, decimalVal) =>
-      assert(TypeCast.castTo(strVal, decimalType) === new BigDecimal(decimalVal.toString))
+      assert(TypeCast.castTo(strVal, "_c", decimalType) === new BigDecimal(decimalVal.toString))
     }
   }
 
@@ -61,36 +61,46 @@ class TypeCastSuite extends FunSuite {
   }
 
   test("Nullable types are handled") {
-    assert(TypeCast.castTo("-", ByteType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", ShortType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", IntegerType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", LongType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", FloatType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", DoubleType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", BooleanType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", TimestampType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", DateType, nullable = true, nullValue = "-") == null)
-    assert(TypeCast.castTo("-", StringType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", ByteType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", ShortType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", IntegerType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", LongType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", FloatType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", DoubleType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", BooleanType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", TimestampType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", DateType, nullable = true, nullValue = "-") == null)
+    assert(TypeCast.castTo("-", "_c", StringType, nullable = false, nullValue = "-") == "-")
   }
 
   test("Throws exception for empty string with non null type") {
-    val exception = intercept[NumberFormatException]{
-      TypeCast.castTo("", IntegerType, nullable = false)
+    val exception1 = intercept[NumberFormatException]{
+      TypeCast.castTo("", "_c", IntegerType, nullable = false)
     }
-    assert(exception.getMessage.contains("For input string: \"\""))
+    assert(exception1.getMessage.contains("For input string: \"\""))
+
+    val exception2 = intercept[RuntimeException]{
+      TypeCast.castTo("", "_c", StringType, nullable = false, treatEmptyValuesAsNulls = true)
+    }
+    assert(exception2.getMessage.contains("null value found but field _c is not nullable"))
+
+    val exception3 = intercept[RuntimeException]{
+      TypeCast.castTo(null, "_c", StringType, nullable = false)
+    }
+    assert(exception3.getMessage.contains("null value found but field _c is not nullable"))
   }
 
   test("Types are cast correctly") {
-    assert(TypeCast.castTo("10", ByteType) == 10)
-    assert(TypeCast.castTo("10", ShortType) == 10)
-    assert(TypeCast.castTo("10", IntegerType) == 10)
-    assert(TypeCast.castTo("10", LongType) == 10)
-    assert(TypeCast.castTo("1.00", FloatType) == 1.0)
-    assert(TypeCast.castTo("1.00", DoubleType) == 1.0)
-    assert(TypeCast.castTo("true", BooleanType) == true)
+    assert(TypeCast.castTo("10", "_c", ByteType) == 10)
+    assert(TypeCast.castTo("10", "_c", ShortType) == 10)
+    assert(TypeCast.castTo("10", "_c", IntegerType) == 10)
+    assert(TypeCast.castTo("10", "_c", LongType) == 10)
+    assert(TypeCast.castTo("1.00", "_c", FloatType) == 1.0)
+    assert(TypeCast.castTo("1.00", "_c", DoubleType) == 1.0)
+    assert(TypeCast.castTo("true", "_c", BooleanType) == true)
     val timestamp = "2015-01-01 00:00:00"
-    assert(TypeCast.castTo(timestamp, TimestampType) == Timestamp.valueOf(timestamp))
-    assert(TypeCast.castTo("2015-01-01", DateType) == Date.valueOf("2015-01-01"))
+    assert(TypeCast.castTo(timestamp, "_c", TimestampType) == Timestamp.valueOf(timestamp))
+    assert(TypeCast.castTo("2015-01-01", "_c", DateType) == Date.valueOf("2015-01-01"))
 
     val dateFormatter = new SimpleDateFormat("dd/MM/yyyy hh:mm")
     val customTimestamp = "31/01/2015 00:00"
@@ -98,25 +108,25 @@ class TypeCastSuite extends FunSuite {
     // to `java.sql.Date`
     val expectedDate = new Date(dateFormatter.parse("31/01/2015 00:00").getTime)
     val expectedTimestamp = new Timestamp(expectedDate.getTime)
-    assert(TypeCast.castTo(customTimestamp, TimestampType, dateFormatter = dateFormatter)
+    assert(TypeCast.castTo(customTimestamp, "_c", TimestampType, dateFormatter = dateFormatter)
       == expectedTimestamp)
-    assert(TypeCast.castTo(customTimestamp, DateType, dateFormatter = dateFormatter) ==
+    assert(TypeCast.castTo(customTimestamp, "_c", DateType, dateFormatter = dateFormatter) ==
       expectedDate)
   }
 
   test("Float and Double Types are cast correctly with Locale") {
     val locale : Locale = new Locale("fr", "FR")
     Locale.setDefault(locale)
-    assert(TypeCast.castTo("1,00", FloatType) == 1.0)
-    assert(TypeCast.castTo("1,00", DoubleType) == 1.0)
+    assert(TypeCast.castTo("1,00", "_c", FloatType) == 1.0)
+    assert(TypeCast.castTo("1,00", "_c", DoubleType) == 1.0)
   }
 
   test("Can handle mapping user specified nullValues") {
-    assert(TypeCast.castTo("null", StringType, true, false, "null") == null)
-    assert(TypeCast.castTo("\\N", ByteType, true, false, "\\N") == null)
-    assert(TypeCast.castTo("", ShortType, true, false) == null)
-    assert(TypeCast.castTo("null", StringType, true, true, "null") == null)
-    assert(TypeCast.castTo("", StringType, true, false, "") == null)
-    assert(TypeCast.castTo("", StringType, true, true, "") == null)
+    assert(TypeCast.castTo("null", "_c", StringType, true, false, "null") == null)
+    assert(TypeCast.castTo("\\N", "_c", ByteType, true, false, "\\N") == null)
+    assert(TypeCast.castTo("", "_c", ShortType, true, false) == null)
+    assert(TypeCast.castTo("null", "_c", StringType, true, true, "null") == null)
+    assert(TypeCast.castTo("", "_c", StringType, true, false, "") == null)
+    assert(TypeCast.castTo("", "_c", StringType, true, true, "") == null)
   }
 }
