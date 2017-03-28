@@ -34,21 +34,43 @@ object TypeCast {
    * Currently we do not support complex types (ArrayType, MapType, StructType).
    *
    * For string types, this is simply the datum. For other types.
-   * For other nullable types, this is null if the string datum is empty.
+   * For other nullable types, returns null if it is null or equals to the value specified
+   * in `nullValue` option. If `treatEmptyValuesAsNulls` is set, it also returns null for
+   * empty strings.
    *
    * @param datum string value
-   * @param castType SparkSQL type
+   * @param name field name in schema.
+   * @param castType data type to cast `datum` into.
+   * @param nullable nullability for the field.
+   * @param treatEmptyValuesAsNulls a flag to indicate if empty strings should be treated as null.
+   * @param nullValue the string value that represents null.
+   * @param dateFormatter date formatter that uses to parse dates and timestamps.
    */
   private[csv] def castTo(
       datum: String,
+      name: String,
       castType: DataType,
       nullable: Boolean = true,
       treatEmptyValuesAsNulls: Boolean = false,
       nullValue: String = "",
       dateFormatter: SimpleDateFormat = null): Any = {
-    if (datum == nullValue &&
-      nullable ||
-      (treatEmptyValuesAsNulls && datum == "")){
+
+    // If the given column is not nullable, we simply fall back to normal string
+    // rather than returning null for backwards compatibility. Note that this case is
+    // different with Spark's internal CSV datasource which throws an exception in this case.
+    val isNullValueMatched = datum == nullValue && nullable
+
+    // If `treatEmptyValuesAsNulls` is enabled, treat empty strings as nulls.
+    val shouldTreatEmptyValuesAsNulls = treatEmptyValuesAsNulls && datum == ""
+
+    // `datum` can be null when some tokens were inserted when permissive modes via `PrunedScan`.
+    // In this case, they are treated as nulls.
+    val isNullDatum = datum == null
+
+    if (isNullValueMatched || shouldTreatEmptyValuesAsNulls || isNullDatum) {
+      if (!nullable) {
+        throw new RuntimeException(s"null value found but field $name is not nullable.")
+      }
       null
     } else {
       castType match {
