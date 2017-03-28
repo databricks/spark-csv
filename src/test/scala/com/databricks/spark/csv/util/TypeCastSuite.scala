@@ -74,17 +74,17 @@ class TypeCastSuite extends FunSuite {
   }
 
   test("Throws exception for empty string with non null type") {
-    val exception1 = intercept[NumberFormatException]{
+    val exception1 = intercept[NumberFormatException] {
       TypeCast.castTo("", "_c", IntegerType, nullable = false)
     }
     assert(exception1.getMessage.contains("For input string: \"\""))
 
-    val exception2 = intercept[RuntimeException]{
+    val exception2 = intercept[RuntimeException] {
       TypeCast.castTo("", "_c", StringType, nullable = false, treatEmptyValuesAsNulls = true)
     }
     assert(exception2.getMessage.contains("null value found but field _c is not nullable"))
 
-    val exception3 = intercept[RuntimeException]{
+    val exception3 = intercept[RuntimeException] {
       TypeCast.castTo(null, "_c", StringType, nullable = false)
     }
     assert(exception3.getMessage.contains("null value found but field _c is not nullable"))

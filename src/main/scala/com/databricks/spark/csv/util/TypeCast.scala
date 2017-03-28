@@ -57,7 +57,7 @@ object TypeCast {
 
     // If the given column is not nullable, we simply fall back to normal string
     // rather than returning null for backwards compatibility. Note that this case is
-    // different with Spark's internal CSV datasource.
+    // different with Spark's internal CSV datasource which throws an exception in this case.
     val isNullValueMatched = datum == nullValue && nullable
 
     // If `treatEmptyValuesAsNulls` is enabled, treat empty strings as nulls.
@@ -67,7 +67,7 @@ object TypeCast {
     // In this case, they are treated as nulls.
     val isNullDatum = datum == null
 
-    if (isNullValueMatched || shouldTreatEmptyValuesAsNulls || isNullDatum){
+    if (isNullValueMatched || shouldTreatEmptyValuesAsNulls || isNullDatum) {
       if (!nullable) {
         throw new RuntimeException(s"null value found but field $name is not nullable.")
       }
