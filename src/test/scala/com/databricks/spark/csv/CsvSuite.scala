@@ -1010,7 +1010,7 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
       StructField("nullcol1", IntegerType, true) :: Nil)
 
     // Selects only bool and nullcol to use `PrunedScan` interface. If we select
-    // all, it falls back to `BaseRelation`.
+    // all, it falls back to `TableScan`.
     val results = new CsvParser()
       .withSchema(schema)
       .withUseHeader(true)
@@ -1023,6 +1023,25 @@ abstract class AbstractCsvSuite extends FunSuite with BeforeAndAfterAll {
     val expected = Seq(Row(true, null), Row(false, null), Row(false, null))
     assert(results.length == expected.length)
     assert(results.toSet == expected.toSet)
+
+    // Negative case
+    val nonNullableSchema = StructType(
+      StructField("bool", BooleanType, false) ::
+      StructField("nullcol", IntegerType, false) ::
+      StructField("nullcol1", IntegerType, false) :: Nil)
+
+    val exception = intercept[SparkException] {
+      new CsvParser()
+        .withSchema(nonNullableSchema)
+        .withUseHeader(true)
+        .withParserLib(parserLib)
+        .withParseMode(ParseModes.PERMISSIVE_MODE)
+        .csvFile(sqlContext, boolFile)
+        .select("bool", "nullcol")
+        .collect()
+    }
+
+    assert(exception.getMessage.contains("null value found but field nullcol"))
   }
 }
 
