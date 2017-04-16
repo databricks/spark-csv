@@ -38,6 +38,15 @@ public class JavaCsvSuite {
   }
 
   @Test
+  public void testSQL() {
+      sqlContext.sql("CREATE TEMPORARY TABLE carsTable " +
+                      "USING com.databricks.spark.csv " +
+                      "OPTIONS (path \""+carsFile+"\", header \"true\"");
+      DataFrame df = sqlContext.sql("SELECT * FROM carsTable");
+      Assert.assertEquals(df.collect().length, 3);
+  }
+
+  @Test
   public void testLoad() {
     HashMap<String, String> options = new HashMap<String, String>();
     options.put("header", "true");
