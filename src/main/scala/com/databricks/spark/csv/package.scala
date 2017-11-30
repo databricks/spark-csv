@@ -93,7 +93,7 @@ package object csv {
   implicit class CsvSchemaRDD(dataFrame: DataFrame) {
 
     /**
-     * Saves DataFrame as csv files. By default uses ',' as delimiter, and includes header line.
+     * Saves DataFrame as csv files. By default uses ',' as delimiter, and doesn't include header line.
      * If compressionCodec is not null the resulting output will be compressed.
      * Note that a codec entry in the parameters map will be ignored.
      */
