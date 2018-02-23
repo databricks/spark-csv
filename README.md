@@ -90,7 +90,7 @@ You can also specify column names and types in DDL.
 ```sql
 CREATE TABLE cars (yearMade double, carMake string, carModel string, comments string, blank string)
 USING com.databricks.spark.csv
-OPTIONS (path "cars.csv", header "true")
+OPTIONS (path "cars.csv", header "true") // input csv file path
 ```
 
 ### Scala API
@@ -105,13 +105,13 @@ val df = sqlContext.read
     .format("com.databricks.spark.csv")
     .option("header", "true") // Use first line of all files as header
     .option("inferSchema", "true") // Automatically infer data types
-    .load("cars.csv")
+    .load("cars.csv") // input csv file path
 
 val selectedData = df.select("year", "model")
 selectedData.write
     .format("com.databricks.spark.csv")
     .option("header", "true")
-    .save("newcars.csv")
+    .save("newcars.csv") // output csv file path
 ```
 
 You can manually specify the schema when reading data:
@@ -131,13 +131,13 @@ val df = sqlContext.read
     .format("com.databricks.spark.csv")
     .option("header", "true") // Use first line of all files as header
     .schema(customSchema)
-    .load("cars.csv")
+    .load("cars.csv") // input csv file path
 
 val selectedData = df.select("year", "model")
 selectedData.write
     .format("com.databricks.spark.csv")
     .option("header", "true")
-    .save("newcars.csv")
+    .save("newcars.csv") // output csv file path
 ```
 
 You can save with compressed output:
@@ -149,14 +149,14 @@ val df = sqlContext.read
     .format("com.databricks.spark.csv")
     .option("header", "true") // Use first line of all files as header
     .option("inferSchema", "true") // Automatically infer data types
-    .load("cars.csv")
+    .load("cars.csv") // input csv file path
 
 val selectedData = df.select("year", "model")
 selectedData.write
     .format("com.databricks.spark.csv")
     .option("header", "true")
     .option("codec", "org.apache.hadoop.io.compress.GzipCodec")
-    .save("newcars.csv.gz")
+    .save("newcars.csv.gz") // input compressed file path
 ```
 
 __Spark 1.3:__
@@ -170,7 +170,7 @@ val df = sqlContext.load(
     "com.databricks.spark.csv",
     Map("path" -> "cars.csv", "header" -> "true", "inferSchema" -> "true"))
 val selectedData = df.select("year", "model")
-selectedData.save("newcars.csv", "com.databricks.spark.csv")
+selectedData.save("newcars.csv", "com.databricks.spark.csv") // input csv file path
 ```
 
 You can manually specify the schema when reading data:
@@ -354,7 +354,7 @@ df = sqlContext.read \
 
 df.select('year', 'model').write \
     .format('com.databricks.spark.csv') \
-    .save('newcars.csv')
+    .save('newcars.csv') // output csv file path
 ```
 
 You can save with compressed output:
@@ -363,7 +363,7 @@ from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
 df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('cars.csv')
-df.select('year', 'model').write.format('com.databricks.spark.csv').options(codec="org.apache.hadoop.io.compress.GzipCodec").save('newcars.csv')
+df.select('year', 'model').write.format('com.databricks.spark.csv').options(codec="org.apache.hadoop.io.compress.GzipCodec").save('newcars.csv') // output compressed file path
 ```
 
 __Spark 1.3:__
@@ -374,7 +374,7 @@ from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', inferSchema = 'true', path = 'cars.csv')
-df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv') // output csv file path
 ```
 
 You can manually specify schema:
@@ -391,7 +391,7 @@ customSchema = StructType([ \
     StructField("blank", StringType(), True)])
 
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', schema = customSchema, path = 'cars.csv')
-df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv')
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv') // output csv file path
 ```
 
 You can save with compressed output:
@@ -400,7 +400,7 @@ from pyspark.sql import SQLContext
 sqlContext = SQLContext(sc)
 
 df = sqlContext.load(source="com.databricks.spark.csv", header = 'true', inferSchema = 'true', path = 'cars.csv')
-df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv', codec="org.apache.hadoop.io.compress.GzipCodec")
+df.select('year', 'model').save('newcars.csv', 'com.databricks.spark.csv', codec="org.apache.hadoop.io.compress.GzipCodec") // output csv file path
 ```
 
 ### R API
@@ -415,7 +415,7 @@ sqlContext <- sparkRSQL.init(sc)
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", inferSchema = "true")
 
-write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
+write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite") # output csv file path
 ```
 
 You can manually specify schema:
@@ -433,7 +433,7 @@ customSchema <- structType(
 
 df <- read.df(sqlContext, "cars.csv", source = "com.databricks.spark.csv", schema = customSchema)
 
-write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite")
+write.df(df, "newcars.csv", "com.databricks.spark.csv", "overwrite") # output csv file path
 ```
 
 You can save with compressed output:
