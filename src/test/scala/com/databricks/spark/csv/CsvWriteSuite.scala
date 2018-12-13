@@ -30,7 +30,7 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
 
   val datesFile = "src/test/resources/dates.csv"
   val tempEmptyDir = "target/test/empty/"
-  val carsFile = "src/test/resources/cars.csv"
+  val weoFile = "src/test/resources/weo_apr_2017_all.csv"
 
   def parserLib: String
 
@@ -90,14 +90,12 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
 
   test("Save multiple csv files with headers") {
     mkTempDir()
-    val dates = readCarsFromFile()
-    dates.show()
+    val weo = readWeoFromFile()
+    weo.show()
 
-    //    val copyFilePath = tempEmptyDir + "dates-copy.csv"
-    //    val retDataFile = tempEmptyDir + "dates-result.csv"
-    //
-    //    dates.saveAsCsvFile(copyFilePath,
-    //      Map("header" -> "false", "dateFormat" -> "MM/dd/yyyy HH:mm:ss"))
+    val copyFilePath = tempEmptyDir + "weo-copy.csv"
+
+    weo.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
     //
     //    FileUtil.fullyDelete(new File(retDataFile))
     //    merge(copyFilePath, retDataFile)
@@ -105,7 +103,6 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     //    val actualContents = readFile(retDataFile)
 
     // note that dates have been written with custom format
-    // assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\nnull\n01/28/2016 20:00:00" === actualContents)
   }
 
   // Create temp directory
@@ -126,11 +123,64 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
       .select("date")
   }
 
-  def readCarsFromFile(): DataFrame = {
+  def readWeoFromFile(): DataFrame = {
     new CsvParser()
       .withUseHeader(true)
-      .csvFile(sqlContext, carsFile)
-      .select("year", "make", "model", "comment", "blank")
+      .csvFile(sqlContext, weoFile)
+      .select("WEO Country Code",
+        "ISO",
+        "WEO Subject Code",
+        "Country",
+        "Subject Descriptor",
+        "Subject Notes",
+        "Units",
+        "Scale",
+        "Country/Series-specific Notes",
+        "1980",
+        "1981",
+        "1982",
+        "1983",
+        "1984",
+        "1985",
+        "1986",
+        "1987",
+        "1988",
+        "1989",
+        "1990",
+        "1991",
+        "1992",
+        "1993",
+        "1994",
+        "1995",
+        "1996",
+        "1997",
+        "1998",
+        "1999",
+        "2000",
+        "2001",
+        "2002",
+        "2003",
+        "2004",
+        "2005",
+        "2006",
+        "2007",
+        "2008",
+        "2009",
+        "2010",
+        "2011",
+        "2012",
+        "2013",
+        "2014",
+        "2015",
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "Estimates Start After"
+      )
   }
 
   def readFile(fname: String): String = {
