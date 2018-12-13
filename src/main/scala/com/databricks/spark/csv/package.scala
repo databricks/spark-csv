@@ -148,6 +148,8 @@ package object csv {
         .withNullString(nullValue)
 
       val generateHeader = parameters.getOrElse("header", "false").toBoolean
+      val headerOnFirstFile = parameters.getOrElse("headerOnFirstFile", "false").toBoolean
+
       val header = if (generateHeader) {
         csvFormat.format(dataFrame.columns.map(_.asInstanceOf[AnyRef]): _*)
       } else {
@@ -181,7 +183,11 @@ package object csv {
           .withNullString(nullValue)
 
         new Iterator[String] {
-          var firstRow: Boolean = generateHeader
+          var firstRow: Boolean = if (headerOnFirstFile) {
+            generateHeader && (index==0)
+          } else {
+            generateHeader
+          }
 
           override def hasNext: Boolean = iter.hasNext || firstRow
 

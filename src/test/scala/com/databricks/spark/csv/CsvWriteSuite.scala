@@ -88,21 +88,32 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\nnull\n01/28/2016 20:00:00" === actualContents)
   }
 
-  test("Save multiple csv files with headers") {
+  test("Save multiple csv files with headers, then merge it") {
     mkTempDir()
     val weo = readWeoFromFile()
-    weo.show()
+    // if 'headerOnFirstFile' specified false, header line will be generated per file
+    val copyFilePath = tempEmptyDir + "weo-copy-headers.csv"
+    val retDataFile = tempEmptyDir + "weo-result-headers.csv"
+    weo.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerOnFirstFile" -> "false"))
+    FileUtil.fullyDelete(new File(retDataFile))
+    merge(copyFilePath, retDataFile)
 
-    val copyFilePath = tempEmptyDir + "weo-copy.csv"
+    val actualContents = readFile(retDataFile)
+    assert(1 < "WEO Country Code".r.findAllIn(actualContents).length)
+  }
 
-    weo.saveAsCsvFile(copyFilePath, Map("header" -> "true"))
-    //
-    //    FileUtil.fullyDelete(new File(retDataFile))
-    //    merge(copyFilePath, retDataFile)
-    //
-    //    val actualContents = readFile(retDataFile)
+  test("Save multiple csv files with only a header, then merge it") {
+    mkTempDir()
+    val weo = readWeoFromFile()
+    // if 'headerOnFirstFile' specified, header line is only 1 row
+    val copyFilePath = tempEmptyDir + "weo-copy-1header.csv"
+    val retDataFile = tempEmptyDir + "weo-result-1header.csv"
+    weo.saveAsCsvFile(copyFilePath, Map("header" -> "true", "headerOnFirstFile" -> "true"))
+    FileUtil.fullyDelete(new File(retDataFile))
+    merge(copyFilePath, retDataFile)
 
-    // note that dates have been written with custom format
+    val actualContents = readFile(retDataFile)
+    assert(1 == "WEO Country Code".r.findAllIn(actualContents).length)
   }
 
   // Create temp directory
