@@ -30,6 +30,7 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
 
   val datesFile = "src/test/resources/dates.csv"
   val tempEmptyDir = "target/test/empty/"
+  val carsFile = "src/test/resources/cars.csv"
 
   def parserLib: String
 
@@ -87,6 +88,26 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
     assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\nnull\n01/28/2016 20:00:00" === actualContents)
   }
 
+  test("Save multiple csv files with headers") {
+    mkTempDir()
+    val dates = readCarsFromFile()
+    dates.show()
+
+    //    val copyFilePath = tempEmptyDir + "dates-copy.csv"
+    //    val retDataFile = tempEmptyDir + "dates-result.csv"
+    //
+    //    dates.saveAsCsvFile(copyFilePath,
+    //      Map("header" -> "false", "dateFormat" -> "MM/dd/yyyy HH:mm:ss"))
+    //
+    //    FileUtil.fullyDelete(new File(retDataFile))
+    //    merge(copyFilePath, retDataFile)
+    //
+    //    val actualContents = readFile(retDataFile)
+
+    // note that dates have been written with custom format
+    // assert("08/26/2015 18:00:00\n10/27/2014 18:30:00\nnull\n01/28/2016 20:00:00" === actualContents)
+  }
+
   // Create temp directory
   def mkTempDir(): Unit = {
     TestUtils.deleteRecursively(new File(tempEmptyDir))
@@ -103,6 +124,13 @@ abstract class AbstractCsvWriteSuite extends FunSuite with BeforeAndAfterAll {
       .withDateFormat("dd/MM/yyyy HH:mm")
       .csvFile(sqlContext, datesFile)
       .select("date")
+  }
+
+  def readCarsFromFile(): DataFrame = {
+    new CsvParser()
+      .withUseHeader(true)
+      .csvFile(sqlContext, carsFile)
+      .select("year", "make", "model", "comment", "blank")
   }
 
   def readFile(fname: String): String = {
